@@ -1,0 +1,61 @@
+const mongoose = require("mongoose");
+const yesNoEnum = {
+    type: String,
+    enum: ["Yes", "No"]
+}
+const statusEnum = {
+    type: String,
+    enum: ["Active", "Inactive"],
+};
+
+const nrlmShgMemberSchema = new mongoose.Schema({
+    state_name: String,
+    district_name: String,
+    district_code:Number,
+    block_name: String,
+    block_code:String,
+    grampanchayat_name: String,
+    grampanchayat_code:String,
+    village_name: String,
+    village_code:String,
+    shg_name: String,
+    shg_code: Number,
+    member_name: String,
+    shg_member_code: Number,
+    belonging_name: Number,
+    gender: String,
+    social_category: String,
+    disability: String,
+    religion: String,
+    apl: String,
+    bpl: String,
+    pip_category: String,
+    leader: String,
+    mobile_number: Number,
+    active_details:statusEnum,
+    dob: String,
+    bank_name: String,
+    bank_branch_name: String,
+    ac_no: Number,
+    book_keeper_member: String,
+    shg_joining_date: String,
+    education: String,
+    other_education: yesNoEnum,
+    enroll_in_pmjy: yesNoEnum,
+    enroll_in_pmsby: yesNoEnum,
+    enroll_in_lic: yesNoEnum,
+    enroll_in_hic: yesNoEnum,
+    aadhar_status: String,
+    member_update_status: {
+        type: Number,
+        enum: [0, 1],
+        default: 0,
+    },
+    aadhar:Number,
+    smart_card_no: Number,
+    createdBy: String,
+    updatedBy: String,
+    updatedAt:Date,
+    createdAt:Date,
+})
+module.exports = nrlmShgMemberSchema;
