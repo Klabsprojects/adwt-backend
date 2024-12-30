@@ -141,6 +141,12 @@ exports.getDashboardData = (req, res) => {
     const currentDate = formatDate(now);
 
   const whereClause = req.whereClause;
+  console.log('whereClause => ', whereClause); 
+  if(whereClause == undefined){
+    console.log('UNDEFINED');
+  }
+  else
+    console.log('WHERE FOUND')
 
   let joinQuery = "";
   let acquitted = "";
@@ -345,11 +351,8 @@ exports.getDashboardData = (req, res) => {
                             const years = Array.from({ length: 11 }, (_, i) => currentYear - 10 + i); 
                             const dataMap = Object.fromEntries(results5.map(row => [row.year, row.pendingTrials]));
                             const labels = years.map(year => year.toString());
-                            const data = years.map(year => dataMap[year] || 0); 
-                            res.json({
-                                //totalCases: totalCasesResult[0].totalCases,
-                                //pendingTrials: pendingTrialsResult[0].pendingTrials,
-                                //minorCases: minorCasesResult[0].minorCases,
+                            const data = years.map(year => dataMap[year] || 0);
+                            let response = {
                                 filteredTotalCases: totalCasesResult[0].totalCases,
                                 filteredPendingTrials: pendingTrialsResult[0].pendingTrials,
                                 filteredMinorCases: minorCasesResult[0].minorCases,
@@ -391,7 +394,79 @@ exports.getDashboardData = (req, res) => {
                                 },
                                 map1 : results6,
                                 map2 : results7,
-                            });
+                          };
+                          
+                          if (whereClause === undefined) {
+                              // Add these fields if `whereClause` is undefined
+                              response.totalCases= totalCasesResult[0].totalCases;
+                              response.pendingTrials= pendingTrialsResult[0].pendingTrials;
+                              response.minorCases= minorCasesResult[0].minorCases;
+
+                              response.filteredTotalCases = 0;
+                              response.filteredPendingTrials = 0;
+                              response.filteredMinorCases = 0;
+                              // response.filteredTotalCases = totalCasesResult[0].totalCases;
+                              // response.filteredPendingTrials = pendingTrialsResult[0].pendingTrials;
+                              // response.filteredMinorCases = minorCasesResult[0].minorCases;
+                          }
+                          else {
+                              response.filteredTotalCases = totalCasesResult[0].totalCases;
+                              response.filteredPendingTrials = pendingTrialsResult[0].pendingTrials;
+                              response.filteredMinorCases = minorCasesResult[0].minorCases;
+
+                              response.totalCases= 0;
+                              response.pendingTrials= 0;
+                              response.minorCases= 0;
+                          }
+                          
+                          res.json(response);
+                           
+                            // res.json({
+                            //     totalCases: totalCasesResult[0].totalCases,
+                            //     pendingTrials: pendingTrialsResult[0].pendingTrials,
+                            //     minorCases: minorCasesResult[0].minorCases,
+                            //     filteredTotalCases: totalCasesResult[0].totalCases,
+                            //     filteredPendingTrials: pendingTrialsResult[0].pendingTrials,
+                            //     filteredMinorCases: minorCasesResult[0].minorCases,
+                            //     acquittedCases: acquittedResult[0].acquittedCases,
+                            //     convictedCases: convictedResult[0].convictedCases,
+                            //     cases: {
+                            //       '<1Year': results[0].less_than_1_year,
+                            //       '1-5Years': results[0].one_to_five_years,
+                            //       '6-10Years': results[0].six_to_ten_years,
+                            //       '11-20Years': results[0].eleven_to_twenty_years,
+                            //       '>20Years': results[0].greater_than_twenty_years
+                            //     },
+                            //     uicases: {
+                            //       '<2Mos': results1[0].less_than_2_months,
+                            //       '2-4Mos': results1[0].two_to_four_months,
+                            //       '4-6Mos': results1[0].four_to_six_months,
+                            //       '6-12Mos': results1[0].six_to_twelve_months,
+                            //       '>1Years': results1[0].greater_than_one_year,
+                            //     },
+                            //     piechart1cases: {
+                            //       'fir': results2[0].fir_count,
+                            //       'chargesheet': results2[0].chargesheet_count,
+                            //       'trial': results2[0].trial_count
+                            //     },
+                            //     piechart2cases: {
+                            //       'death': results3[0].death_count,
+                            //       'rape': results3[0].rape_count,
+                            //       'others': results3[0].other_count
+                            //     },
+                            //     uiBar, ptBar,
+                            //     linechartcases: {
+                            //       'labels': labels,
+                            //       'datasets': [
+                            //         {
+                            //           label: 'Pending Cases',
+                            //           data: data,
+                            //         },
+                            //       ],
+                            //     },
+                            //     map1 : results6,
+                            //     map2 : results7,
+                            // });
                           });
                         });
                       });
