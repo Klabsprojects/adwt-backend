@@ -142,11 +142,6 @@ exports.getDashboardData = (req, res) => {
 
   const whereClause = req.whereClause;
   console.log('whereClause => ', whereClause); 
-  if(whereClause == undefined){
-    console.log('UNDEFINED');
-  }
-  else
-    console.log('WHERE FOUND')
 
   let joinQuery = "";
   let acquitted = "";
@@ -402,21 +397,14 @@ exports.getDashboardData = (req, res) => {
                               response.pendingTrials= pendingTrialsResult[0].pendingTrials;
                               response.minorCases= minorCasesResult[0].minorCases;
 
-                              response.filteredTotalCases = 0;
-                              response.filteredPendingTrials = 0;
-                              response.filteredMinorCases = 0;
-                              // response.filteredTotalCases = totalCasesResult[0].totalCases;
-                              // response.filteredPendingTrials = pendingTrialsResult[0].pendingTrials;
-                              // response.filteredMinorCases = minorCasesResult[0].minorCases;
+                              response.filteredTotalCases = null;
+                              response.filteredPendingTrials = null;
+                              response.filteredMinorCases = null;
                           }
                           else {
                               response.filteredTotalCases = totalCasesResult[0].totalCases;
                               response.filteredPendingTrials = pendingTrialsResult[0].pendingTrials;
                               response.filteredMinorCases = minorCasesResult[0].minorCases;
-
-                              response.totalCases= 0;
-                              response.pendingTrials= 0;
-                              response.minorCases= 0;
                           }
                           
                           res.json(response);
