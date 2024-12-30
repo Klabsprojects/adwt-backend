@@ -347,9 +347,12 @@ exports.getDashboardData = (req, res) => {
                             const labels = years.map(year => year.toString());
                             const data = years.map(year => dataMap[year] || 0); 
                             res.json({
-                                totalCases: totalCasesResult[0].totalCases,
-                                pendingTrials: pendingTrialsResult[0].pendingTrials,
-                                minorCases: minorCasesResult[0].minorCases,
+                                //totalCases: totalCasesResult[0].totalCases,
+                                //pendingTrials: pendingTrialsResult[0].pendingTrials,
+                                //minorCases: minorCasesResult[0].minorCases,
+                                filteredTotalCases: totalCasesResult[0].totalCases,
+                                filteredPendingTrials: pendingTrialsResult[0].pendingTrials,
+                                filteredMinorCases: minorCasesResult[0].minorCases,
                                 acquittedCases: acquittedResult[0].acquittedCases,
                                 convictedCases: convictedResult[0].convictedCases,
                                 cases: {
