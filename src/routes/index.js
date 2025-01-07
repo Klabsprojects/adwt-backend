@@ -80,7 +80,8 @@ router.post('/auth/verify-otp', authController.verifyOtp);
 router.post('/auth/reset-password', authController.resetPassword);
 
 // Multer configuration
-const uploadFolder = "/var/www/backend/uploads/fir_copy";
+// const uploadFolder = "/home/onlinetn/adwt-backend/uploads/fir_copy";
+const uploadFolder = "uploads/fir_copy";
 if (!fs.existsSync(uploadFolder)) {
   fs.mkdirSync(uploadFolder, { recursive: true });
 }
@@ -311,6 +312,8 @@ router.post(
     vmcMeetingController.submitMeeting(req, res, uploadedFilePath);
   }
 );
+
+router.post('/vmcmeeting/getAttendeesByDistrictbysk', vmcMeetingController.getAttendeesByDistrictbysk);
 
 router.post('/fir/handle-step-five', firController.handleStepFive);
 

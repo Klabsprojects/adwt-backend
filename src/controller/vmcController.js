@@ -12,8 +12,7 @@ const getAllMembers = async (req, res) => {
       district,
       subdivision,
       designation, 
-      other_designation, 
-      meeting_date, 
+      other_designation,  
       validity_end_date, 
       status, 
       created_at, 
@@ -70,7 +69,7 @@ const createMember = async (req, res) => {
       subdivision,
       designation, 
       other_designation, 
-      meeting_date, 
+      appointment_date, 
       validity_end_date, 
       status, 
       created_at, 
@@ -136,7 +135,7 @@ const updateMember = async (req, res) => {
         subdivision = ?, 
         designation = ?, 
         other_designation = ?, 
-        meeting_date = ?, 
+        appointment_date = ?, 
         validity_end_date = ?, 
         updated_at = NOW()
     WHERE vmc_id = ?
