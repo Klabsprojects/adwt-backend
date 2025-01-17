@@ -22,6 +22,7 @@ const whitelist = [
   "https://shg.mathikalam.org",
   "https://mathikalam.org",
   "http://104.254.244.178",
+  "https://adwatrocity.onlinetn.com"
 ];
 const corsOptions = {
   origin: (origin, callback) => {
@@ -45,7 +46,7 @@ app.get("/", (req, res) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3010;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });

@@ -7,12 +7,13 @@ const mysql = require('mysql2');
 //   database: 'adw_database', // Database name
 // });
 
-const db = mysql.createConnection({
-  host: 'localhost', // Server IP
-  user: 'root',        // Replace with your MySQL username
-  password: 'Pass', // Replace with the password
-  database: 'adw', // Database name
-});
+
+// const db = mysql.createConnection({
+//   host: 'localhost', // Server IP
+//   user: 'root',        // Replace with your MySQL username
+//   password: 'Pass', // Replace with the password
+//   database: 'adw', // Database name
+// });
 
 db.connect((err) => {
   if (err) {

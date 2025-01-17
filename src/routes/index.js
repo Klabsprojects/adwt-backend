@@ -18,6 +18,7 @@ const offenceActController = require('../controller/offenceActController');
 const firController = require('../controller/firController');
 const firListController = require('../controller/firListController');
 const vmcMeetingController = require('../controller/vmcMeetingController');
+const monthlyreportController = require('../controller/monthlyreportController');
 
 const ReliefController = require('../controller/ReliefController');
 //const AdditinalReliefController = require('../controller/AdditinalReliefController');
@@ -34,6 +35,7 @@ const courtController = require('../controller/courtController');
 
 const getdashboardController = require('../controller/getdashboardController');
 const vmcController = require('../controller/vmcController');
+const editfircontroller = require('../controller/editfirController');
 
 
 const dadtwodashboardController = require('../controller/getdadtwodashboardController');
@@ -80,8 +82,8 @@ router.post('/auth/verify-otp', authController.verifyOtp);
 router.post('/auth/reset-password', authController.resetPassword);
 
 // Multer configuration
-// const uploadFolder = "/home/onlinetn/adwt-backend/uploads/fir_copy";
-const uploadFolder = "uploads/fir_copy";
+const uploadFolder = "/home/onlinetn/adwt-backend/uploads/fir_copy";
+// const uploadFolder = "uploads/fir_copy";
 if (!fs.existsSync(uploadFolder)) {
   fs.mkdirSync(uploadFolder, { recursive: true });
 }
@@ -227,11 +229,13 @@ router.post('/fir/user-details', firController.getUserDetails);
 
 router.get('/fir/details', firController.getFirDetails);
 
+router.get('/fir/firEditdetails', editfircontroller.getFirDetailsFirEdit);
 
 router.get('/fir/police-stations', firController.getPoliceStations);
 
 // Route to get police division details
 router.get('/fir/police-division', firController.getPoliceDivisionDetails);
+router.get('/fir/police-divisionedit', editfircontroller.getPoliceDivisionDetailsedit);
 
 router.get('/fir/status/:firId', firController.getFirStatus);
 
@@ -243,9 +247,14 @@ router.get('/fir/police-revenue', firController.getAllRevenues);
 // Define routes for fetching data from tables
 router.get('/fir/offences', firController.getAllOffences); // Fetch offence names from offence table
 router.get('/fir/offence-acts', firController.getAllOffenceActs); // Fetch offence acts from offence_acts table
-//router.get('/fir/scst-sections', firController.getAllCastes); // Fetch SC/ST sections from caste_community table
+router.get('/fir/scst-sections', editfircontroller.getAllCastes); // Fetch SC/ST sections from caste_community table
 // Route to fetch all court divisions
 router.get('/fir/court-divisions', firController.getAllCourtDivisions);
+
+router.get('/fir/remove-chargesheet-image', editfircontroller.removechargesheet);
+router.get('/fir/remove-chargesheet-relief', editfircontroller.removechargesheetrelief);
+
+
 
 // Route to fetch court ranges by division
 router.get('/fir/court-ranges', firController.getCourtRangesByDivision);
@@ -272,6 +281,12 @@ router.post('/fir/handle-step-one', firController.handleStepOne);
 router.post('/fir/handle-Step-Two', firController.handleStepTwo);
 // Add this route for Step 3 in your routes file
 router.post('/fir/handle-step-three', firController.handleStepThree);
+router.post('/fir/handle-step-four', firController.handleStepFour);
+router.post('/fir/handle-step-five', firController.handleStepFive);
+
+router.post('/fir/save-step-six', firController.handleStepSix);
+
+
 
 router.post(
   "/fir/handle-step-four",
@@ -314,11 +329,13 @@ router.post(
 );
 
 router.post('/vmcmeeting/getAttendeesByDistrictbysk', vmcMeetingController.getAttendeesByDistrictbysk);
+router.get('/monthlyreport/getmonthlyreportdetail', monthlyreportController.getmonthlyreportdetail);
 
 router.post('/fir/handle-step-five', firController.handleStepFive);
 
 router.post('/fir/save-step-six', firController.handleStepSix);
 router.get('/fir_list/list', firListController.getFirList);
+router.get('/fir_list/view', firListController.getFirView);
 
 
 // Route for fetching number of victims and victim names by FIR ID
@@ -382,6 +399,7 @@ router.post('/fir-relief/save-first-installment', ReliefController.saveFirstInst
 router.post('/fir-relief/save-second-installment', ReliefController.saveSecondInstallment);
 router.post('/fir-relief/trial_relief_save', ReliefController.saveThirdInstallmentDetails);
 router.post('/fir/save-step-seven', firController.saveStepSevenAsDraft);
+router.post('/fir/save-step-sevenedit', editfircontroller.editStepSevenAsDraft);
 router.get('/fir-relief/trial_relief/:firId', ReliefController.getTrialReliefDetails);
 
 //router.get('/dashboard-data/:roleId', dashboardController.getDashboardData);
