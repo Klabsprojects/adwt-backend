@@ -19,6 +19,7 @@ const firController = require('../controller/firController');
 const firListController = require('../controller/firListController');
 const vmcMeetingController = require('../controller/vmcMeetingController');
 const monthlyreportController = require('../controller/monthlyreportController');
+const additionalreportController = require('../controller/additionalreportController');
 
 const ReliefController = require('../controller/ReliefController');
 //const AdditinalReliefController = require('../controller/AdditinalReliefController');
@@ -330,6 +331,7 @@ router.post(
 
 router.post('/vmcmeeting/getAttendeesByDistrictbysk', vmcMeetingController.getAttendeesByDistrictbysk);
 router.get('/monthlyreport/getmonthlyreportdetail', monthlyreportController.getmonthlyreportdetail);
+router.get('/additionalreport/getadditionalreportdetail', additionalreportController.getadditionalreportdetail);
 
 router.post('/fir/handle-step-five', firController.handleStepFive);
 

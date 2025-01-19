@@ -7,7 +7,7 @@ const db = require('../db'); // Adjust the path to your actual DB config
 // Controller to fetch all FIRs
 exports.getFirList = (req, res) => {
   //console.log("Fetching FIR list"); // For debugging, this should log to your backend console
-  const query = `SELECT * FROM fir_add ORDER BY created_at DESC`; // Fetch all FIRs sorted by created_at
+  const query = `SELECT id, fir_id, police_city, police_station, fir_number, created_by, created_at, status, relief_status FROM fir_add ORDER BY created_at DESC`; // Fetch all FIRs sorted by created_at
 
   db.query(query, (err, results) => {
     if (err) {
