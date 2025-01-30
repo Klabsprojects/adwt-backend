@@ -285,7 +285,7 @@ router.post('/fir/handle-step-three', firController.handleStepThree);
 router.post('/fir/handle-step-four', firController.handleStepFour);
 router.post('/fir/handle-step-five', firController.handleStepFive);
 
-router.post('/fir/save-step-six', firController.handleStepSix);
+// router.post('/fir/save-step-six', firController.handleStepSix);
 
 
 
