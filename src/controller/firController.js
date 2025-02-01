@@ -1,6 +1,7 @@
 const db = require('../db'); // Make sure the path to the database file is correct
 const { v4: uuidv4 } = require('uuid');
-
+const multer = require('multer');
+const path = require('path');
 // Get User Details
 exports.getUserDetails = (req, res) => {
   const userId = req.body.userId;
@@ -512,136 +513,179 @@ exports.handleStepThree = (req, res) => {
 //   });
 // };
 
-exports.handleStepFour = (req, res) => {
-  const { firId, numberOfAccused, accuseds: accusedsRaw } = req.body;
-  
-  let accuseds = [];
-  
-  try {
-    if (typeof accusedsRaw === 'string') {
-      accuseds = JSON.parse(accusedsRaw);
-    } else if (Array.isArray(accusedsRaw) || typeof accusedsRaw === 'object') {
-      accuseds = accusedsRaw;
-    } else {
-      throw new Error("Invalid format for 'accuseds'");
-    }
-  } catch (error) {
-    console.error("Error parsing accuseds:", error.message);
-    return res.status(400).json({ error: "Invalid data format for 'accuseds'" });
+
+// mahi code
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, './uploads'); 
+  },
+  filename: (req, file, cb) => {
+   
+    const fileExtension = file.mimetype.split('/')[1]; 
+    const fileName = `${uuidv4()}.${fileExtension}`; 
+    cb(null, fileName);
   }
+});
 
-  const updateFirQuery = `
-    UPDATE fir_add
-    SET
-      number_of_accused = ?
-    WHERE fir_id = ?;
-  `;
-  const updateFirValues = [numberOfAccused, firId];
+const fileFilter = (req, file, cb) => {
+  cb(null, true); 
+};
 
-  db.query(updateFirQuery, updateFirValues, (err) => {
-    if (err) {
-      console.error("Failed to update FIR data:", err);
-      return res.status(500).json({ message: "Failed to update FIR data", error: err.message });
+const upload = multer({ storage: storage, fileFilter: fileFilter });
+
+// // Use this in your endpoint to handle the file upload
+
+exports.handleStepFour = (req, res) => {
+
+
+  upload.array('uploadFIRCopy[]', 5)(req, res, (err)=> {
+    if (err instanceof multer.MulterError) {
+      return res.status(400).json({ error: err.message });
+    } else if (err) {
+      return res.status(500).json({ error: 'Failed to upload file', message: err.message });
     }
 
-    const accusedPromises = accuseds.map((accused) => {
+    const { firId, numberOfAccused, accuseds: accusedsRaw } = req.body;
+    const files = req.files; 
 
-      return new Promise((resolve, reject) => {
-        if (accused.accusedId) {
+    let accuseds = [];
+    try {
+      if (typeof accusedsRaw === 'string') {
+        accuseds = JSON.parse(accusedsRaw);
+      } else if (Array.isArray(accusedsRaw) || typeof accusedsRaw === 'object') {
+        accuseds = accusedsRaw;
+      } else {
+        throw new Error("Invalid format for 'accuseds'");
+      }
+    } catch (error) {
+      console.error("Error parsing accuseds:", error.message);
+      return res.status(400).json({ error: "Invalid data format for 'accuseds'" });
+    }
 
-          const updateAccusedQuery = `
-            UPDATE accuseds
-            SET
-              age = ?, name = ?, gender = ?, custom_gender = ?, address = ?, pincode = ?,
-              community = ?, caste = ?, guardian_name = ?, previous_incident = ?,
-              previous_fir_number = ?, previous_fir_number_suffix = ?, scst_offence = ?,
-              scst_fir_number = ?, scst_fir_number_suffix = ?, antecedents = ?, land_o_issues = ?,
-              gist_of_current_case = ?
-            WHERE accused_id = ?;
-          `;
-          const accusedValues = [
-            accused.age,
-            accused.name,
-            accused.gender,
-            accused.gender === 'Other' ? accused.customGender || '' : '',
-            accused.address,
-            accused.pincode,
-            accused.community,
-            accused.caste,
-            accused.guardianName,
-            accused.previousIncident,
-            accused.previousFIRNumber,
-            accused.previousFIRNumberSuffix,
-            accused.scstOffence,
-            accused.scstFIRNumber,
-            accused.scstFIRNumberSuffix,
-            accused.antecedents,
-            accused.landOIssues,
-            accused.gistOfCurrentCase,
-            accused.accusedId,
-          ];
-
-
-          db.query(updateAccusedQuery, accusedValues, (err) => {
-            if (err) return reject(err);
-            resolve({ accusedId: accused.accusedId });
-          });
-        } else {
-          const accusedId = generateRandomId(6);
-          const insertAccusedQuery = `
-            INSERT INTO accuseds (
-              accused_id, fir_id, age, name, gender, custom_gender, address, pincode, community, caste,
-              guardian_name, previous_incident, previous_fir_number, previous_fir_number_suffix, scst_offence,
-              scst_fir_number, scst_fir_number_suffix, antecedents, land_o_issues, gist_of_current_case
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-          `;
-          const accusedValues = [
-            accusedId,
-            firId,
-            accused.age,
-            accused.name,
-            accused.gender,
-            accused.gender === 'Other' ? accused.customGender || '' : '',
-            accused.address,
-            accused.pincode,
-            accused.community,
-            accused.caste,
-            accused.guardianName,
-            accused.previousIncident,
-            accused.previousFIRNumber,
-            accused.previousFIRNumberSuffix,
-            accused.scstOffence,
-            accused.scstFIRNumber,
-            accused.scstFIRNumberSuffix,
-            accused.antecedents,
-            accused.landOIssues,
-            accused.gistOfCurrentCase,
-          ];
-
-          db.query(insertAccusedQuery, accusedValues, (err) => {
-            if (err) return reject(err);
-            resolve({ accusedId });
-          });
-        }
-      });
+    let filePaths = files.map(file => file.path).join(', '); 
+    accuseds = accuseds.map((accused, index) => {
+      accused.uploadFIRCopy = files[index] ? files[index].path : null; 
+      return accused;
     });
+   
 
-    Promise.all(accusedPromises)
-      .then((results) => {
-        const updatedAccuseds = accuseds.map((accused, index) => ({
-          ...accused,
-          accusedId: results[index].accusedId,
-        }));
-        res.status(200).json({
-          message: "Step 4 data saved successfully",
-          fir_id: firId,
-          accuseds: updatedAccuseds,
+    const updateFirQuery = `
+      UPDATE fir_add
+      SET
+        number_of_accused = ?
+      WHERE fir_id = ?;
+    `;
+
+    
+ 
+    const updateFirValues = [numberOfAccused, files ? files.path : null, firId];
+
+    db.query(updateFirQuery, updateFirValues, (err) => {
+      if (err) {
+        console.error("Failed to update FIR data:", err);
+        return res.status(500).json({ message: "Failed to update FIR data", error: err.message });
+      }
+
+      const accusedPromises = accuseds.map((accused) => {
+        return new Promise((resolve, reject) => {
+          if (accused.accusedId) {
+            const updateAccusedQuery = `
+              UPDATE accuseds
+              SET
+                age = ?, name = ?, gender = ?, custom_gender = ?, address = ?, pincode = ?,
+                community = ?, caste = ?, guardian_name = ?, previous_incident = ?,
+                previous_fir_number = ?, previous_fir_number_suffix = ?, scst_offence = ?,
+                scst_fir_number = ?, scst_fir_number_suffix = ?, antecedents = ?, land_o_issues = ?,
+                gist_of_current_case = ?, upload_fir_copy = ?
+              WHERE accused_id = ?;
+            `;
+            const accusedValues = [
+              accused.age,
+              accused.name,
+              accused.gender,
+              accused.gender === 'Other' ? accused.customGender || '' : '',
+              accused.address,
+              accused.pincode,
+              accused.community,
+              accused.caste,
+              accused.guardianName,
+              accused.previousIncident,
+              accused.previousFIRNumber,
+              accused.previousFIRNumberSuffix,
+              accused.scstOffence,
+              accused.scstFIRNumber,
+              accused.scstFIRNumberSuffix,
+              accused.antecedents,
+              accused.landOIssues,
+              accused.gistOfCurrentCase,
+              accused.uploadFIRCopy,
+              accused.accusedId,
+            ];
+
+            db.query(updateAccusedQuery, accusedValues, (err) => {
+              if (err) return reject(err);
+              resolve({ accusedId: accused.accusedId });
+            });
+          } else {
+            const accusedId = generateRandomId(6);
+            const insertAccusedQuery = `
+              INSERT INTO accuseds (
+                accused_id, fir_id, age, name, gender, custom_gender, address, pincode, community, caste,
+                guardian_name, previous_incident, previous_fir_number, previous_fir_number_suffix, scst_offence,
+                scst_fir_number, scst_fir_number_suffix, antecedents, land_o_issues, gist_of_current_case,upload_fir_copy
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?);
+            `;
+            const accusedValues = [
+              accusedId,
+              firId,
+              accused.age,
+              accused.name,
+              accused.gender,
+              accused.gender === 'Other' ? accused.customGender || '' : '',
+              accused.address,
+              accused.pincode,
+              accused.community,
+              accused.caste,
+              accused.guardianName,
+              accused.previousIncident,
+              accused.previousFIRNumber,
+              accused.previousFIRNumberSuffix,
+              accused.scstOffence,
+              accused.scstFIRNumber,
+              accused.scstFIRNumberSuffix,
+              accused.antecedents,
+              accused.landOIssues,
+              accused.gistOfCurrentCase,
+              accused.uploadFIRCopy,
+            ];
+
+            db.query(insertAccusedQuery, accusedValues, (err) => {
+              if (err) return reject(err);
+              resolve({ accusedId });
+            });
+          }
         });
-      })
-      .catch((err) => {
-        console.error("Failed to process accused data:", err);
-        res.status(500).json({ message: "Failed to process accused data", error: err.message });
       });
+
+      Promise.all(accusedPromises)
+        .then((results) => {
+          const updatedAccuseds = accuseds.map((accused, index) => ({
+            ...accused,
+            accusedId: results[index].accusedId,
+          }));
+          res.status(200).json({
+            message: "Step 4 data saved successfully",
+            fir_id: firId,
+            accuseds: updatedAccuseds,
+            file: files ? files.path : null, 
+          });
+        })
+        .catch((err) => {
+          console.error("Failed to process accused data:", err);
+          res.status(500).json({ message: "Failed to process accused data", error: err.message });
+        });
+    });
   });
 };
 

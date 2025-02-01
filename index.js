@@ -38,6 +38,10 @@ app.use(cors(corsOptions));
 // Serve static files
 app.use("/uploads", express.static("/var/www/backend/uploads"));
 
+
+app.use("/uploads", express.static(path.join(__dirname, 'uploads')));
+
+
 // Use routes
 app.use("/", routes);
 
