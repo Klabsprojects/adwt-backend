@@ -40,6 +40,7 @@ const editfircontroller = require('../controller/editfirController');
 
 
 const dadtwodashboardController = require('../controller/getdadtwodashboardController');
+const UploadFileController = require('../controller/uploadController');
 
 
 router.get('/rolepermissions/:roleId', rolePermissionsController.getRolePermissions);
@@ -401,7 +402,8 @@ router.post('/fir-relief/save-first-installment', ReliefController.saveFirstInst
 router.post('/fir-relief/save-second-installment', ReliefController.saveSecondInstallment);
 router.post('/fir-relief/trial_relief_save', ReliefController.saveThirdInstallmentDetails);
 router.post('/fir/save-step-seven', firController.saveStepSevenAsDraft);
-router.post('/fir/save-step-sevenedit', editfircontroller.editStepSevenAsDraft);
+// router.post('/fir/save-step-sevenedit', editfircontroller.editStepSevenAsDraft);
+router.post('/fir/save-step-sevenedit', editfircontroller.saveEditStepSevenAsDraft);
 router.get('/fir-relief/trial_relief/:firId', ReliefController.getTrialReliefDetails);
 
 //router.get('/dashboard-data/:roleId', dashboardController.getDashboardData);
@@ -430,5 +432,6 @@ router.post('/applybarchartgivenDataFilters',dadtwodashboardController.applybarc
 router.post('/applybarchartpendingDataFilters',dadtwodashboardController.applybarchartpendingDataFilters);
 // router.get('/vmcmeeting/statuses', vmcMeetingController.getMeetingStatuses);
 
+router.post('/FileUpload', UploadFileController.UploadFiles);
 
 module.exports = router;

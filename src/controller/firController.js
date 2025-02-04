@@ -1807,16 +1807,25 @@ exports.getFirDetails = (req, res) => {
                 return res.status(500).json({ message: 'Error fetching FIR details.', error: err });
               }
 
+              const query6 = `SELECT * FROM fir_trial WHERE fir_id = ?`;
+              db.query(query6, [fir_id], (err, result6) => {
+                if (err) {
+                  console.error(err);
+                  return res.status(500).json({ message: 'Error fetching FIR details.', error: err });
+                }
+
               return res.status(200).json({
                 data: result[0],
                 data1: result1,
                 data2: result2,
                 data3: result3[0],
                 data4: result4[0],
-                data5: result5
+                data5: result5,
+                data6: result6
               });
             });
           });
+        });
         });
       });
     });
@@ -2241,7 +2250,7 @@ exports.saveStepSevenAsDraft = (req, res) => {
         VALUES (?, ?, ?, NOW(), NOW(), NOW())
       `;
       attachments.forEach((attachment) => {
-        const caseAttachmentsValues = [firId, caseId, attachment.fileName];
+        const caseAttachmentsValues = [firId, caseId, attachment];
         console.log("Executing case attachment query:", caseAttachmentsQuery);
         console.log("With values:", caseAttachmentsValues);
 
@@ -2260,7 +2269,7 @@ exports.saveStepSevenAsDraft = (req, res) => {
         ) VALUES (?, ?, ?, ?, ?, NOW(), NOW())
       `;
       const caseCourtDetailsTwoValues = [
-        firId, caseId, trialDetails.caseNumber, trialDetails.publicProsecutor,
+        firId, caseId, trialDetails.trialCaseNumber, trialDetails.publicProsecutor,
         trialDetails.prosecutorPhone
       ];
 
