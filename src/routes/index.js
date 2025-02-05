@@ -404,6 +404,11 @@ router.post('/fir/save-step-seven', firController.saveStepSevenAsDraft);
 router.post('/fir/save-step-sevenedit', editfircontroller.editStepSevenAsDraft);
 router.get('/fir-relief/trial_relief/:firId', ReliefController.getTrialReliefDetails);
 
+
+router.post('/fir/save-step-fiveedit', editfircontroller.updateStepFive);
+router.post('/fir/save-step-sixedit', editfircontroller.Update_step6);
+
+
 //router.get('/dashboard-data/:roleId', dashboardController.getDashboardData);
 
 router.get('/user/:id', dashboardController.getUserById);
