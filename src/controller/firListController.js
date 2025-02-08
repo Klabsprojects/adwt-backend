@@ -92,16 +92,16 @@ const query12 = `
   SELECT * 
   FROM fir_add f 
   LEFT JOIN appeal_details_one ao 
-    ON f.fir_id COLLATE utf8mb4_general_ci = ao.fir_id COLLATE utf8mb4_general_ci 
-  WHERE f.fir_id COLLATE utf8mb4_general_ci = ? 
+    ON CONVERT(f.fir_id USING utf8mb4) = CONVERT(ao.fir_id USING utf8mb4) 
+  WHERE CONVERT(f.fir_id USING utf8mb4) = ?;
 `;
 
 const query13 = `
   SELECT * 
   FROM fir_add f 
   LEFT JOIN case_court_details_two cd2 
-    ON f.fir_id COLLATE utf8mb4_general_ci = cd2.fir_id COLLATE utf8mb4_general_ci 
-  WHERE f.fir_id COLLATE utf8mb4_general_ci = ? 
+    ON CONVERT(f.fir_id USING utf8mb4) = CONVERT(cd2.fir_id USING utf8mb4) 
+  WHERE CONVERT(f.fir_id USING utf8mb4) = ?;
 `;
 
 const query14 = `
@@ -132,8 +132,8 @@ const query17 = `
   SELECT * 
   FROM fir_add f 
   LEFT JOIN case_appeal_details_two ad2 
-    ON f.fir_id COLLATE utf8mb4_general_ci = ad2.fir_id COLLATE utf8mb4_general_ci 
-  WHERE f.fir_id COLLATE utf8mb4_general_ci = ? 
+    ON CONVERT(f.fir_id USING utf8mb4) = CONVERT(ad2.fir_id USING utf8mb4) 
+  WHERE CONVERT(f.fir_id USING utf8mb4) = ?;
 `;
 
 const query18 = `

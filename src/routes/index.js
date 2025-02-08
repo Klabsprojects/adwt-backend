@@ -24,7 +24,7 @@ const additionalreportController = require('../controller/additionalreportContro
 const ReliefController = require('../controller/ReliefController');
 //const AdditinalReliefController = require('../controller/AdditinalReliefController');
 const casteCommunityController = require('../controller/casteCommunityController');
-const alteredCaseController = require('../controller/AlteredCaseController');
+const alteredCaseController = require('../controller/alteredCaseController');
 
 const victimReliefController = require('../controller/victimReliefController');
 const AdditionalReliefController = require('../controller/AdditionalReliefController');
@@ -405,6 +405,8 @@ router.post('/fir/save-step-seven', firController.saveStepSevenAsDraft);
 // router.post('/fir/save-step-sevenedit', editfircontroller.editStepSevenAsDraft);
 router.post('/fir/save-step-sevenedit', editfircontroller.saveEditStepSevenAsDraft);
 router.get('/fir-relief/trial_relief/:firId', ReliefController.getTrialReliefDetails);
+router.post('/fir/save-step-fiveedit', editfircontroller.updateStepFive);
+router.post('/fir/save-step-sixedit', editfircontroller.Update_step6);
 
 //router.get('/dashboard-data/:roleId', dashboardController.getDashboardData);
 
