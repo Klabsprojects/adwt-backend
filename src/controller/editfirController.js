@@ -893,8 +893,39 @@ exports.updateStepFive = (req, res) => {
           });
         });
       });
+      const attachmentPromises = attachments.map((attachment) => {
+        return new Promise((resolve, reject) => {
+          const attachmentId = generateRandomId(8);
+          const insertQuery = `
+            INSERT INTO attachment_relief (
+              attachment_id, fir_id, file_name, file_path
+            ) VALUES (?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+              file_name = VALUES(file_name),
+              file_path = VALUES(file_path)
+          `;
 
-      Promise.all([...updateVictimPromises, updateProceedingsPromise])
+          const values = [
+            attachmentId,
+            firId,
+            attachment.originalname,
+            attachment.filename,
+          ];
+
+          db.query(insertQuery, values, (err) => {
+            if (err) return reject({ step: 'attachment_relief', error: err });
+
+            const selectQuery = 'SELECT * FROM attachment_relief WHERE attachment_id = ?';
+            db.query(selectQuery, [attachmentId], (err, result) => {
+              if (err) return reject({ step: 'select_attachment_relief', error: err });
+              updatedData.attachments.push(result[0]);
+              resolve();
+            });
+          });
+        });
+      });
+
+      Promise.all([...updateVictimPromises, updateProceedingsPromise,...attachmentPromises])
         .then(() => {
           db.commit((err) => {
             if (err) {
