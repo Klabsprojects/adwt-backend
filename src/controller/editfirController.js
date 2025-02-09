@@ -1656,59 +1656,252 @@ const update_step6 = multer({ storage: storage_step5 }).fields([
   { name: 'proceedingsFile', maxCount: 1 },
   { name: 'attachments', maxCount: 10 }
 ]);
+// exports.Update_step6 = (req, res) => {
+//   update_step6(req, res, (err) => {
+//     if (err) return res.status(500).json({ message: 'File upload error', error: err });
+
+//     const { firId, chargesheetDetails, chargesheet_id, victimsRelief } = req.body;
+//     const parsedChargesheetDetails = JSON.parse(chargesheetDetails);
+
+//     console.log('Parsed chargesheetDetails:', parsedChargesheetDetails);
+
+//     if (!parsedChargesheetDetails || !chargesheet_id) {
+//       return res.status(400).json({ message: 'Missing chargesheet details or chargesheet_id.' });
+//     }
+
+//     const proceedingsFile = req.files['proceedingsFile'] ? req.files['proceedingsFile'][0].path : null;
+//     const attachments = req.files['attachments'] || [];
+//     if (!firId) {
+//       return res.status(400).json({ message: 'FIR ID is missing.' });
+//     }
+
+//     const generateRandomId = (length = 8) => {
+//       const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+//       let result = '';
+//       for (let i = 0; i < length; i++) {
+//         result += characters.charAt(Math.floor(Math.random() * characters.length));
+//       }
+//       return result;
+//     };
+
+//     db.beginTransaction((err) => {
+//       if (err) return res.status(500).json({ message: 'Transaction error', error: err });
+
+//     // Update FIR status in the `fir_add` table
+//     const updateFirStatusPromise = new Promise((resolve, reject) => {
+//       const query = `
+//         UPDATE fir_add 
+//         SET status = 6 
+//         WHERE fir_id = ?
+//       `;
+//       db.query(query, [firId], (err) => {
+//         if (err) return reject(err);
+//         resolve();
+//       });
+//     });
+
+//       const chargesheetId = chargesheet_id;
+
+//       if (!chargesheetId) {
+//         return res.status(400).json({ message: 'Chargesheet ID is missing or invalid' });
+//       }
+
+//       const chargesheetUpdates = [];
+//       const chargesheetValues = [];
+      
+//       if (parsedChargesheetDetails.chargeSheetFiled) {
+//         chargesheetUpdates.push('charge_sheet_filed = ?');
+//         chargesheetValues.push(parsedChargesheetDetails.chargeSheetFiled);
+//       }
+//       if (parsedChargesheetDetails.courtDistrict) {
+//         chargesheetUpdates.push('court_district = ?');
+//         chargesheetValues.push(parsedChargesheetDetails.courtDistrict);
+//       }
+//       if (parsedChargesheetDetails.courtName) {
+//         chargesheetUpdates.push('court_name = ?');
+//         chargesheetValues.push(parsedChargesheetDetails.courtName);
+//       }
+//       if (parsedChargesheetDetails.caseType) {
+//         chargesheetUpdates.push('case_type = ?');
+//         chargesheetValues.push(parsedChargesheetDetails.caseType);
+//       }
+//       if (parsedChargesheetDetails.caseNumber) {
+//         chargesheetUpdates.push('case_number = ?');
+//         chargesheetValues.push(parsedChargesheetDetails.caseNumber);
+//       }
+//       if (parsedChargesheetDetails.rcsFileNumber) {
+//         chargesheetUpdates.push('rcs_file_number = ?');
+//         chargesheetValues.push(parsedChargesheetDetails.rcsFileNumber);
+//       }
+//       if (parsedChargesheetDetails.rcsFilingDate) {
+//         chargesheetUpdates.push('rcs_filing_date = ?');
+//         chargesheetValues.push(parsedChargesheetDetails.rcsFilingDate);
+//       }
+//       if (parsedChargesheetDetails.mfCopyPath) {
+//         chargesheetUpdates.push('mf_copy_path = ?');
+//         chargesheetValues.push(parsedChargesheetDetails.mfCopyPath);
+//       }
+//       if (parsedChargesheetDetails.totalCompensation) {
+//         chargesheetUpdates.push('total_compensation_1 = ?');
+//         chargesheetValues.push(parsedChargesheetDetails.totalCompensation);
+//       }
+//       if (parsedChargesheetDetails.proceedingsFileNo) {
+//         chargesheetUpdates.push('proceedings_file_no = ?');
+//         chargesheetValues.push(parsedChargesheetDetails.proceedingsFileNo);
+//       }
+//       if (parsedChargesheetDetails.proceedingsDate) {
+//         chargesheetUpdates.push('proceedings_date = ?');
+//         chargesheetValues.push(parsedChargesheetDetails.proceedingsDate);
+//       }
+//       if (proceedingsFile) {
+//         chargesheetUpdates.push('upload_proceedings_path = ?');
+//         chargesheetValues.push(proceedingsFile);
+//       }
+
+//       const chargesheetPromise = new Promise((resolve, reject) => {
+//         const checkQuery = `SELECT upload_proceedings_path FROM chargesheet_details WHERE chargesheet_id = ?`;
+
+
+//         if (chargesheetUpdates.length > 0) {
+//           const query = `
+//             UPDATE chargesheet_details
+//             SET ${chargesheetUpdates.join(', ')}
+//             WHERE chargesheet_id = ?
+//           `;
+//           db.query(query, [...chargesheetValues, chargesheetId], (err) => {
+//             if (err) return reject(err);
+//             resolve();
+//           });
+//         } else {
+//           resolve(); 
+//         }
+//       });
+//       let parsedVictimsRelief;
+//       try {
+//         parsedVictimsRelief = JSON.parse(victimsRelief);
+//       } catch (error) {
+//         console.error('Error parsing victimsRelief:', error);
+//         return res.status(400).json({ message: 'Invalid victimsRelief data format' });
+//       }
+
+   
+//       const victimPromises = parsedVictimsRelief.map((victim) => {
+//         const victimUpdates = [];
+//         const victimValues = [];
+
+//         if (victim.victimName) {
+//           victimUpdates.push('victim_name = ?');
+//           victimValues.push(victim.victimName);
+//         }
+//         if (victim.reliefAmountScst) {
+//           victimUpdates.push('relief_amount_scst_1 = ?');
+//           victimValues.push(victim.reliefAmountScst);
+//         }
+//         if (victim.reliefAmountExGratia) {
+//           victimUpdates.push('relief_amount_ex_gratia_1 = ?');
+//           victimValues.push(victim.reliefAmountExGratia);
+//         }
+//         if (victim.reliefAmountSecondStage) {
+//           victimUpdates.push('relief_amount_second_stage = ?');
+//           victimValues.push(victim.reliefAmountSecondStage);
+//         }
+
+//         return new Promise((resolve, reject) => {
+//           const query = `
+//             UPDATE chargesheet_victims 
+//             SET ${victimUpdates.join(', ')}
+//             WHERE fir_id = ? AND victim_id = ? AND chargesheet_id = ?
+//           `;
+//           db.query(query, [...victimValues, firId, victim.victimId, chargesheetId], (err) => {
+//             if (err) return reject(err);
+//             resolve();
+//           });
+//         });
+//       });
+
+//       const attachmentPromises = attachments.map((attachment) => {
+//         return new Promise((resolve, reject) => {
+//           const query = `
+//             UPDATE chargesheet_attachments 
+//             SET file_path = ? 
+//             WHERE fir_id = ? AND chargesheet_id = ? AND attachment_id = ?
+//           `;
+//           const values = [
+//             attachment.path || null,
+//             firId,
+//             chargesheetId,
+//             generateRandomId() 
+//           ];
+
+//           db.query(query, values, (err) => {
+//             if (err) return reject(err);
+//             resolve();
+//           });
+//         });
+//       });
+
+//       // Execute all promises
+//       Promise.all([updateFirStatusPromise, chargesheetPromise, ...victimPromises, ...attachmentPromises])
+//         .then(() => {
+//           db.commit((err) => {
+//             if (err) return db.rollback(() => res.status(500).json({ message: 'Commit error', error: err }));
+//             res.status(200).json({ message: 'Step 6 data updated successfully, and FIR status updated to 6.' });
+//           });
+//         })
+//         .catch((err) => {
+//           db.rollback(() => res.status(500).json({ message: 'Transaction failed', error: err }));
+//         });
+//     });
+//   });
+// };
+
+
+
 exports.Update_step6 = (req, res) => {
   update_step6(req, res, (err) => {
     if (err) return res.status(500).json({ message: 'File upload error', error: err });
 
     const { firId, chargesheetDetails, chargesheet_id, victimsRelief } = req.body;
-    const parsedChargesheetDetails = JSON.parse(chargesheetDetails);
 
-    console.log('Parsed chargesheetDetails:', parsedChargesheetDetails);
-
-    if (!parsedChargesheetDetails || !chargesheet_id) {
-      return res.status(400).json({ message: 'Missing chargesheet details or chargesheet_id.' });
-    }
-
-    const proceedingsFile = req.files['proceedingsFile'] ? req.files['proceedingsFile'][0].path : null;
-    const attachments = req.files['attachments'] || [];
     if (!firId) {
       return res.status(400).json({ message: 'FIR ID is missing.' });
     }
 
-    const generateRandomId = (length = 8) => {
-      const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-      let result = '';
-      for (let i = 0; i < length; i++) {
-        result += characters.charAt(Math.floor(Math.random() * characters.length));
-      }
-      return result;
-    };
+    if (!chargesheetDetails || !chargesheet_id) {
+      return res.status(400).json({ message: 'Missing chargesheet details or chargesheet_id.' });
+    }
+
+    let parsedChargesheetDetails;
+    try {
+      parsedChargesheetDetails = JSON.parse(chargesheetDetails);
+    } catch (error) {
+      return res.status(400).json({ message: 'Invalid chargesheetDetails format', error });
+    }
+
+    let parsedVictimsRelief;
+    try {
+      parsedVictimsRelief = JSON.parse(victimsRelief);
+    } catch (error) {
+      return res.status(400).json({ message: 'Invalid victimsRelief data format', error });
+    }
+
+    const proceedingsFile = req.files['proceedingsFile'] ? req.files['proceedingsFile'][0].path : null;
+    const attachments = req.files['attachments'] || [];
 
     db.beginTransaction((err) => {
       if (err) return res.status(500).json({ message: 'Transaction error', error: err });
 
-    // Update FIR status in the `fir_add` table
-    const updateFirStatusPromise = new Promise((resolve, reject) => {
-      const query = `
-        UPDATE fir_add 
-        SET status = 6 
-        WHERE fir_id = ?
-      `;
-      db.query(query, [firId], (err) => {
-        if (err) return reject(err);
-        resolve();
+      // Update FIR status
+      const updateFirStatusPromise = new Promise((resolve, reject) => {
+        const query = `UPDATE fir_add SET status = 6 WHERE fir_id = ?`;
+        db.query(query, [firId], (err) => (err ? reject(err) : resolve()));
       });
-    });
 
       const chargesheetId = chargesheet_id;
 
-      if (!chargesheetId) {
-        return res.status(400).json({ message: 'Chargesheet ID is missing or invalid' });
-      }
-
       const chargesheetUpdates = [];
       const chargesheetValues = [];
-      
+
       if (parsedChargesheetDetails.chargeSheetFiled) {
         chargesheetUpdates.push('charge_sheet_filed = ?');
         chargesheetValues.push(parsedChargesheetDetails.chargeSheetFiled);
@@ -1753,35 +1946,38 @@ exports.Update_step6 = (req, res) => {
         chargesheetUpdates.push('proceedings_date = ?');
         chargesheetValues.push(parsedChargesheetDetails.proceedingsDate);
       }
-      if (proceedingsFile) {
-        chargesheetUpdates.push('upload_proceedings_path = ?');
-        chargesheetValues.push(proceedingsFile);
-      }
 
       const chargesheetPromise = new Promise((resolve, reject) => {
         if (chargesheetUpdates.length > 0) {
-          const query = `
-            UPDATE chargesheet_details
-            SET ${chargesheetUpdates.join(', ')}
+          const query = `UPDATE chargesheet_details SET ${chargesheetUpdates.join(', ')} WHERE chargesheet_id = ?`;
+          db.query(query, [...chargesheetValues, chargesheetId], (err) => (err ? reject(err) : resolve()));
+        } else {
+          resolve();
+        }
+      });
+
+      // Check if upload_proceedings_path exists
+      const proceedingsFilePromise = new Promise((resolve, reject) => {
+        if (!proceedingsFile) return resolve();
+
+        const checkQuery = `SELECT upload_proceedings_path FROM chargesheet_details WHERE chargesheet_id = ?`;
+
+        db.query(checkQuery, [chargesheetId], (err, results) => {
+          if (err) return reject(err);
+
+          const updateQuery = `
+            UPDATE chargesheet_details 
+            SET upload_proceedings_path = ? 
             WHERE chargesheet_id = ?
           `;
-          db.query(query, [...chargesheetValues, chargesheetId], (err) => {
+          db.query(updateQuery, [proceedingsFile, chargesheetId], (err) => {
             if (err) return reject(err);
             resolve();
           });
-        } else {
-          resolve(); 
-        }
+        });
       });
-      let parsedVictimsRelief;
-      try {
-        parsedVictimsRelief = JSON.parse(victimsRelief);
-      } catch (error) {
-        console.error('Error parsing victimsRelief:', error);
-        return res.status(400).json({ message: 'Invalid victimsRelief data format' });
-      }
 
-   
+      // Update victims details
       const victimPromises = parsedVictimsRelief.map((victim) => {
         const victimUpdates = [];
         const victimValues = [];
@@ -1816,6 +2012,7 @@ exports.Update_step6 = (req, res) => {
         });
       });
 
+      // Update attachments
       const attachmentPromises = attachments.map((attachment) => {
         return new Promise((resolve, reject) => {
           const query = `
@@ -1827,7 +2024,7 @@ exports.Update_step6 = (req, res) => {
             attachment.path || null,
             firId,
             chargesheetId,
-            generateRandomId() 
+            attachment.filename || Math.random().toString(36).substr(2, 9),
           ];
 
           db.query(query, values, (err) => {
@@ -1838,7 +2035,7 @@ exports.Update_step6 = (req, res) => {
       });
 
       // Execute all promises
-      Promise.all([updateFirStatusPromise, chargesheetPromise, ...victimPromises, ...attachmentPromises])
+      Promise.all([updateFirStatusPromise, chargesheetPromise, proceedingsFilePromise, ...victimPromises, ...attachmentPromises])
         .then(() => {
           db.commit((err) => {
             if (err) return db.rollback(() => res.status(500).json({ message: 'Commit error', error: err }));

@@ -828,7 +828,7 @@ exports.handleStepFive = (req, res) => {
 
     const victimsRelief = req.body.victimsRelief ? JSON.parse(req.body.victimsRelief) : [];
     const proceedingsFile = req.files['proceedingsFile'] ? req.files['proceedingsFile'][0].filename : null;
-    const attachments = req.files['attachments'] || [];
+    const attachments = req.files['attachment s'] || [];
 
     if (!firId) {
       return res.status(400).json({ message: 'FIR ID is missing.' });
@@ -1490,6 +1490,125 @@ exports.getVictimsReliefDetails = (req, res) => {
 //   });
 // };
 
+// exports.getFirDetails = (req, res) => {
+//   const { fir_id } = req.query;
+
+//   if (!fir_id) {
+//     return res.status(400).json({ message: 'FIR ID is required.' });
+//   }
+
+//   const query = `SELECT * FROM fir_add WHERE fir_id = ?`;
+
+//   db.query(query, [fir_id], (err, result) => {
+//     if (err) {
+//       console.error(err);
+//       return res.status(500).json({ message: 'Error fetching FIR details.', error: err });
+//     }
+
+//     const query1 = `SELECT * FROM victims WHERE fir_id = ?`;
+
+//     db.query(query1, [fir_id], (err, result1) => {
+//       if (err) {
+//         console.error(err);
+//         return res.status(500).json({ message: 'Error fetching FIR details.', error: err });
+//       }
+
+//       const query2 = `SELECT * FROM accuseds WHERE fir_id = ?`;
+
+//       db.query(query2, [fir_id], (err, result2) => {
+//         if (err) {
+//           console.error(err);
+//           return res.status(500).json({ message: 'Error fetching FIR details.', error: err });
+//         }
+
+//         const query3 = `
+//         SELECT 
+//           *
+//         FROM 
+//           proceedings_victim_relief cd
+//         LEFT JOIN 
+//           attachment_relief ca ON cd.fir_id = ca.fir_id
+//         WHERE 
+//           cd.fir_id = ?
+//         GROUP BY
+//           cd.fir_id,
+//           cd.total_compensation,
+//           cd.proceedings_file_no,
+//           cd.proceedings_file,
+//           cd.proceedings_date
+//         `;
+
+//         db.query(query3, [fir_id], (err, result3) => {
+//           if (err) {
+//             console.error(err);
+//             return res.status(500).json({ message: 'Error fetching FIR details.', error: err });
+//           }
+
+//           const query4 = `
+//           SELECT  
+//             *
+//           FROM 
+//             chargesheet_details cd
+//           LEFT JOIN 
+//             chargesheet_attachments ca ON cd.fir_id = ca.fir_id
+//           WHERE 
+//             cd.fir_id = ?
+//           GROUP BY
+//             cd.fir_id, 
+//             cd.charge_sheet_filed, 
+//             cd.court_district,
+//             cd.court_name, 
+//             cd.case_type, 
+//             cd.case_number, 
+//             cd.rcs_file_number,
+//             cd.rcs_filing_date, 
+//             cd.mf_copy_path, 
+//             cd.total_compensation_1, 
+//             cd.proceedings_file_no, 
+//             cd.proceedings_date, 
+//             cd.upload_proceedings_path
+//           `;
+
+//           db.query(query4, [fir_id], (err, result4) => {
+//             if (err) {
+//               console.error(err);
+//               return res.status(500).json({ message: 'Error fetching FIR details.', error: err });
+//             }
+
+//             const query5 = `SELECT * FROM case_details WHERE fir_id = ?`;
+
+//             db.query(query5, [fir_id], (err, result5) => {
+//               if (err) {
+//                 console.error(err);
+//                 return res.status(500).json({ message: 'Error fetching FIR details.', error: err });
+//               }
+
+//               const query6 = `SELECT * FROM fir_trial WHERE fir_id = ?`;
+//               db.query(query6, [fir_id], (err, result6) => {
+//                 if (err) {
+//                   console.error(err);
+//                   return res.status(500).json({ message: 'Error fetching FIR details.', error: err });
+//                 }
+
+//               return res.status(200).json({
+//                 data: result[0],
+//                 data1: result1,
+//                 data2: result2,
+//                 data3: result3[0],
+//                 data4: result4[0],
+//                 data5: result5,
+//                 data6: result6[0]
+//               });
+//             });
+//           });
+//         });
+//         });
+//       });
+//     });
+//   });
+// };
+
+
 exports.getFirDetails = (req, res) => {
   const { fir_id } = req.query;
 
@@ -1510,7 +1629,7 @@ exports.getFirDetails = (req, res) => {
     db.query(query1, [fir_id], (err, result1) => {
       if (err) {
         console.error(err);
-        return res.status(500).json({ message: 'Error fetching FIR details.', error: err });
+        return res.status(500).json({ message: 'Error fetching victims.', error: err });
       }
 
       const query2 = `SELECT * FROM accuseds WHERE fir_id = ?`;
@@ -1518,7 +1637,7 @@ exports.getFirDetails = (req, res) => {
       db.query(query2, [fir_id], (err, result2) => {
         if (err) {
           console.error(err);
-          return res.status(500).json({ message: 'Error fetching FIR details.', error: err });
+          return res.status(500).json({ message: 'Error fetching accused.', error: err });
         }
 
         const query3 = `
@@ -1541,38 +1660,53 @@ exports.getFirDetails = (req, res) => {
         db.query(query3, [fir_id], (err, result3) => {
           if (err) {
             console.error(err);
-            return res.status(500).json({ message: 'Error fetching FIR details.', error: err });
+            return res.status(500).json({ message: 'Error fetching proceedings victim relief.', error: err });
           }
 
           const query4 = `
           SELECT  
-            *
+            cd.*, 
+            ca.attachment_id AS attachment_id, 
+            ca.file_path
           FROM 
             chargesheet_details cd
           LEFT JOIN 
             chargesheet_attachments ca ON cd.fir_id = ca.fir_id
           WHERE 
             cd.fir_id = ?
-          GROUP BY
-            cd.fir_id, 
-            cd.charge_sheet_filed, 
-            cd.court_district,
-            cd.court_name, 
-            cd.case_type, 
-            cd.case_number, 
-            cd.rcs_file_number,
-            cd.rcs_filing_date, 
-            cd.mf_copy_path, 
-            cd.total_compensation_1, 
-            cd.proceedings_file_no, 
-            cd.proceedings_date, 
-            cd.upload_proceedings_path
           `;
 
           db.query(query4, [fir_id], (err, result4) => {
             if (err) {
               console.error(err);
-              return res.status(500).json({ message: 'Error fetching FIR details.', error: err });
+              return res.status(500).json({ message: 'Error fetching chargesheet details.', error: err });
+            }
+
+            let chargesheetData = null;
+            let attachments = [];
+
+            if (result4.length > 0) {
+              chargesheetData = {
+                fir_id: result4[0].fir_id,
+                charge_sheet_filed: result4[0].charge_sheet_filed,
+                court_district: result4[0].court_district,
+                court_name: result4[0].court_name,
+                case_type: result4[0].case_type,
+                case_number: result4[0].case_number,
+                rcs_file_number: result4[0].rcs_file_number,
+                rcs_filing_date: result4[0].rcs_filing_date,
+                mf_copy_path: result4[0].mf_copy_path,
+                total_compensation_1: result4[0].total_compensation_1,
+                proceedings_file_no: result4[0].proceedings_file_no,
+                proceedings_date: result4[0].proceedings_date,
+                upload_proceedings_path: result4[0].upload_proceedings_path,
+                attachments: result4
+                  .filter(row => row.attachment_id !== null)
+                  .map(row => ({
+                    id: row.attachment_id,
+                    path: row.file_path
+                  }))
+              };
             }
 
             const query5 = `SELECT * FROM case_details WHERE fir_id = ?`;
@@ -1580,28 +1714,28 @@ exports.getFirDetails = (req, res) => {
             db.query(query5, [fir_id], (err, result5) => {
               if (err) {
                 console.error(err);
-                return res.status(500).json({ message: 'Error fetching FIR details.', error: err });
+                return res.status(500).json({ message: 'Error fetching case details.', error: err });
               }
 
               const query6 = `SELECT * FROM fir_trial WHERE fir_id = ?`;
               db.query(query6, [fir_id], (err, result6) => {
                 if (err) {
                   console.error(err);
-                  return res.status(500).json({ message: 'Error fetching FIR details.', error: err });
+                  return res.status(500).json({ message: 'Error fetching FIR trial.', error: err });
                 }
 
-              return res.status(200).json({
-                data: result[0],
-                data1: result1,
-                data2: result2,
-                data3: result3[0],
-                data4: result4[0],
-                data5: result5,
-                data6: result6[0]
+                return res.status(200).json({
+                  data: result[0],
+                  data1: result1,
+                  data2: result2,
+                  data3: result3[0],
+                  data4: chargesheetData, // Includes attachments array
+                  data5: result5,
+                  data6: result6[0]
+                });
               });
             });
           });
-        });
         });
       });
     });
