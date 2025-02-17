@@ -401,6 +401,7 @@ router.post('/save-accused-data', alteredCaseController.handleAccusedData);
 router.post('/fir-relief/save-first-installment', ReliefController.saveFirstInstallment);
 router.post('/fir-relief/save-second-installment', ReliefController.saveSecondInstallment);
 router.post('/fir-relief/trial_relief_save', ReliefController.saveThirdInstallmentDetails);
+router.post('/fir-relief/Fetch_relief_details', ReliefController.AllReliefDetails);
 router.post('/fir/save-step-seven', firController.saveStepSevenAsDraft);
 // router.post('/fir/save-step-sevenedit', editfircontroller.editStepSevenAsDraft);
 router.post('/fir/save-step-sevenedit', editfircontroller.saveEditStepSevenAsDraft);
