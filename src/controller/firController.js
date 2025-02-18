@@ -565,7 +565,8 @@ exports.handleStepFour = (req, res) => {
 
     let filePaths = files.map(file => file.path).join(', '); 
     accuseds = accuseds.map((accused, index) => {
-      accused.uploadFIRCopy = files[index] ? files[index].path : null; 
+      //accused.uploadFIRCopy = files[index] ? files[index].path : null; 
+      accused.uploadFIRCopy = files[index] ? files[index].path : (typeof accused.uploadFIRCopy === 'string' ? accused.uploadFIRCopy : null); // Assign path if file exists; otherwise, keep existing string or set to null
       return accused;
     });
    
