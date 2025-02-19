@@ -1428,188 +1428,7 @@ exports.getVictimsReliefDetails = (req, res) => {
 };
 
 
-
-// exports.getVictimsReliefDetails = (req, res) => {
-//   const { firId } = req.params;
-
-//   if (!firId) {
-//     return res.status(400).json({ message: 'FIR ID is required' });
-//   }
-
-//   const query = `
-//     SELECT
-//       victim_id,
-//       victim_name,
-//       fir_stage_as_per_act,
-//       fir_stage_ex_gratia,
-//       chargesheet_stage_as_per_act,
-//       chargesheet_stage_ex_gratia,
-//       final_stage_as_per_act,
-//       final_stage_ex_gratia
-//     FROM victims
-//     WHERE fir_id = ?
-//   `;
-
-//   db.query(query, [firId], (err, results) => {
-//     if (err) {
-//       return res.status(500).json({ message: 'Failed to fetch victim relief details', error: err });
-//     }
-
-//     return res.status(200).json({ victimsReliefDetails: results });
-//   });
-// };
-
-
-
-// exports.getFirDetails = (req, res) => {
-//   const { fir_id } = req.query;
-
-//   if (!fir_id) {
-//     return res.status(400).json({ message: 'FIR ID is required.' });
-//   }
-
-//   const query = `
-//     SELECT
-//       fir_id, police_station, fir_number, date_of_occurrence, place_of_occurrence, number_of_victim, number_of_accused,
-//       DATE_FORMAT(date_of_registration, '%d.%m.%Y') as date_of_registration
-//     FROM fir_add
-//     WHERE fir_id = ? LIMIT 1
-//   `;
-
-//   db.query(query, [fir_id], (err, result) => {
-//     if (err) {
-//       console.error(err);
-//       return res.status(500).json({ message: 'Error fetching FIR details.', error: err });
-//     }
-
-//     if (result.length === 0) {
-//       return res.status(404).json({ message: 'FIR not found.' });
-//     }
-
-//     res.status(200).json(result[0]);
-//   });
-// };
-
-// exports.getFirDetails = (req, res) => {
-//   const { fir_id } = req.query;
-
-//   if (!fir_id) {
-//     return res.status(400).json({ message: 'FIR ID is required.' });
-//   }
-
-//   const query = `SELECT * FROM fir_add WHERE fir_id = ?`;
-
-//   db.query(query, [fir_id], (err, result) => {
-//     if (err) {
-//       console.error(err);
-//       return res.status(500).json({ message: 'Error fetching FIR details.', error: err });
-//     }
-
-//     const query1 = `SELECT * FROM victims WHERE fir_id = ?`;
-
-//     db.query(query1, [fir_id], (err, result1) => {
-//       if (err) {
-//         console.error(err);
-//         return res.status(500).json({ message: 'Error fetching FIR details.', error: err });
-//       }
-
-//       const query2 = `SELECT * FROM accuseds WHERE fir_id = ?`;
-
-//       db.query(query2, [fir_id], (err, result2) => {
-//         if (err) {
-//           console.error(err);
-//           return res.status(500).json({ message: 'Error fetching FIR details.', error: err });
-//         }
-
-//         const query3 = `
-//         SELECT 
-//           *
-//         FROM 
-//           proceedings_victim_relief cd
-//         LEFT JOIN 
-//           attachment_relief ca ON cd.fir_id = ca.fir_id
-//         WHERE 
-//           cd.fir_id = ?
-//         GROUP BY
-//           cd.fir_id,
-//           cd.total_compensation,
-//           cd.proceedings_file_no,
-//           cd.proceedings_file,
-//           cd.proceedings_date
-//         `;
-
-//         db.query(query3, [fir_id], (err, result3) => {
-//           if (err) {
-//             console.error(err);
-//             return res.status(500).json({ message: 'Error fetching FIR details.', error: err });
-//           }
-
-//           const query4 = `
-//           SELECT  
-//             *
-//           FROM 
-//             chargesheet_details cd
-//           LEFT JOIN 
-//             chargesheet_attachments ca ON cd.fir_id = ca.fir_id
-//           WHERE 
-//             cd.fir_id = ?
-//           GROUP BY
-//             cd.fir_id, 
-//             cd.charge_sheet_filed, 
-//             cd.court_district,
-//             cd.court_name, 
-//             cd.case_type, 
-//             cd.case_number, 
-//             cd.rcs_file_number,
-//             cd.rcs_filing_date, 
-//             cd.mf_copy_path, 
-//             cd.total_compensation_1, 
-//             cd.proceedings_file_no, 
-//             cd.proceedings_date, 
-//             cd.upload_proceedings_path
-//           `;
-
-//           db.query(query4, [fir_id], (err, result4) => {
-//             if (err) {
-//               console.error(err);
-//               return res.status(500).json({ message: 'Error fetching FIR details.', error: err });
-//             }
-
-//             const query5 = `SELECT * FROM case_details WHERE fir_id = ?`;
-
-//             db.query(query5, [fir_id], (err, result5) => {
-//               if (err) {
-//                 console.error(err);
-//                 return res.status(500).json({ message: 'Error fetching FIR details.', error: err });
-//               }
-
-//               const query6 = `SELECT * FROM fir_trial WHERE fir_id = ?`;
-//               db.query(query6, [fir_id], (err, result6) => {
-//                 if (err) {
-//                   console.error(err);
-//                   return res.status(500).json({ message: 'Error fetching FIR details.', error: err });
-//                 }
-
-//               return res.status(200).json({
-//                 data: result[0],
-//                 data1: result1,
-//                 data2: result2,
-//                 data3: result3[0],
-//                 data4: result4[0],
-//                 data5: result5,
-//                 data6: result6[0]
-//               });
-//             });
-//           });
-//         });
-//         });
-//       });
-//     });
-//   });
-// };
-
-
-exports.getFirDetails = (req, res) => {
+exports.getFirDetails = async  (req, res) => {
   const { fir_id } = req.query;
 
   if (!fir_id) {
@@ -1718,12 +1537,30 @@ exports.getFirDetails = (req, res) => {
               }
 
               const query6 = `SELECT * FROM fir_trial WHERE fir_id = ?`;
-              db.query(query6, [fir_id], (err, result6) => {
+              db.query(query6, [fir_id], async (err, result6) => {
                 if (err) {
                   console.error(err);
                   return res.status(500).json({ message: 'Error fetching FIR trial.', error: err });
                 }
 
+
+ const hearingDetailsOne = await queryAsync('SELECT * FROM hearing_details_one WHERE fir_id = ?', [fir_id]);
+    const hearingDetailsTwo = await queryAsync('SELECT * FROM hearing_details_two WHERE fir_id = ?', [fir_id]);
+    const hearingDetailsThree = await queryAsync('SELECT * FROM hearing_details_three WHERE fir_id = ?', [fir_id]);
+
+    // Appeal details (all 3)
+    const appealDetails = await queryAsync('SELECT * FROM appeal_details WHERE fir_id = ?', [fir_id]);
+    const appealDetailsOne = await queryAsync('SELECT * FROM appeal_details_one WHERE fir_id = ?', [fir_id]);
+    const caseAppealDetailsTwo = await queryAsync('SELECT * FROM case_appeal_details_two WHERE fir_id = ?', [fir_id]);
+
+
+
+    // 
+    // casedetail_one
+    const casedetail_one = await queryAsync('SELECT * FROM case_court_detail_one WHERE fir_id = ?', [fir_id]);
+    const casedetail_two = await queryAsync('SELECT * FROM case_court_details_two WHERE fir_id = ?', [fir_id]);
+
+    console.log(casedetail_two);
                 return res.status(200).json({
                   data: result[0],
                   data1: result1,
@@ -1731,7 +1568,16 @@ exports.getFirDetails = (req, res) => {
                   data3: result3[0],
                   data4: chargesheetData, // Includes attachments array
                   data5: result5,
-                  data6: result6[0]
+                  casedetail_one:casedetail_one,
+                  casedetail_two:casedetail_two,
+                  data6: result6[0],
+                  hearingDetails: hearingDetailsOne,
+                  hearingDetails_one: hearingDetailsTwo,
+                  hearingDetails_two: hearingDetailsThree,
+                  appeal_details: appealDetails,
+                  appeal_details_one: appealDetailsOne,
+                  case_appeal_details_two: caseAppealDetailsTwo,
+             
                 });
               });
             });
@@ -1987,16 +1833,36 @@ exports.editStepSevenAsDraft = (req, res) => {
 // }
 
 
-
 exports.saveStepSevenAsDraft = (req, res) => {
   // Destructure the request body
   const {
-    firId, trialDetails, compensationDetails, attachments, victimsDetails,
-    appealDetails, appealDetailsOne, caseAppealDetailsTwo, caseAttachments
+    firId,
+    trialDetails,
+    compensationDetails,
+    attachments,
+    appealDetails,
+    appealDetailsOne,
+    caseAppealDetailsTwo,
+    hearingdetail
   } = req.body;
 
-  // Log the received data to see if everything is coming as expected
-  console.log("Received request body:", req.body);
+  console.log("Received request body:", hearingdetail);
+
+  const parseJSON = (data) => {
+    try {
+      return typeof data === "string" ? JSON.parse(data) : data;
+    } catch (error) {
+      console.error("Error parsing JSON:", error);
+      return {};
+    }
+  };
+  const parsedHearingDetails = parseJSON(hearingdetail);
+
+  const parsedTrialDetails = parseJSON(trialDetails);
+  const parsedCompensationDetails = parseJSON(compensationDetails);
+  const parsedAppealDetails = parseJSON(appealDetails);
+  const parsedAppealDetailsOne = parseJSON(appealDetailsOne);
+  const parsedCaseAppealDetailsTwo = parseJSON(caseAppealDetailsTwo);
 
   // Check if mandatory fields are missing
   if (!firId || !trialDetails || !compensationDetails) {
@@ -2004,12 +1870,23 @@ exports.saveStepSevenAsDraft = (req, res) => {
     return res.status(400).json({ message: "Missing required fields." });
   }
 
-  // Generate case ID
+  const convertArrayToString = (value) => {
+    if (Array.isArray(value)) {
+      return value.length ? value.join(',') : null;
+    }
+    return value;
+  };
+
+  const judgementAwarded = convertArrayToString(parsedTrialDetails.judgementAwarded);
+  const judgementAwarded1 = convertArrayToString(parsedTrialDetails.judgementAwarded1);
+  const judgementAwarded2 = convertArrayToString(parsedTrialDetails.judgementAwarded2);
+  const judgementAwarded3 = convertArrayToString(parsedTrialDetails.judgementAwarded3);
+
   const caseId = generateRandomId(8);
   console.log("Generated case ID:", caseId);
 
   // Start a database transaction
-  db.beginTransaction((err) => {
+  db.beginTransaction(async (err) => {
     if (err) {
       console.error("Transaction error:", err);
       return res.status(500).json({ message: "Transaction error", error: err });
@@ -2017,65 +1894,109 @@ exports.saveStepSevenAsDraft = (req, res) => {
 
     console.log("Transaction started.");
 
-    // Insert into `case_details` table
-    const caseDetailsQuery = `
-      INSERT INTO case_details (
-          fir_id, case_id, court_name, court_district, trial_case_number,
-          public_prosecutor, prosecutor_phone, first_hearing_date, judgement_awarded
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-    const caseDetailsValues = [
-      firId,
-      caseId,
-      trialDetails.courtName,
-      trialDetails.courtDistrict,
-      trialDetails.trialCaseNumber,
-      trialDetails.publicProsecutor,
-      trialDetails.prosecutorPhone,
-      trialDetails.firstHearingDate,
-      trialDetails.judgementAwarded
-    ];
+    try {
+      const hearingTables = {
+        hearingDetails: 'hearing_details_one',
+        hearingDetails_one: 'hearing_details_two',
+        hearingDetails_two: 'hearing_details_three',
+      };
 
-    console.log("Executing case details query:", caseDetailsQuery);
-    console.log("With values:", caseDetailsValues);
+      for (const key in parsedHearingDetails) {
+        if (!parsedHearingDetails.hasOwnProperty(key)) {
+          continue;
+        }
+        const tableData = parsedHearingDetails[key];
+        const tableName = hearingTables[key];
 
-    db.query(caseDetailsQuery, caseDetailsValues, (err) => {
-      if (err) {
-        console.error("Error saving case details:", err);
-        return db.rollback(() => res.status(500).json({ message: "Error saving case details.", error: err }));
+        if (!Array.isArray(tableData) || tableData.length === 0) {
+          console.warn(`Skipping key "${key}" because it has no valid data.`);
+          continue;
+        }
+
+        if (!tableName) {
+          console.warn(`Skipping key "${key}" as no table is mapped.`);
+          continue;
+        }
+        try {
+          await queryAsync(`DELETE FROM ${tableName} WHERE fir_id = ?`, [firId]);
+          console.log(`Cleared existing data for fir_id: ${firId} in ${tableName}`);
+        } catch (error) {
+          console.error(`Failed to clear existing data for fir_id: ${firId} in ${tableName}`, error);
+          continue;
+        }
+        for (const entry of tableData) {
+          let suffix = '';
+
+          if (key === 'hearingDetails_one') {
+            suffix = '_one';
+          } else if (key === 'hearingDetails_two') {
+            suffix = '_two';
+          }
+
+          const nextHearingDate = entry[`nextHearingDate${suffix}`] || null;
+          const reasonNextHearing = entry[`reasonNextHearing${suffix}`] || null;
+
+          if (!nextHearingDate && !reasonNextHearing) {
+            console.warn(`Skipping empty record for table "${tableName}"`);
+            continue;
+          }
+
+          try {
+            await queryAsync(
+              `INSERT INTO ${tableName} (fir_id, next_hearing_date, reason_next_hearing) 
+               VALUES (?, ?, ?)`,
+              [firId, nextHearingDate, reasonNextHearing]
+            );
+            console.log(`Inserted record into ${tableName}: ${nextHearingDate}, ${reasonNextHearing}`);
+          } catch (error) {
+            console.error(`Database error for table "${tableName}":`, error);
+          }
+        }
       }
 
-    // Insert into `judgement details create` table
-    if(trialDetails.judgementNature || trialDetails.uploadJudgement){
-    const JudgementQuery = `
-          UPDATE fir_add SET
-          nature_of_judgement = ?, 
-          judgement_copy = ?
-          WHERE fir_id = ?
-      `;
-  
-      const JudgementValues = [
-        trialDetails.judgementNature,
-        trialDetails.uploadJudgement,
-      firId,  
-      ];
 
+      await queryAsync(
+        `INSERT INTO case_details (
+          fir_id, case_id, court_name, court_district, trial_case_number,
+          public_prosecutor, prosecutor_phone, first_hearing_date, judgement_awarded,
+          CaseHandledBy, NameOfAdvocate, advocateMobNumber,
+          judgementAwarded1, judgementAwarded2, judgementAwarded3
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          firId,
+          caseId,
+          parsedTrialDetails.courtName,
+          parsedTrialDetails.courtDistrict,
+          parsedTrialDetails.trialCaseNumber,
+          parsedTrialDetails.publicProsecutor,
+          parsedTrialDetails.prosecutorPhone,
+          parsedTrialDetails.firstHearingDate,
+          judgementAwarded,
+          parsedTrialDetails.CaseHandledBy || null,
+          parsedTrialDetails.NameOfAdvocate || null,
+          parsedTrialDetails.advocateMobNumber || null,
+          judgementAwarded1,
+          judgementAwarded2,
+          judgementAwarded3
+        ]
+      );
+      console.log("Executing case details query:", caseDetailsQuery);
+      console.log("With values:", caseDetailsValues);
 
-      console.log("Executing fir_trial query:", JudgementQuery);
-      console.log("With values:", JudgementValues);
+      if (parsedTrialDetails.judgementNature || parsedTrialDetails.uploadJudgement) {
+        await queryAsync(
+          `UPDATE fir_add SET nature_of_judgement = ?, judgement_copy = ? WHERE fir_id = ?`,
+          [
+            parsedTrialDetails.judgementNature,
+            parsedTrialDetails.uploadJudgement,
+            firId
+          ]
+        );
+        console.log("Judgment details updated.");
+      }
 
-      db.query(JudgementQuery, JudgementValues, (err) => {
-        if (err) {
-          console.error("Error saving judgmentment details:", err);
-          return db.rollback(() => res.status(500).json({ message: "Error saving judgmentment details.", error: err }));
-        }
-        console.log("judgmentment details saved successfully.");
-      });
-    }
-
-      // Insert or Update `fir_trial` Table
-      const firTrialQuery = `
-        INSERT INTO fir_trial (
+      await queryAsync(
+        `INSERT INTO fir_trial (
           fir_id, case_id, total_amount_third_stage, proceedings_file_no,
           proceedings_date, Commissionerate_file
         ) VALUES (?, ?, ?, ?, ?, ?)
@@ -2083,186 +2004,131 @@ exports.saveStepSevenAsDraft = (req, res) => {
           total_amount_third_stage = VALUES(total_amount_third_stage),
           proceedings_file_no = VALUES(proceedings_file_no),
           proceedings_date = VALUES(proceedings_date),
-          Commissionerate_file = VALUES(Commissionerate_file)
-      `;
-      const firTrialValues = [
-        firId,
-        caseId,
-        compensationDetails.totalCompensation,
-        compensationDetails.proceedingsFileNo,
-        compensationDetails.proceedingsDate,
-        compensationDetails.uploadProceedings
-      ];
+          Commissionerate_file = VALUES(Commissionerate_file)`,
+        [
+          firId,
+          caseId,
+          parsedCompensationDetails.totalCompensation,
+          parsedCompensationDetails.proceedingsFileNo,
+          parsedCompensationDetails.proceedingsDate,
+          parsedCompensationDetails.uploadProceedings
+        ]
+      );
 
       console.log("Executing fir_trial query:", firTrialQuery);
       console.log("With values:", firTrialValues);
 
-      db.query(firTrialQuery, firTrialValues, (err) => {
-        if (err) {
-          console.error("Error saving fir_trial details:", err);
-          return db.rollback(() => res.status(500).json({ message: "Error saving fir_trial details.", error: err }));
-        }
-        console.log("fir_trial details saved successfully.");
-      });
-
-      // Insert into `appeal_details` table
       if (appealDetails) {
-        const appealDetailsQuery = `
-          INSERT INTO appeal_details (
-              fir_id, case_id, legal_opinion_obtained, case_fit_for_appeal,
-              government_approval_for_appeal, filed_by, designated_court
-          ) VALUES (?, ?, ?, ?, ?, ?, ?)
-        `;
-        const appealDetailsValues = [
-          firId, caseId, appealDetails.legalOpinionObtained, appealDetails.caseFitForAppeal,
-          appealDetails.governmentApprovalForAppeal, appealDetails.filedBy, appealDetails.designatedCourt
-        ];
-
-        console.log("Executing appeal details query:", appealDetailsQuery);
-        console.log("With values:", appealDetailsValues);
-
-        db.query(appealDetailsQuery, appealDetailsValues, (err) => {
-          if (err) {
-            console.error("Error saving appeal details:", err);
-            return db.rollback(() => res.status(500).json({ message: "Error saving appeal details.", error: err }));
-          }
-          console.log("Appeal details saved successfully.");
-        });
-      }
-
-      // Insert into `appeal_details_one` table
-      if (appealDetailsOne) {
-        const appealDetailsOneQuery = `
-          INSERT INTO appeal_details_one (
-              fir_id, case_id, legal_opinion_obtained, case_fit_for_appeal,
-              government_approval_for_appeal, filed_by, designated_court, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
-        `;
-        const appealDetailsOneValues = [
-          firId, caseId, appealDetailsOne.legalOpinionObtained, appealDetailsOne.caseFitForAppeal,
-          appealDetailsOne.governmentApprovalForAppeal, appealDetailsOne.filedBy, appealDetailsOne.designatedCourt
-        ];
-
-        console.log("Executing appeal details one query:", appealDetailsOneQuery);
-        console.log("With values:", appealDetailsOneValues);
-
-        db.query(appealDetailsOneQuery, appealDetailsOneValues, (err) => {
-          if (err) {
-            console.error("Error saving appeal details one:", err);
-            return db.rollback(() => res.status(500).json({ message: "Error saving appeal details one.", error: err }));
-          }
-          console.log("Appeal details one saved successfully.");
-        });
-      }
-
-      // Insert into `case_appeal_details_two`
-      if (caseAppealDetailsTwo) {
-        const caseAppealDetailsTwoQuery = `
-          INSERT INTO case_appeal_details_two (
-              fir_id, case_id, legal_opinion_obtained, case_fit_for_appeal,
-              government_approval_for_appeal, filed_by, designated_court, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
-        `;
-        const caseAppealDetailsTwoValues = [
-          firId, caseId, caseAppealDetailsTwo.legalOpinionObtained, caseAppealDetailsTwo.caseFitForAppeal,
-          caseAppealDetailsTwo.governmentApprovalForAppeal, caseAppealDetailsTwo.filedBy, caseAppealDetailsTwo.designatedCourt
-        ];
-
-        console.log("Executing case appeal details two query:", caseAppealDetailsTwoQuery);
-        console.log("With values:", caseAppealDetailsTwoValues);
-
-        db.query(caseAppealDetailsTwoQuery, caseAppealDetailsTwoValues, (err) => {
-          if (err) {
-            console.error("Error saving case appeal details two:", err);
-            return db.rollback(() => res.status(500).json({ message: "Error saving case appeal details two.", error: err }));
-          }
-          console.log("Case appeal details two saved successfully.");
-        });
-      }
-
-      // Insert into `case_attachments` table
-      const caseAttachmentsQuery = `
-        INSERT INTO case_attachments (fir_id, case_id, file_name, uploaded_at, created_at, updated_at)
-        VALUES (?, ?, ?, NOW(), NOW(), NOW())
-      `;
-      attachments.forEach((attachment) => {
-        const caseAttachmentsValues = [firId, caseId, attachment];
-        console.log("Executing case attachment query:", caseAttachmentsQuery);
-        console.log("With values:", caseAttachmentsValues);
-
-        db.query(caseAttachmentsQuery, caseAttachmentsValues, (err) => {
-          if (err) {
-            console.error("Error saving case attachments:", err);
-            return db.rollback(() => res.status(500).json({ message: "Error saving case attachments.", error: err }));
-          }
-        });
-      });
-
-      // Insert into `case_court_details_two`
-      const caseCourtDetailsTwoQuery = `
-        INSERT INTO case_court_details_two (
-            fir_id, case_id, case_number, public_prosecutor, prosecutor_phone, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, NOW(), NOW())
-      `;
-      const caseCourtDetailsTwoValues = [
-        firId, caseId, trialDetails.trialCaseNumber, trialDetails.publicProsecutor,
-        trialDetails.prosecutorPhone
-      ];
-
-      console.log("Executing case court details two query:", caseCourtDetailsTwoQuery);
-      console.log("With values:", caseCourtDetailsTwoValues);
-
-      db.query(caseCourtDetailsTwoQuery, caseCourtDetailsTwoValues, (err) => {
-        if (err) {
-          console.error("Error saving case court details two:", err);
-          return db.rollback(() => res.status(500).json({ message: "Error saving case court details two.", error: err }));
-        }
-      });
-
-      // Insert into `trial_relief`
-      const victimPromises = victimsDetails.map((victim) => {
-        console.log('New Victim', victim.reliefAmountFinalStage);
-        return new Promise((resolve, reject) => {
-          const trialId = generateRandomId(8);
-          const victimQuery = `
-            INSERT INTO trial_relief (
-                fir_id, case_id, trial_id, victim_id, victim_name,
-                relief_amount_act, relief_amount_government, relief_amount_final_stage, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
-          `;
-          const victimValues = [
+        await queryAsync(
+          `INSERT INTO appeal_details (
+            fir_id, case_id, legal_opinion_obtained, case_fit_for_appeal,
+            government_approval_for_appeal, filed_by, designated_court
+          ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [
             firId,
             caseId,
-            trialId,
-            victim.victimId,
-            victim.victimName,
-            victim.reliefAmountAct,
-            victim.reliefAmountGovernment,
-            victim.reliefAmountFinalStage
-          ];
+            parsedAppealDetails.legalOpinionObtained,
+            parsedAppealDetails.caseFitForAppeal,
+            parsedAppealDetails.governmentApprovalForAppeal,
+            parsedAppealDetails.filedBy,
+            parsedAppealDetails.designatedCourt
+          ]
+        );
+        console.log("Appeal details saved.");
+      }
 
-          console.log("Executing trial relief query:", victimQuery);
-          console.log("With values:", victimValues);
+      if (appealDetailsOne) {
+        await queryAsync(
+          `INSERT INTO appeal_details_one (
+            fir_id, case_id, legal_opinion_obtained, case_fit_for_appeal,
+            government_approval_for_appeal, filed_by, designated_court, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+          [
+            firId,
+            caseId,
+            parsedAppealDetailsOne.legalOpinionObtained,
+            parsedAppealDetailsOne.caseFitForAppeal,
+            parsedAppealDetailsOne.governmentApprovalForAppeal,
+            parsedAppealDetailsOne.filedBy,
+            parsedAppealDetailsOne.designatedCourt
+          ]
+        );
+        console.log("Appeal details one saved.");
+      }
 
-          db.query(victimQuery, victimValues, (err) => (err ? reject(err) : resolve()));
+      if (caseAppealDetailsTwo) {
+        await queryAsync(
+          `INSERT INTO case_appeal_details_two (
+            fir_id, case_id, legal_opinion_obtained, case_fit_for_appeal,
+            government_approval_for_appeal, filed_by, designated_court, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+          [
+            firId,
+            caseId,
+            parsedCaseAppealDetailsTwo.legalOpinionObtained,
+            parsedCaseAppealDetailsTwo.caseFitForAppeal,
+            parsedCaseAppealDetailsTwo.governmentApprovalForAppeal,
+            parsedCaseAppealDetailsTwo.filedBy,
+            parsedCaseAppealDetailsTwo.designatedCourt
+          ]
+        );
+        console.log("Case appeal details two saved.");
+      }
+
+      if (attachments && attachments.length > 0) {
+        const attachmentQueries = attachments.map((attachment) => {
+          return queryAsync(
+            `INSERT INTO case_attachments (fir_id, case_id, file_name, uploaded_at, created_at, updated_at)
+             VALUES (?, ?, ?, NOW(), NOW(), NOW())`,
+            [firId, caseId, attachment]
+          );
         });
+        await Promise.all(attachmentQueries);
+        console.log("Attachments saved.");
+      }
+
+      await queryAsync(
+        `INSERT INTO case_court_details_two (
+          fir_id, case_id, case_number, public_prosecutor, prosecutor_phone, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
+        [
+          firId,
+          caseId,
+          parsedTrialDetails.trialCaseNumber,
+          parsedTrialDetails.publicProsecutor,
+          parsedTrialDetails.prosecutorPhone
+        ]
+      );
+
+      console.log("Case court details two saved.");
+
+      db.commit((err) => {
+        if (err) {
+          console.error("Transaction commit error:", err);
+          return db.rollback(() =>
+            res.status(500).json({ message: "Transaction commit error", error: err })
+          );
+        }
+        console.log("fir_trial details saved successfully.");
+        res.status(200).json({ message: "Step seven details saved successfully." }); // Send success response
       });
 
-      // Commit transaction after all inserts
-      Promise.all(victimPromises)
-        .then(() => {
-          db.commit((err) => {
-            if (err) {
-              console.error("Transaction commit failed:", err);
-              return db.rollback(() => res.status(500).json({ message: "Transaction commit failed.", error: err }));
-            }
-            console.log("Transaction committed successfully.");
-            res.status(200).json({ message: "Draft data saved successfully.", caseId });
-          });
-        })
-        .catch((err) => {
-          db.rollback(() => res.status(500).json({ message: "Error saving victim details.", error: err }));
-        });
+    } catch (error) {
+      console.error("Transaction failed:", error);
+      db.rollback(() => res.status(500).json({ message: "Transaction failed", error }));
+    }
+  });
+};
+
+
+    
+
+
+const queryAsync = (query, params) => {
+  return new Promise((resolve, reject) => {
+    db.query(query, params, (err, results) => {
+      if (err) return reject(err);
+      resolve(results);
     });
   });
 };
