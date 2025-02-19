@@ -565,8 +565,7 @@ exports.handleStepFour = (req, res) => {
 
     let filePaths = files.map(file => file.path).join(', '); 
     accuseds = accuseds.map((accused, index) => {
-      //accused.uploadFIRCopy = files[index] ? files[index].path : null; 
-      accused.uploadFIRCopy = files[index] ? files[index].path : (typeof accused.uploadFIRCopy === 'string' ? accused.uploadFIRCopy : null); // Assign path if file exists; otherwise, keep existing string or set to null
+      accused.uploadFIRCopy = files[index] ? files[index].path : null; 
       return accused;
     });
    
@@ -1988,109 +1987,94 @@ exports.editStepSevenAsDraft = (req, res) => {
 // }
 
 
+
 exports.saveStepSevenAsDraft = (req, res) => {
+  // Destructure the request body
   const {
-    firId , trialDetails, compensationDetails, attachments, 
-    appealDetails, appealDetailsOne, caseAppealDetailsTwo,hearingdetail
+    firId, trialDetails, compensationDetails, attachments, victimsDetails,
+    appealDetails, appealDetailsOne, caseAppealDetailsTwo, caseAttachments
   } = req.body;
 
-  console.log("Received request body:",hearingdetail);
+  // Log the received data to see if everything is coming as expected
+  console.log("Received request body:", req.body);
 
-  const parseJSON = (data) => {
-    try {
-      return typeof data === "string" ? JSON.parse(data) : data;
-    } catch (error) {
-      console.error("Error parsing JSON:", error);
-      return {};
-    }
-  };
-
-  const parsedTrialDetails = parseJSON(trialDetails);
-  const parsedCompensationDetails = parseJSON(compensationDetails);
-  const parsedAppealDetails = parseJSON(appealDetails);
-  const parsedAppealDetailsOne = parseJSON(appealDetailsOne);
-  const parsedCaseAppealDetailsTwo = parseJSON(caseAppealDetailsTwo);
-
+  // Check if mandatory fields are missing
   if (!firId || !trialDetails || !compensationDetails) {
     console.log("Missing required fields:", { firId, trialDetails, compensationDetails });
     return res.status(400).json({ message: "Missing required fields." });
   }
 
+  // Generate case ID
   const caseId = generateRandomId(8);
   console.log("Generated case ID:", caseId);
 
-  db.beginTransaction(async (err) => {
+  // Start a database transaction
+  db.beginTransaction((err) => {
     if (err) {
       console.error("Transaction error:", err);
       return res.status(500).json({ message: "Transaction error", error: err });
     }
 
-    try {
-      console.log("Transaction started.");
+    console.log("Transaction started.");
 
-
-
-      if (Array.isArray(hearingdetail) && hearingdetail.length > 0) {
-        if (hearingdetail[0]) {
-          await queryAsync(
-            `INSERT INTO hearing_details_one (fir_id, case_id, next_hearing_date, reason_next_hearing)
-             VALUES (?, ?, ?, ?) 
-             ON DUPLICATE KEY UPDATE next_hearing_date = VALUES(next_hearing_date), reason_next_hearing = VALUES(reason_next_hearing)`,
-            [
-              firId, caseId, hearingdetail[0].nextHearingDate, hearingdetail[0].reasonNextHearing
-            ]
-          );
-        }
-      
-        if (hearingdetail[1]) {
-          await queryAsync(
-            `INSERT INTO hearing_details_two (fir_id, case_id, next_hearing_date, reason_next_hearing)
-             VALUES (?, ?, ?, ?) 
-             ON DUPLICATE KEY UPDATE next_hearing_date = VALUES(next_hearing_date), reason_next_hearing = VALUES(reason_next_hearing)`,
-            [
-              firId, caseId, hearingdetail[1].nextHearingDate, hearingdetail[1].reasonNextHearing
-            ]
-          );
-        }
-      
-        if (hearingdetail[2]) {
-          await queryAsync(
-            `INSERT INTO hearing_details_three (fir_id, case_id, next_hearing_date, reason_next_hearing)
-             VALUES (?, ?, ?, ?) 
-             ON DUPLICATE KEY UPDATE next_hearing_date = VALUES(next_hearing_date), reason_next_hearing = VALUES(reason_next_hearing)`,
-            [
-              firId, caseId, hearingdetail[2].nextHearingDate, hearingdetail[2].reasonNextHearing
-            ]
-          );
-        }
-      }
-      
-
-      await queryAsync(`
-        INSERT INTO case_details (
+    // Insert into `case_details` table
+    const caseDetailsQuery = `
+      INSERT INTO case_details (
           fir_id, case_id, court_name, court_district, trial_case_number,
-          public_prosecutor, prosecutor_phone, first_hearing_date, judgement_awarded,CaseHandledBy,NameOfAdvocate,advocateMobNumber
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
-          firId, caseId, parsedTrialDetails.courtName, parsedTrialDetails.courtDistrict,
-          parsedTrialDetails.trialCaseNumber, parsedTrialDetails.publicProsecutor,
-          parsedTrialDetails.prosecutorPhone, parsedTrialDetails.firstHearingDate,
-          parsedTrialDetails.judgementAwarded,
-          parsedTrialDetails.CaseHandledBy,
-          parsedTrialDetails.NameOfAdvocate,
-          parsedTrialDetails.advocateMobNumber
-        ]);
+          public_prosecutor, prosecutor_phone, first_hearing_date, judgement_awarded
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+    const caseDetailsValues = [
+      firId,
+      caseId,
+      trialDetails.courtName,
+      trialDetails.courtDistrict,
+      trialDetails.trialCaseNumber,
+      trialDetails.publicProsecutor,
+      trialDetails.prosecutorPhone,
+      trialDetails.firstHearingDate,
+      trialDetails.judgementAwarded
+    ];
 
-      console.log("Case details saved.");
+    console.log("Executing case details query:", caseDetailsQuery);
+    console.log("With values:", caseDetailsValues);
 
-      if (parsedTrialDetails.judgementNature || parsedTrialDetails.uploadJudgement) {
-        await queryAsync(`
-          UPDATE fir_add SET nature_of_judgement = ?, judgement_copy = ? WHERE fir_id = ?`, [
-          parsedTrialDetails.judgementNature, parsedTrialDetails.uploadJudgement, firId
-        ]);
-        console.log("Judgment details updated.");
+    db.query(caseDetailsQuery, caseDetailsValues, (err) => {
+      if (err) {
+        console.error("Error saving case details:", err);
+        return db.rollback(() => res.status(500).json({ message: "Error saving case details.", error: err }));
       }
 
-      await queryAsync(`
+    // Insert into `judgement details create` table
+    if(trialDetails.judgementNature || trialDetails.uploadJudgement){
+    const JudgementQuery = `
+          UPDATE fir_add SET
+          nature_of_judgement = ?, 
+          judgement_copy = ?
+          WHERE fir_id = ?
+      `;
+  
+      const JudgementValues = [
+        trialDetails.judgementNature,
+        trialDetails.uploadJudgement,
+      firId,  
+      ];
+
+
+      console.log("Executing fir_trial query:", JudgementQuery);
+      console.log("With values:", JudgementValues);
+
+      db.query(JudgementQuery, JudgementValues, (err) => {
+        if (err) {
+          console.error("Error saving judgmentment details:", err);
+          return db.rollback(() => res.status(500).json({ message: "Error saving judgmentment details.", error: err }));
+        }
+        console.log("judgmentment details saved successfully.");
+      });
+    }
+
+      // Insert or Update `fir_trial` Table
+      const firTrialQuery = `
         INSERT INTO fir_trial (
           fir_id, case_id, total_amount_third_stage, proceedings_file_no,
           proceedings_date, Commissionerate_file
@@ -2100,100 +2084,185 @@ exports.saveStepSevenAsDraft = (req, res) => {
           proceedings_file_no = VALUES(proceedings_file_no),
           proceedings_date = VALUES(proceedings_date),
           Commissionerate_file = VALUES(Commissionerate_file)
-      `, [
-        firId, caseId, parsedCompensationDetails.totalCompensation,
-        parsedCompensationDetails.proceedingsFileNo, parsedCompensationDetails.proceedingsDate,
-        parsedCompensationDetails.uploadProceedings
-      ]);
+      `;
+      const firTrialValues = [
+        firId,
+        caseId,
+        compensationDetails.totalCompensation,
+        compensationDetails.proceedingsFileNo,
+        compensationDetails.proceedingsDate,
+        compensationDetails.uploadProceedings
+      ];
 
-      console.log("fir_trial details saved.");
+      console.log("Executing fir_trial query:", firTrialQuery);
+      console.log("With values:", firTrialValues);
 
-      if (appealDetails) {
-        await queryAsync(`
-          INSERT INTO appeal_details (
-            fir_id, case_id, legal_opinion_obtained, case_fit_for_appeal,
-            government_approval_for_appeal, filed_by, designated_court
-          ) VALUES (?, ?, ?, ?, ?, ?, ?)
-        `, [
-          firId, caseId, parsedAppealDetails.legalOpinionObtained, parsedAppealDetails.caseFitForAppeal,
-          parsedAppealDetails.governmentApprovalForAppeal, parsedAppealDetails.filedBy, parsedAppealDetails.designatedCourt
-        ]);
-
-        console.log("Appeal details saved.");
-      }
-
-      if (appealDetailsOne) {
-        await queryAsync(`
-          INSERT INTO appeal_details_one (
-            fir_id, case_id, legal_opinion_obtained, case_fit_for_appeal,
-            government_approval_for_appeal, filed_by, designated_court, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
-        `, [
-          firId, caseId, parsedAppealDetailsOne.legalOpinionObtained, parsedAppealDetailsOne.caseFitForAppeal,
-          parsedAppealDetailsOne.governmentApprovalForAppeal, parsedAppealDetailsOne.filedBy, parsedAppealDetailsOne.designatedCourt
-        ]);
-
-        console.log("Appeal details one saved.");
-      }
-
-      if (caseAppealDetailsTwo) {
-        await queryAsync(`
-          INSERT INTO case_appeal_details_two (
-            fir_id, case_id, legal_opinion_obtained, case_fit_for_appeal,
-            government_approval_for_appeal, filed_by, designated_court, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
-        `, [
-          firId, caseId, parsedCaseAppealDetailsTwo.legalOpinionObtained, parsedCaseAppealDetailsTwo.caseFitForAppeal,
-          parsedCaseAppealDetailsTwo.governmentApprovalForAppeal, parsedCaseAppealDetailsTwo.filedBy, parsedCaseAppealDetailsTwo.designatedCourt
-        ]);
-
-        console.log("Case appeal details two saved.");
-      }
-
-      if (attachments && attachments.length > 0) {
-        const attachmentQueries = attachments.map(attachment => {
-          return queryAsync(`
-            INSERT INTO case_attachments (fir_id, case_id, file_name, uploaded_at, created_at, updated_at)
-            VALUES (?, ?, ?, NOW(), NOW(), NOW())`, [firId, caseId, attachment]);
-        });
-
-        await Promise.all(attachmentQueries);
-        console.log("Attachments saved.");
-      }
-
-      await queryAsync(`
-        INSERT INTO case_court_details_two (
-          fir_id, case_id, case_number, public_prosecutor, prosecutor_phone, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, NOW(), NOW())
-      `, [
-        firId, caseId, parsedTrialDetails.trialCaseNumber, parsedTrialDetails.publicProsecutor,
-        parsedTrialDetails.prosecutorPhone
-      ]);
-
-      console.log("Case court details two saved.");
-
-      db.commit((err) => {
+      db.query(firTrialQuery, firTrialValues, (err) => {
         if (err) {
-          console.error("Transaction commit error:", err);
-          return db.rollback(() => res.status(500).json({ message: "Transaction commit error", error: err }));
+          console.error("Error saving fir_trial details:", err);
+          return db.rollback(() => res.status(500).json({ message: "Error saving fir_trial details.", error: err }));
         }
-        console.log("Transaction committed successfully.");
-        res.status(200).json({ message: "Step 7 draft saved successfully." });
+        console.log("fir_trial details saved successfully.");
       });
 
-    } catch (error) {
-      console.error("Transaction failed:", error);
-      db.rollback(() => res.status(500).json({ message: "Transaction failed", error }));
-    }
-  });
-};
+      // Insert into `appeal_details` table
+      if (appealDetails) {
+        const appealDetailsQuery = `
+          INSERT INTO appeal_details (
+              fir_id, case_id, legal_opinion_obtained, case_fit_for_appeal,
+              government_approval_for_appeal, filed_by, designated_court
+          ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        `;
+        const appealDetailsValues = [
+          firId, caseId, appealDetails.legalOpinionObtained, appealDetails.caseFitForAppeal,
+          appealDetails.governmentApprovalForAppeal, appealDetails.filedBy, appealDetails.designatedCourt
+        ];
 
+        console.log("Executing appeal details query:", appealDetailsQuery);
+        console.log("With values:", appealDetailsValues);
 
-const queryAsync = (query, params) => {
-  return new Promise((resolve, reject) => {
-    db.query(query, params, (err, results) => {
-      if (err) return reject(err);
-      resolve(results);
+        db.query(appealDetailsQuery, appealDetailsValues, (err) => {
+          if (err) {
+            console.error("Error saving appeal details:", err);
+            return db.rollback(() => res.status(500).json({ message: "Error saving appeal details.", error: err }));
+          }
+          console.log("Appeal details saved successfully.");
+        });
+      }
+
+      // Insert into `appeal_details_one` table
+      if (appealDetailsOne) {
+        const appealDetailsOneQuery = `
+          INSERT INTO appeal_details_one (
+              fir_id, case_id, legal_opinion_obtained, case_fit_for_appeal,
+              government_approval_for_appeal, filed_by, designated_court, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        `;
+        const appealDetailsOneValues = [
+          firId, caseId, appealDetailsOne.legalOpinionObtained, appealDetailsOne.caseFitForAppeal,
+          appealDetailsOne.governmentApprovalForAppeal, appealDetailsOne.filedBy, appealDetailsOne.designatedCourt
+        ];
+
+        console.log("Executing appeal details one query:", appealDetailsOneQuery);
+        console.log("With values:", appealDetailsOneValues);
+
+        db.query(appealDetailsOneQuery, appealDetailsOneValues, (err) => {
+          if (err) {
+            console.error("Error saving appeal details one:", err);
+            return db.rollback(() => res.status(500).json({ message: "Error saving appeal details one.", error: err }));
+          }
+          console.log("Appeal details one saved successfully.");
+        });
+      }
+
+      // Insert into `case_appeal_details_two`
+      if (caseAppealDetailsTwo) {
+        const caseAppealDetailsTwoQuery = `
+          INSERT INTO case_appeal_details_two (
+              fir_id, case_id, legal_opinion_obtained, case_fit_for_appeal,
+              government_approval_for_appeal, filed_by, designated_court, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        `;
+        const caseAppealDetailsTwoValues = [
+          firId, caseId, caseAppealDetailsTwo.legalOpinionObtained, caseAppealDetailsTwo.caseFitForAppeal,
+          caseAppealDetailsTwo.governmentApprovalForAppeal, caseAppealDetailsTwo.filedBy, caseAppealDetailsTwo.designatedCourt
+        ];
+
+        console.log("Executing case appeal details two query:", caseAppealDetailsTwoQuery);
+        console.log("With values:", caseAppealDetailsTwoValues);
+
+        db.query(caseAppealDetailsTwoQuery, caseAppealDetailsTwoValues, (err) => {
+          if (err) {
+            console.error("Error saving case appeal details two:", err);
+            return db.rollback(() => res.status(500).json({ message: "Error saving case appeal details two.", error: err }));
+          }
+          console.log("Case appeal details two saved successfully.");
+        });
+      }
+
+      // Insert into `case_attachments` table
+      const caseAttachmentsQuery = `
+        INSERT INTO case_attachments (fir_id, case_id, file_name, uploaded_at, created_at, updated_at)
+        VALUES (?, ?, ?, NOW(), NOW(), NOW())
+      `;
+      attachments.forEach((attachment) => {
+        const caseAttachmentsValues = [firId, caseId, attachment];
+        console.log("Executing case attachment query:", caseAttachmentsQuery);
+        console.log("With values:", caseAttachmentsValues);
+
+        db.query(caseAttachmentsQuery, caseAttachmentsValues, (err) => {
+          if (err) {
+            console.error("Error saving case attachments:", err);
+            return db.rollback(() => res.status(500).json({ message: "Error saving case attachments.", error: err }));
+          }
+        });
+      });
+
+      // Insert into `case_court_details_two`
+      const caseCourtDetailsTwoQuery = `
+        INSERT INTO case_court_details_two (
+            fir_id, case_id, case_number, public_prosecutor, prosecutor_phone, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, NOW(), NOW())
+      `;
+      const caseCourtDetailsTwoValues = [
+        firId, caseId, trialDetails.trialCaseNumber, trialDetails.publicProsecutor,
+        trialDetails.prosecutorPhone
+      ];
+
+      console.log("Executing case court details two query:", caseCourtDetailsTwoQuery);
+      console.log("With values:", caseCourtDetailsTwoValues);
+
+      db.query(caseCourtDetailsTwoQuery, caseCourtDetailsTwoValues, (err) => {
+        if (err) {
+          console.error("Error saving case court details two:", err);
+          return db.rollback(() => res.status(500).json({ message: "Error saving case court details two.", error: err }));
+        }
+      });
+
+      // Insert into `trial_relief`
+      const victimPromises = victimsDetails.map((victim) => {
+        console.log('New Victim', victim.reliefAmountFinalStage);
+        return new Promise((resolve, reject) => {
+          const trialId = generateRandomId(8);
+          const victimQuery = `
+            INSERT INTO trial_relief (
+                fir_id, case_id, trial_id, victim_id, victim_name,
+                relief_amount_act, relief_amount_government, relief_amount_final_stage, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+          `;
+          const victimValues = [
+            firId,
+            caseId,
+            trialId,
+            victim.victimId,
+            victim.victimName,
+            victim.reliefAmountAct,
+            victim.reliefAmountGovernment,
+            victim.reliefAmountFinalStage
+          ];
+
+          console.log("Executing trial relief query:", victimQuery);
+          console.log("With values:", victimValues);
+
+          db.query(victimQuery, victimValues, (err) => (err ? reject(err) : resolve()));
+        });
+      });
+
+      // Commit transaction after all inserts
+      Promise.all(victimPromises)
+        .then(() => {
+          db.commit((err) => {
+            if (err) {
+              console.error("Transaction commit failed:", err);
+              return db.rollback(() => res.status(500).json({ message: "Transaction commit failed.", error: err }));
+            }
+            console.log("Transaction committed successfully.");
+            res.status(200).json({ message: "Draft data saved successfully.", caseId });
+          });
+        })
+        .catch((err) => {
+          db.rollback(() => res.status(500).json({ message: "Error saving victim details.", error: err }));
+        });
     });
   });
 };

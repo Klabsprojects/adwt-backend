@@ -15,7 +15,6 @@ const districtRevenueController = require('../controller/districtRevenueControll
 const offenceController = require('../controller/offenceController');
 const rolePermissionsController = require('../controller/rolePermissionsController'); // Ensure the path is correct
 const offenceActController = require('../controller/offenceActController');
-const offenceReliefDetailsController = require('../controller/offenceReliefDetailsController');
 const firController = require('../controller/firController');
 const firListController = require('../controller/firListController');
 const vmcMeetingController = require('../controller/vmcMeetingController');
@@ -257,8 +256,7 @@ router.get('/fir/court-divisions', firController.getAllCourtDivisions);
 router.get('/fir/remove-chargesheet-image', editfircontroller.removechargesheet);
 router.get('/fir/remove-chargesheet-relief', editfircontroller.removechargesheetrelief);
 
-// Get all offences relief details
-router.get('/fir/offence/relief/details', offenceReliefDetailsController.getAllOffenceReliefDetails);
+
 
 // Route to fetch court ranges by division
 router.get('/fir/court-ranges', firController.getCourtRangesByDivision);

@@ -38,6 +38,7 @@ app.use(cors(corsOptions));
 // Serve static files
 app.use("/uploads", express.static("/var/www/backend/uploads"));
 app.use("/uploadedfile/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/CommonFileUpload/uploads", express.static(path.join(__dirname, "src/uploads")));
 
 
 // Use routes
