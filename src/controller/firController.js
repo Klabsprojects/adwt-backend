@@ -1980,8 +1980,6 @@ exports.saveStepSevenAsDraft = (req, res) => {
           judgementAwarded3
         ]
       );
-      console.log("Executing case details query:", caseDetailsQuery);
-      console.log("With values:", caseDetailsValues);
 
       if (parsedTrialDetails.judgementNature || parsedTrialDetails.uploadJudgement) {
         await queryAsync(
@@ -2014,9 +2012,6 @@ exports.saveStepSevenAsDraft = (req, res) => {
           parsedCompensationDetails.uploadProceedings
         ]
       );
-
-      console.log("Executing fir_trial query:", firTrialQuery);
-      console.log("With values:", firTrialValues);
 
       if (appealDetails) {
         await queryAsync(

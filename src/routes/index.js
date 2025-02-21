@@ -383,6 +383,7 @@ router.post('/fir/update-status_1', firController.updateFirStatus_1);
 
 
 router.get('/fir-additional-relief', AdditionalReliefController.getFIRAdditionalReliefList);
+router.get('/fir-additional-relief-ByVictim', AdditionalReliefController.getFIRAdditionalReliefListByVictim);
 
 router.get('/victims', AdditionalReliefController.getVictimDetailsByFirId);
 
@@ -439,5 +440,8 @@ router.post('/applybarchartpendingDataFilters',dadtwodashboardController.applyba
 // router.get('/vmcmeeting/statuses', vmcMeetingController.getMeetingStatuses);
 
 router.post('/FileUpload', UploadFileController.UploadFiles);
+router.post('/save-additional-relief', AdditionalReliefController.saveAdditionalRelief);
+
+router.get('/get-additional-relief-details', AdditionalReliefController.getAdditionalReliefByFirId);
 
 module.exports = router;

@@ -72,9 +72,12 @@ exports.getFirView = (req, res) => {
 `;
 
 
-  const query9 =`SELECT * FROM fir_add f 
-  LEFT JOIN appeal_details a ON f.fir_id = a.fir_id 
-  WHERE f.fir_id = ?`;
+const query9 = `
+SELECT * FROM fir_add f 
+LEFT JOIN appeal_details a 
+ON f.fir_id = a.fir_id COLLATE utf8mb4_general_ci
+WHERE f.fir_id = ?;
+`;
 
   const query10 =`SELECT * FROM fir_add f 
   LEFT JOIN case_court_detail_one cdo ON f.fir_id = cdo.fir_id 
