@@ -2492,6 +2492,18 @@ exports.editStepSevenAsDraft = (req, res) => {
 
 }
 
+const storage_step7 = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/'); // Folder where files will be stored
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const newFilename = uniqueSuffix + path.extname(file.originalname);
+    cb(null, newFilename);
+  }
+});
+
+const upload_step7 = multer({ storage: storage_step7 }).array('attachments', 10);
 
 exports.saveEditStepSevenAsDraft = (req, res) => {
   console.log(req.body);
