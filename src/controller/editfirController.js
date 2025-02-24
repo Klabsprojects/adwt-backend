@@ -2748,10 +2748,10 @@ if (existingCaseCourtDetailTwo.length > 0) {
         `, [
             ogId,
             randomCaseId_1,
-            parsedCompensationDetails_1.totalCompensation,
-            parsedCompensationDetails_1.proceedingsFileNo,
-            parsedCompensationDetails_1.proceedingsDate,
-            parsedCompensationDetails_1.uploadProceedings
+            parsedCompensationDetails.totalCompensation,
+            parsedCompensationDetails.proceedingsFileNo,
+            parsedCompensationDetails.proceedingsDate,
+            parsedCompensationDetails.uploadProceedings
         ]);
     }
     
