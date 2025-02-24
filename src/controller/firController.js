@@ -1553,7 +1553,11 @@ exports.getFirDetails = async  (req, res) => {
     const appealDetailsOne = await queryAsync('SELECT * FROM appeal_details_one WHERE fir_id = ?', [fir_id]);
     const caseAppealDetailsTwo = await queryAsync('SELECT * FROM case_appeal_details_two WHERE fir_id = ?', [fir_id]);
 
-
+    const compensation_details = await queryAsync(`SELECT * FROM compensation_details WHERE fir_id = ?`, [fir_id]);
+    const compensation_details_1 = await queryAsync(`SELECT * FROM compensation_details_1 WHERE fir_id = ?`, [fir_id]);
+    const compensation_details_2 = await queryAsync(`SELECT * FROM compensation_details_2 WHERE fir_id = ?`, [fir_id]);
+    
+    
 
     // 
     // casedetail_one
@@ -1577,6 +1581,9 @@ exports.getFirDetails = async  (req, res) => {
                   appeal_details: appealDetails,
                   appeal_details_one: appealDetailsOne,
                   case_appeal_details_two: caseAppealDetailsTwo,
+                  compensation_details:compensation_details,
+                  compensation_details_1:compensation_details_1,
+                  compensation_details_2:compensation_details_2,
              
                 });
               });
