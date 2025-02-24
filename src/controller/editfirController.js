@@ -2510,7 +2510,7 @@ exports.saveEditStepSevenAsDraft = (req, res) => {
 
   const {
     firId, trialDetails, trialDetails_one, trialDetails_two, compensationDetails, attachments,
-    appealDetails, appealDetailsOne, caseAppealDetailsTwo, hearingdetail,
+    appealDetails, appealDetailsOne, caseAppealDetailsTwo, hearingdetail,compensationDetails_1,compensationDetails_2
   } = req.body;
 
   const ogId = firId.replace(/(^")|("$)/g, '');
@@ -2531,6 +2531,9 @@ exports.saveEditStepSevenAsDraft = (req, res) => {
   const parsedAppealDetails = parseJSON(appealDetails);
   const parsedAppealDetailsOne = parseJSON(appealDetailsOne);
   const parsedCaseAppealDetailsTwo = parseJSON(caseAppealDetailsTwo);
+
+  const parsedCompensationDetails_1 = parseJSON(compensationDetails_1);
+  const parsedCompensationDetails_2 = parseJSON(compensationDetails_2);
 
   if (!ogId) {
     return res.status(400).json({ message: 'Missing required firId field.' });
@@ -2718,6 +2721,111 @@ if (existingCaseCourtDetailTwo.length > 0) {
         parsedCompensationDetails.uploadProceedings,
       ]);
 
+
+      const existingCompensation = await queryAsync(
+        'SELECT * FROM compensation_details WHERE fir_id = ? AND case_id = ?',
+        [ogId, parsedCompensationDetails_1.caseId]
+    );
+    
+    if (existingCompensation.length > 0) {
+        await queryAsync(`
+            UPDATE compensation_details 
+            SET total_compensation = ?, proceedings_file_no = ?, proceedings_date = ?, upload_proceedings = ?
+            WHERE fir_id = ? AND case_id = ?
+        `, [
+            parsedCompensationDetails_1.totalCompensation,
+            parsedCompensationDetails_1.proceedingsFileNo,
+            parsedCompensationDetails_1.proceedingsDate,
+            parsedCompensationDetails_1.uploadProceedings,
+            ogId,
+            parsedCompensationDetails_1.caseId
+        ]);
+    } else {
+        await queryAsync(`
+            INSERT INTO compensation_details 
+                (fir_id, case_id, total_compensation, proceedings_file_no, proceedings_date, upload_proceedings)
+            VALUES (?, ?, ?, ?, ?, ?)
+        `, [
+            ogId,
+            parsedCompensationDetails_1.caseId,
+            parsedCompensationDetails_1.totalCompensation,
+            parsedCompensationDetails_1.proceedingsFileNo,
+            parsedCompensationDetails_1.proceedingsDate,
+            parsedCompensationDetails_1.uploadProceedings
+        ]);
+    }
+    
+      const existingCompensation1 = await queryAsync(
+        'SELECT * FROM compensation_details_1 WHERE fir_id = ? AND case_id = ?',
+        [ogId, parsedCompensationDetails_1.caseId]
+    );
+    
+    if (existingCompensation1.length > 0) {
+  
+        await queryAsync(`
+            UPDATE compensation_details_1 
+            SET total_compensation = ?, proceedings_file_no = ?, proceedings_date = ?, upload_proceedings = ?
+            WHERE fir_id = ? AND case_id = ?
+        `, [
+            parsedCompensationDetails_1.totalCompensation,
+            parsedCompensationDetails_1.proceedingsFileNo,
+            parsedCompensationDetails_1.proceedingsDate,
+            parsedCompensationDetails_1.uploadProceedings,
+            ogId,
+            parsedCompensationDetails_1.caseId
+        ]);
+    } else {
+      
+        await queryAsync(`
+            INSERT INTO compensation_details_1 
+                (fir_id, case_id, total_compensation, proceedings_file_no, proceedings_date, upload_proceedings)
+            VALUES (?, ?, ?, ?, ?, ?)
+        `, [
+            ogId,
+            parsedCompensationDetails_1.caseId,
+            parsedCompensationDetails_1.totalCompensation,
+            parsedCompensationDetails_1.proceedingsFileNo,
+            parsedCompensationDetails_1.proceedingsDate,
+            parsedCompensationDetails_1.uploadProceedings
+        ]);
+    }
+    
+
+    const existingCompensation2 = await queryAsync(
+        'SELECT * FROM compensation_details_2 WHERE fir_id = ? AND case_id = ?',
+        [ogId, parsedCompensationDetails_2.caseId]
+    );
+    
+    if (existingCompensation2.length > 0) {
+     
+        await queryAsync(`
+            UPDATE compensation_details_2 
+            SET total_compensation = ?, proceedings_file_no = ?, proceedings_date = ?, upload_proceedings = ?
+            WHERE fir_id = ? AND case_id = ?
+        `, [
+            parsedCompensationDetails_2.totalCompensation,
+            parsedCompensationDetails_2.proceedingsFileNo,
+            parsedCompensationDetails_2.proceedingsDate,
+            parsedCompensationDetails_2.uploadProceedings,
+            ogId,
+            parsedCompensationDetails_2.caseId
+        ]);
+    } else {
+       
+        await queryAsync(`
+            INSERT INTO compensation_details_2 
+                (fir_id, case_id, total_compensation, proceedings_file_no, proceedings_date, upload_proceedings)
+            VALUES (?, ?, ?, ?, ?, ?)
+        `, [
+            ogId,
+            parsedCompensationDetails_2.caseId,
+            parsedCompensationDetails_2.totalCompensation,
+            parsedCompensationDetails_2.proceedingsFileNo,
+            parsedCompensationDetails_2.proceedingsDate,
+            parsedCompensationDetails_2.uploadProceedings
+        ]);
+    }
+    
       
       const appealTables = [
         { table: 'appeal_details', data: parsedAppealDetails },

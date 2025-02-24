@@ -2122,7 +2122,7 @@ exports.saveStepSevenAsDraft = (req, res) => {
 
   const {
     firId, trialDetails, trialDetails_one, trialDetails_two, compensationDetails, attachments,
-    appealDetails, appealDetailsOne, caseAppealDetailsTwo, hearingdetail,
+    appealDetails, appealDetailsOne, caseAppealDetailsTwo, hearingdetail,compensationDetails_1,compensationDetails_2
   } = req.body;
 
   const ogId = firId.replace(/(^")|("$)/g, '');
@@ -2140,6 +2140,8 @@ exports.saveStepSevenAsDraft = (req, res) => {
   const parsedTrialDetailsOne = parseJSON(trialDetails_one);
   const parsedTrialDetailsTwo = parseJSON(trialDetails_two);
   const parsedCompensationDetails = parseJSON(compensationDetails);
+  const parsedCompensationDetails_1 = parseJSON(compensationDetails_1);
+  const parsedCompensationDetails_2 = parseJSON(compensationDetails_2);
   const parsedAppealDetails = parseJSON(appealDetails);
   const parsedAppealDetailsOne = parseJSON(appealDetailsOne);
   const parsedCaseAppealDetailsTwo = parseJSON(caseAppealDetailsTwo);
@@ -2330,6 +2332,62 @@ if (existingCaseCourtDetailTwo.length > 0) {
         parsedCompensationDetails.uploadProceedings,
       ]);
 
+
+
+      await queryAsync(`
+        INSERT INTO compensation_details
+            (fir_id, case_id, total_compensation, proceedings_file_no, proceedings_date, upload_proceedings)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE
+            total_compensation = VALUES(total_compensation),
+            proceedings_file_no = VALUES(proceedings_file_no),
+            proceedings_date = VALUES(proceedings_date),
+            upload_proceedings = VALUES(upload_proceedings)
+    `, [
+        ogId,
+        parsedCompensationDetails_1.caseId, 
+        parsedCompensationDetails_1.totalCompensation,
+        parsedCompensationDetails_1.proceedingsFileNo,
+        parsedCompensationDetails_1.proceedingsDate,
+        parsedCompensationDetails_1.uploadProceedings
+    ]);
+      await queryAsync(`
+        INSERT INTO compensation_details_1 
+            (fir_id, case_id, total_compensation, proceedings_file_no, proceedings_date, upload_proceedings)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE
+            total_compensation = VALUES(total_compensation),
+            proceedings_file_no = VALUES(proceedings_file_no),
+            proceedings_date = VALUES(proceedings_date),
+            upload_proceedings = VALUES(upload_proceedings)
+    `, [
+        ogId,
+        parsedCompensationDetails_1.caseId, 
+        parsedCompensationDetails_1.totalCompensation,
+        parsedCompensationDetails_1.proceedingsFileNo,
+        parsedCompensationDetails_1.proceedingsDate,
+        parsedCompensationDetails_1.uploadProceedings
+    ]);
+
+    
+    await queryAsync(`
+      INSERT INTO compensation_details_2 
+          (fir_id, case_id, total_compensation, proceedings_file_no, proceedings_date, upload_proceedings)
+      VALUES (?, ?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+          total_compensation = VALUES(total_compensation),
+          proceedings_file_no = VALUES(proceedings_file_no),
+          proceedings_date = VALUES(proceedings_date),
+          upload_proceedings = VALUES(upload_proceedings)
+  `, [
+      ogId,
+      parsedCompensationDetails_2.caseId, 
+      parsedCompensationDetails_2.totalCompensation,
+      parsedCompensationDetails_2.proceedingsFileNo,
+      parsedCompensationDetails_2.proceedingsDate,
+      parsedCompensationDetails_2.uploadProceedings
+  ]);
+  
       
       const appealTables = [
         { table: 'appeal_details', data: parsedAppealDetails },

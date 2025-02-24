@@ -188,8 +188,16 @@ const caseDetails = await queryAsync(`SELECT * FROM case_details WHERE fir_id = 
 
 const caseCourtDetailOne = await queryAsync(`SELECT * FROM case_court_detail_one WHERE fir_id = ?`, [fir_id]);
 const caseCourtDetailsTwo = await queryAsync(`SELECT * FROM case_court_details_two WHERE fir_id = ?`, [fir_id]);
+const compensation_details = await queryAsync(`SELECT * FROM compensation_details WHERE fir_id = ?`, [fir_id]);
+const compensation_details_1 = await queryAsync(`SELECT * FROM compensation_details_1 WHERE fir_id = ?`, [fir_id]);
+const compensation_details_2 = await queryAsync(`SELECT * FROM compensation_details_2 WHERE fir_id = ?`, [fir_id]);
+
+
+
+
 
 const firDetails = await queryAsync(`SELECT * FROM fir_add WHERE fir_id = ?`, [fir_id]);
+
 
 
 const trialDetails = await queryAsync(`SELECT * FROM fir_trial WHERE fir_id = ?`, [fir_id]);
@@ -433,6 +441,10 @@ const hearingDetailsThree = await queryAsync(`SELECT * FROM hearing_details_thre
           hearingDetailsTwo: hearingDetailsTwo || [],
           hearingDetailsThree: hearingDetailsThree || [],
         },
+
+        compensation_details :compensation_details,
+        compensation_details_1 :compensation_details_1,
+        compensation_details_2 :compensation_details_2
       });
     });
     });
