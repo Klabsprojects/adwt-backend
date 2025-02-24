@@ -2721,7 +2721,7 @@ if (existingCaseCourtDetailTwo.length > 0) {
         parsedCompensationDetails.uploadProceedings,
       ]);
 
-
+      const randomCaseId_1 = uuidv4();
       const existingCompensation = await queryAsync(
         'SELECT * FROM compensation_details WHERE fir_id = ? AND case_id = ?',
         [ogId, parsedCompensationDetails_1.caseId]
@@ -2733,12 +2733,12 @@ if (existingCaseCourtDetailTwo.length > 0) {
             SET total_compensation = ?, proceedings_file_no = ?, proceedings_date = ?, upload_proceedings = ?
             WHERE fir_id = ? AND case_id = ?
         `, [
-            parsedCompensationDetails_1.totalCompensation,
-            parsedCompensationDetails_1.proceedingsFileNo,
-            parsedCompensationDetails_1.proceedingsDate,
-            parsedCompensationDetails_1.uploadProceedings,
+            parsedCompensationDetails.totalCompensation,
+            parsedCompensationDetails.proceedingsFileNo,
+            parsedCompensationDetails.proceedingsDate,
+            parsedCompensationDetails.uploadProceedings,
             ogId,
-            parsedCompensationDetails_1.caseId
+            randomCaseId_1
         ]);
     } else {
         await queryAsync(`
@@ -2747,7 +2747,7 @@ if (existingCaseCourtDetailTwo.length > 0) {
             VALUES (?, ?, ?, ?, ?, ?)
         `, [
             ogId,
-            parsedCompensationDetails_1.caseId,
+            randomCaseId_1,
             parsedCompensationDetails_1.totalCompensation,
             parsedCompensationDetails_1.proceedingsFileNo,
             parsedCompensationDetails_1.proceedingsDate,
@@ -2772,7 +2772,7 @@ if (existingCaseCourtDetailTwo.length > 0) {
             parsedCompensationDetails_1.proceedingsDate,
             parsedCompensationDetails_1.uploadProceedings,
             ogId,
-            parsedCompensationDetails_1.caseId
+            randomCaseId_1
         ]);
     } else {
       
@@ -2782,7 +2782,7 @@ if (existingCaseCourtDetailTwo.length > 0) {
             VALUES (?, ?, ?, ?, ?, ?)
         `, [
             ogId,
-            parsedCompensationDetails_1.caseId,
+            randomCaseId_1,
             parsedCompensationDetails_1.totalCompensation,
             parsedCompensationDetails_1.proceedingsFileNo,
             parsedCompensationDetails_1.proceedingsDate,
@@ -2808,7 +2808,7 @@ if (existingCaseCourtDetailTwo.length > 0) {
             parsedCompensationDetails_2.proceedingsDate,
             parsedCompensationDetails_2.uploadProceedings,
             ogId,
-            parsedCompensationDetails_2.caseId
+            randomCaseId_1
         ]);
     } else {
        
@@ -2818,7 +2818,7 @@ if (existingCaseCourtDetailTwo.length > 0) {
             VALUES (?, ?, ?, ?, ?, ?)
         `, [
             ogId,
-            parsedCompensationDetails_2.caseId,
+            randomCaseId_1,
             parsedCompensationDetails_2.totalCompensation,
             parsedCompensationDetails_2.proceedingsFileNo,
             parsedCompensationDetails_2.proceedingsDate,

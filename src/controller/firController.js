@@ -2331,7 +2331,7 @@ if (existingCaseCourtDetailTwo.length > 0) {
         parsedCompensationDetails.proceedingsDate,
         parsedCompensationDetails.uploadProceedings,
       ]);
-
+      const randomCaseId_1 = uuidv4();
 
 
       await queryAsync(`
@@ -2345,11 +2345,11 @@ if (existingCaseCourtDetailTwo.length > 0) {
             upload_proceedings = VALUES(upload_proceedings)
     `, [
         ogId,
-        parsedCompensationDetails_1.caseId, 
-        parsedCompensationDetails_1.totalCompensation,
-        parsedCompensationDetails_1.proceedingsFileNo,
-        parsedCompensationDetails_1.proceedingsDate,
-        parsedCompensationDetails_1.uploadProceedings
+        randomCaseId_1, 
+        parsedCompensationDetails.totalCompensation,
+        parsedCompensationDetails.proceedingsFileNo,
+        parsedCompensationDetails.proceedingsDate,
+        parsedCompensationDetails.uploadProceedings
     ]);
       await queryAsync(`
         INSERT INTO compensation_details_1 
@@ -2362,7 +2362,7 @@ if (existingCaseCourtDetailTwo.length > 0) {
             upload_proceedings = VALUES(upload_proceedings)
     `, [
         ogId,
-        parsedCompensationDetails_1.caseId, 
+        randomCaseId_1, 
         parsedCompensationDetails_1.totalCompensation,
         parsedCompensationDetails_1.proceedingsFileNo,
         parsedCompensationDetails_1.proceedingsDate,
@@ -2381,7 +2381,7 @@ if (existingCaseCourtDetailTwo.length > 0) {
           upload_proceedings = VALUES(upload_proceedings)
   `, [
       ogId,
-      parsedCompensationDetails_2.caseId, 
+      randomCaseId_1, 
       parsedCompensationDetails_2.totalCompensation,
       parsedCompensationDetails_2.proceedingsFileNo,
       parsedCompensationDetails_2.proceedingsDate,
