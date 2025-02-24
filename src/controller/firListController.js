@@ -24,7 +24,7 @@ exports.getFirList = (req, res) => {
 };
 
 // view
-exports.getFirView = (req, res) => {
+exports.getFirView = async (req, res)  => {
   const { fir_id } = req.query;
 
   const query1 = `SELECT * FROM fir_add f  
@@ -183,6 +183,26 @@ const query = `
   WHERE f.fir_id COLLATE utf8mb4_general_ci = ? 
 `;
 
+const caseDetails = await queryAsync(`SELECT * FROM case_details WHERE fir_id = ?`, [fir_id]);
+
+
+const caseCourtDetailOne = await queryAsync(`SELECT * FROM case_court_detail_one WHERE fir_id = ?`, [fir_id]);
+const caseCourtDetailsTwo = await queryAsync(`SELECT * FROM case_court_details_two WHERE fir_id = ?`, [fir_id]);
+
+const firDetails = await queryAsync(`SELECT * FROM fir_add WHERE fir_id = ?`, [fir_id]);
+
+
+const trialDetails = await queryAsync(`SELECT * FROM fir_trial WHERE fir_id = ?`, [fir_id]);
+
+
+const appealDetails = await queryAsync(`SELECT * FROM appeal_details WHERE fir_id = ?`, [fir_id]);
+const appealDetailsOne = await queryAsync(`SELECT * FROM appeal_details_one WHERE fir_id = ?`, [fir_id]);
+const caseAppealDetailsTwo = await queryAsync(`SELECT * FROM case_appeal_details_two WHERE fir_id = ?`, [fir_id]);
+
+
+const hearingDetailsOne = await queryAsync(`SELECT * FROM hearing_details_one WHERE fir_id = ?`, [fir_id]);
+const hearingDetailsTwo = await queryAsync(`SELECT * FROM hearing_details_two WHERE fir_id = ?`, [fir_id]);
+const hearingDetailsThree = await queryAsync(`SELECT * FROM hearing_details_three WHERE fir_id = ?`, [fir_id]);
 
   db.query(query1, [fir_id], (err1, results1) => {
     if (err1) {
@@ -396,6 +416,23 @@ const query = `
         queryResults18: results18,
         queryResults19: results19,
         queryResults: result,
+        caseDetails: caseDetails[0] || {},
+        courtDetails: {
+          caseCourtDetailOne: caseCourtDetailOne[0] || {},
+          caseCourtDetailsTwo: caseCourtDetailsTwo[0] || {},
+        },
+        firDetails: firDetails[0] || {},
+        trialDetails: trialDetails[0] || {},
+        appealDetails: {
+          appealDetails: appealDetails[0] || {},
+          appealDetailsOne: appealDetailsOne[0] || {},
+          caseAppealDetailsTwo: caseAppealDetailsTwo[0] || {},
+        },
+        hearingDetails: {
+          hearingDetailsOne: hearingDetailsOne || [],
+          hearingDetailsTwo: hearingDetailsTwo || [],
+          hearingDetailsThree: hearingDetailsThree || [],
+        },
       });
     });
     });
@@ -419,6 +456,14 @@ const query = `
 });
 };
 
+const queryAsync = (query, params) => {
+  return new Promise((resolve, reject) => {
+    db.query(query, params, (err, results) => {
+      if (err) return reject(err);
+      resolve(results);
+    });
+  });
+};
 
   // Controller to delete a FIR by ID
   exports.deleteFir = (req, res) => {
