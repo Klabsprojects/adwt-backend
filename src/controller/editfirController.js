@@ -2704,21 +2704,64 @@ if (existingCaseCourtDetailTwo.length > 0) {
         WHERE fir_id = ?
       `, [parsedTrialDetails.judgementNature, parsedTrialDetails.uploadJudgement, ogId]);
 
-      await queryAsync(`
-        INSERT INTO fir_trial (fir_id, total_amount_third_stage, proceedings_file_no, proceedings_date, Commissionerate_file)
-        VALUES (?, ?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE
-          total_amount_third_stage = VALUES(total_amount_third_stage),
-          proceedings_file_no = VALUES(proceedings_file_no),
-          proceedings_date = VALUES(proceedings_date),
-          Commissionerate_file = VALUES(Commissionerate_file)
-      `, [
-        ogId,
-        parsedCompensationDetails.totalCompensation,
-        parsedCompensationDetails.proceedingsFileNo,
-        parsedCompensationDetails.proceedingsDate,
-        parsedCompensationDetails.uploadProceedings,
-      ]);
+      // await queryAsync(`
+      //   INSERT INTO fir_trial (fir_id, total_amount_third_stage, proceedings_file_no, proceedings_date, Commissionerate_file)
+      //   VALUES (?, ?, ?, ?, ?)
+      //   ON DUPLICATE KEY UPDATE
+      //     total_amount_third_stage = VALUES(total_amount_third_stage),
+      //     proceedings_file_no = VALUES(proceedings_file_no),
+      //     proceedings_date = VALUES(proceedings_date),
+      //     Commissionerate_file = VALUES(Commissionerate_file)
+      // `, [
+      //   ogId,
+      //   parsedCompensationDetails.totalCompensation,
+      //   parsedCompensationDetails.proceedingsFileNo,
+      //   parsedCompensationDetails.proceedingsDate,
+      //   parsedCompensationDetails.uploadProceedings,
+      // ]);
+
+      // Check if the FIR ID already exists in the table
+const existingCompensation = await queryAsync(
+  `SELECT * FROM fir_trial WHERE fir_id = ?`,
+  [ogId]
+);
+
+if (existingCompensation.length > 0) {
+  // If record exists, update it
+  await queryAsync(`
+      UPDATE fir_trial
+      SET 
+          total_amount_third_stage = ?, 
+          proceedings_file_no = ?, 
+          proceedings_date = ?, 
+          Commissionerate_file = ?
+      WHERE fir_id = ?;
+  `, [
+      parsedCompensationDetails.totalCompensation,
+      parsedCompensationDetails.proceedingsFileNo,
+      parsedCompensationDetails.proceedingsDate,
+      parsedCompensationDetails.uploadProceedings,
+      ogId
+  ]);
+} else {
+  // If no record exists, insert a new one
+  await queryAsync(`
+      INSERT INTO fir_trial (
+          fir_id, 
+          total_amount_third_stage, 
+          proceedings_file_no, 
+          proceedings_date, 
+          Commissionerate_file
+      ) VALUES (?, ?, ?, ?, ?);
+  `, [
+      ogId,
+      parsedCompensationDetails.totalCompensation,
+      parsedCompensationDetails.proceedingsFileNo,
+      parsedCompensationDetails.proceedingsDate,
+      parsedCompensationDetails.uploadProceedings
+  ]);
+}
+
 
       const randomCaseId_1 = uuidv4();
 
