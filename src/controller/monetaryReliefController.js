@@ -4,17 +4,19 @@ const db = require("../db"); // DB connection
 exports.getmonetaryReliefDetails = async (req, res) => {
   let query = `
   SELECT 
+    fa.fir_id, 
     fa.police_city, 
     fa.police_station, 
-    fa.fir_number, 
+    CONCAT(fa.fir_number, '/', fa.fir_number_suffix) AS fir_number,
     fa.status, 
-    v.victim_name,
+    fa.relief_status,
+    GROUP_CONCAT(DISTINCT v.victim_name ORDER BY v.victim_id DESC SEPARATOR ', ') AS victim_name,
     DATE_FORMAT(rr.report_month, '%Y-%m-%d') AS report_month, -- Include report_month
 
     -- Aggregate victim details to avoid duplicate rows
     GROUP_CONCAT(DISTINCT 
-      REPLACE(REPLACE(v.offence_committed, '[', ''), ']', '') 
-      ORDER BY v.offence_committed SEPARATOR ', ') AS offence_committed, 
+            REPLACE(REPLACE(v.offence_committed, '[', ''), ']', '') 
+            ORDER BY v.victim_id DESC SEPARATOR ', ') AS offence_committed,
 
     -- Get only the latest report reason for the current and previous month
     (SELECT rr.reason_for_status 
@@ -59,5 +61,109 @@ exports.getmonetaryReliefDetails = async (req, res) => {
   } catch (error) {
     console.error("Error in getmonetaryReliefDetails:", error);
     res.status(500).json({ error: "Failed to get report data." });
+  }
+};
+
+
+// Updates status and relief_status in fir_add table and insert/update reason_current_month into report_reasons table if provided
+exports.updateMonetaryRelief = async (req, res) => {
+  const records = req.body; // Expecting an array of objects
+
+  if (!Array.isArray(records) || records.length === 0) {
+    return res.status(400).json({ message: "Request body must be an array with at least one object" });
+  }
+
+  try {
+    let updatePromises = records.map((record) => {
+      return new Promise((resolve, reject) => {
+        const { fir_id, status, relief_status, reason_current_month, created_by } = record;
+        if (!Array.isArray(records) || records.length === 0) return res.status(400).json({ message: "Invalid Request" });
+        // Check if fir_id exists in fir_add table
+        let checkQuery = `SELECT COUNT(*) AS count FROM fir_add WHERE fir_id = ?`;
+        db.query(checkQuery, [fir_id], (checkErr, checkResults) => {
+          if (checkErr) {
+            console.error("Database error while checking FIR ID:", checkErr);
+            return reject({ fir_id, message: "Database error while checking FIR ID", error: checkErr });
+          }
+          if (checkResults[0].count === 0) {
+            return reject({ fir_id, message: "Invalid FIR ID" });
+          }
+          // Update status and relief_status in fir_add table
+          let updateQuery = `UPDATE fir_add SET status = COALESCE(?, status), relief_status = COALESCE(?, relief_status) WHERE fir_id = ?`;
+          let updateParams = [status, relief_status, fir_id];
+          db.query(updateQuery, updateParams, (updateErr, updateResults) => {
+            if (updateErr) {
+              console.error("Database error while updating FIR status:", updateErr);
+              return reject({ fir_id, message: "Failed to update FIR status", error: updateErr });
+            }
+            console.log(`FIR status updated successfully for FIR ID: ${fir_id}`);
+            // Handle report_reasons table (Insert/Update)
+            if (reason_current_month && created_by) {
+              let checkReportQuery = `
+                SELECT id FROM report_reasons 
+                WHERE fir_id = ? 
+                AND MONTH(report_month) = MONTH(CURDATE()) 
+                AND YEAR(report_month) = YEAR(CURDATE())
+              `;
+              db.query(checkReportQuery, [fir_id], (checkReportErr, reportResults) => {
+                if (checkReportErr) {
+                  console.error("Database error while checking report_reasons:", checkReportErr);
+                  return reject({ fir_id, message: "Failed to check report_reasons", error: checkReportErr });
+                }
+                if (reportResults.length > 0) {
+                  // If a report exists for the current month, update it
+                  let updateReportQuery = `
+                    UPDATE report_reasons 
+                    SET reason_for_status = ?, created_by = ?, report_month = CURRENT_DATE
+                    WHERE id = ?
+                  `;
+                  let updateReportParams = [reason_current_month, created_by, reportResults[0].id];
+                  db.query(updateReportQuery, updateReportParams, (updateReportErr, updateReportResults) => {
+                    if (updateReportErr) {
+                      console.error("Database error while updating reason:", updateReportErr);
+                      return reject({ fir_id, message: "Failed to update reason", error: updateReportErr });
+                    }
+                    console.log(`Reason updated successfully for FIR ID: ${fir_id}`);
+                    resolve({ fir_id, message: "Updated successfully" });
+                  });
+                } else {
+                  // If no report exists for the current month, insert a new one
+                  let insertReportQuery = `
+                    INSERT INTO report_reasons (fir_id, report_month, reason_for_status, created_by) 
+                    VALUES (?, CURDATE(), ?, ?)
+                  `;
+                  let insertReportParams = [fir_id, reason_current_month, created_by];
+                  db.query(insertReportQuery, insertReportParams, (insertReportErr, insertReportResults) => {
+                    if (insertReportErr) {
+                      console.error("Database error while inserting reason:", insertReportErr);
+                      return reject({ fir_id, message: "Failed to insert reason", error: insertReportErr });
+                    }
+                    console.log(`Reason inserted successfully for FIR ID: ${fir_id}`);
+                    resolve({ fir_id, message: "Updated successfully" });
+                  });
+                }
+              });
+            } else {
+              resolve({ fir_id, message: "Updated successfully" });
+            }
+          });
+        });
+      });
+    });
+    Promise.allSettled(updatePromises)
+      .then((results) => {
+        res.status(200).json({
+          message: "Monetary Relief update completed",
+          results,
+        });
+      })
+      .catch((error) => {
+        console.error("Error in Monetary Relief update:", error);
+        res.status(500).json({ error: "Failed to process some Monetary Relief records", details: error });
+      });
+
+  } catch (error) {
+    console.error("Error in update Monetary Relief:", error);
+    res.status(500).json({ error: "Failed to update Monetary Relief report." });
   }
 };

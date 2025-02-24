@@ -337,7 +337,9 @@ router.post('/vmcmeeting/getAttendeesByDistrictbysk', vmcMeetingController.getAt
 // Reports
 router.get('/monthlyreport/get-monthly-report-details', monthlyreportController.getmonthlyreportdetail);
 router.get('/monetaryRelief/get-monetary-relief-details', monetaryReliefController.getmonetaryReliefDetails);
-router.get('/additionalreport/getadditionalreportdetail', additionalreportController.getadditionalreportdetail);
+router.get('/additionalreport/get-additional-report-details', additionalreportController.getadditionalreportdetail);
+router.put('/monthlyreport/update-monthly-report-details', monthlyreportController.updateMonthlyReports);
+router.put('/monetaryRelief/update-monetary-relief-details', monetaryReliefController.updateMonetaryRelief);
 
 router.post('/fir/handle-step-five', firController.handleStepFive);
 
