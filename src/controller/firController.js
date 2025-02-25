@@ -579,7 +579,7 @@ exports.handleStepFour = (req, res) => {
 
     
  
-    const updateFirValues = [numberOfAccused, files ? files.path : null, firId];
+    const updateFirValues = [numberOfAccused, firId];
 
   db.query(updateFirQuery, updateFirValues, (err) => {
     if (err) {
