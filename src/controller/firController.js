@@ -828,7 +828,7 @@ exports.handleStepFive = (req, res) => {
 
     const victimsRelief = req.body.victimsRelief ? JSON.parse(req.body.victimsRelief) : [];
     const proceedingsFile = req.files['proceedingsFile'] ? req.files['proceedingsFile'][0].filename : null;
-    const attachments = req.files['attachment s'] || [];
+    const attachments = req.files['attachments'] || [];
 
     if (!firId) {
       return res.status(400).json({ message: 'FIR ID is missing.' });
@@ -925,35 +925,57 @@ exports.handleStepFive = (req, res) => {
 
       const attachmentPromises = attachments.map((attachment) => {
         return new Promise((resolve, reject) => {
-          const attachmentId = generateRandomId(8);
-          const insertQuery = `
-            INSERT INTO attachment_relief (
-              attachment_id, fir_id, file_name, file_path
-            ) VALUES (?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE
-              file_name = VALUES(file_name),
-              file_path = VALUES(file_path)
-          `;
-
-          const values = [
-            attachmentId,
-            firId,
-            attachment.originalname,
-            attachment.filename,
-          ];
-
-          db.query(insertQuery, values, (err) => {
-            if (err) return reject({ step: 'attachment_relief', error: err });
-
-            const selectQuery = 'SELECT * FROM attachment_relief WHERE attachment_id = ?';
-            db.query(selectQuery, [attachmentId], (err, result) => {
-              if (err) return reject({ step: 'select_attachment_relief', error: err });
-              savedData.attachments.push(result[0]);
-              resolve();
+            const attachmentId = generateRandomId(8);
+    
+            // Debug: Log values before inserting
+            console.log("Inserting Attachment:", {
+                attachmentId,
+                firId,
+                fileName: attachment.originalname,
+                filePath: attachment.filename,
             });
-          });
+    
+            const insertQuery = `
+                INSERT INTO attachment_relief (
+                  attachment_id, fir_id, file_name, file_path
+                ) VALUES (?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE
+                  file_name = VALUES(file_name),
+                  file_path = VALUES(file_path)
+            `;
+    
+            const values = [
+                attachmentId,
+                firId,
+                attachment.originalname,
+                attachment.filename,
+            ];
+    
+            db.query(insertQuery, values, (err) => {
+                if (err) {
+                    console.error("Database Insert Error:", err);
+                    return reject({ step: 'attachment_relief', error: err });
+                }
+    
+                const selectQuery = 'SELECT * FROM attachment_relief WHERE attachment_id = ?';
+                db.query(selectQuery, [attachmentId], (err, result) => {
+                    if (err) {
+                        console.error("Database Select Error:", err);
+                        return reject({ step: 'select_attachment_relief', error: err });
+                    }
+    
+                    if (result.length > 0) {
+                        console.log("Inserted Data:", result[0]); 
+                        savedData.attachments.push(result[0]);
+                        resolve();
+                    } else {
+                        console.error("No data found for attachment_id:", attachmentId);
+                        reject({ step: 'select_attachment_relief', error: "No record found" });
+                    }
+                });
+            });
         });
-      });
+    });
 
       Promise.all([...victimPromises, proceedingsPromise, ...attachmentPromises])
         .then(() => {
@@ -1565,6 +1587,23 @@ exports.getFirDetails = async  (req, res) => {
     const casedetail_two = await queryAsync('SELECT * FROM case_court_details_two WHERE fir_id = ?', [fir_id]);
 
     console.log(casedetail_two);
+
+
+    const queryAttachments = `
+    SELECT file_path 
+    FROM attachment_relief 
+    WHERE fir_id = ?
+  `;
+
+  db.query(queryAttachments, [fir_id], (err, attachmentResults) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ message: 'Error fetching attachment file paths.', error: err });
+    }
+    const filePaths = attachmentResults.map(row => row.file_path).filter(path => path !== null);
+
+
+    result3[0].file_paths = filePaths;
                 return res.status(200).json({
                   data: result[0],
                   data1: result1,
@@ -1586,6 +1625,7 @@ exports.getFirDetails = async  (req, res) => {
                   compensation_details_2:compensation_details_2,
              
                 });
+              });
               });
             });
           });

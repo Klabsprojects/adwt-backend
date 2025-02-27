@@ -780,166 +780,133 @@ exports.updateStepFive = (req, res) => {
   upload_step5(req, res, (err) => {
     if (err) return res.status(500).json({ message: 'File upload error', error: err });
 
-    const {
-      firId,
-      totalCompensation,
-      proceedingsFileNo,
-      proceedingsDate,
-    } = req.body;
-
+    const { firId, totalCompensation, proceedingsFileNo, proceedingsDate } = req.body;
     const victimsRelief = req.body.victimsRelief ? JSON.parse(req.body.victimsRelief) : [];
     const proceedingsFile = req.files['proceedingsFile'] ? req.files['proceedingsFile'][0].filename : null;
     const attachments = req.files['attachments'] || [];
 
+
+
+    
     if (!firId) {
       return res.status(400).json({ message: 'FIR ID is missing.' });
     }
 
-    db.beginTransaction((err) => {
+    db.beginTransaction(async (err) => {
       if (err) return res.status(500).json({ message: 'Transaction error', error: err });
 
-      const updatedData = { victims: [], proceedings: null, attachments: [] };
+      try {
+        const updatedData = { victims: [], proceedings: null, attachments: [] };
 
-      const updateVictimPromises = victimsRelief.map((victim) => {
-        return new Promise((resolve, reject) => {
-          if (!victim.victimId) return resolve();
-      
-          db.query('SELECT * FROM victim_relief WHERE victim_id = ?', [victim.victimId], (err, existingData) => {
-            if (err) return reject({ step: 'fetch_victim_data', error: err });
-      
-            if (existingData.length === 0) {
-              const insertQuery = `
-                INSERT INTO victim_relief (victim_id, victim_name, community_certificate, relief_amount_scst, relief_amount_exgratia, relief_amount_first_stage, additional_relief)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-              `;
-              const insertValues = [
-                victim.victimId,
-                victim.victimName,
-                victim.communityCertificate,
-                victim.reliefAmountScst,
-                victim.reliefAmountExGratia,
-                victim.reliefAmountFirstStage,
-                victim.additionalRelief ? JSON.stringify(victim.additionalRelief) : null,
-              ];
-      
-              db.query(insertQuery, insertValues, (err) => {
-                if (err) return reject({ step: 'insert_victim_data', error: err });
-      
-                // After insertion, fetch the newly inserted data to return it
-                db.query('SELECT * FROM victim_relief WHERE victim_id = ?', [victim.victimId], (err, result) => {
-                  if (err) return reject({ step: 'select_inserted_victim_relief', error: err });
-                  updatedData.victims.push(result[0]);
-                  resolve();
-                });
-              });
-            } else {
-              const updates = [];
-              const values = [];
-      
-              updates.push('victim_name = ?', 'community_certificate = ?', 'relief_amount_scst = ?', 'relief_amount_exgratia = ?', 'relief_amount_first_stage = ?', 'additional_relief = ?');
-              values.push(
-                victim.victimName || existingData[0].victim_name,
-                victim.communityCertificate || existingData[0].community_certificate,
-                victim.reliefAmountScst || existingData[0].relief_amount_scst,
-                victim.reliefAmountExGratia || existingData[0].relief_amount_exgratia,
-                victim.reliefAmountFirstStage || existingData[0].relief_amount_first_stage,
-                victim.additionalRelief ? JSON.stringify(victim.additionalRelief) : existingData[0].additional_relief
-              );
-      
-              const updateQuery = `UPDATE victim_relief SET ${updates.join(', ')} WHERE victim_id = ?`;
-              values.push(victim.victimId);
-      
-              db.query(updateQuery, values, (err) => {
-                if (err) return reject({ step: 'update_victim_relief', error: err });
-      
-                db.query('SELECT * FROM victim_relief WHERE victim_id = ?', [victim.victimId], (err, result) => {
-                  if (err) return reject({ step: 'select_updated_victim_relief', error: err });
-                  updatedData.victims.push(result[0]);
-                  resolve();
-                });
-              });
-            }
-          });
-        });
-      });
-      
+        // Update or insert victim relief data
+        for (const victim of victimsRelief) {
+          if (!victim.victimId) continue;
 
-      const updateProceedingsPromise = new Promise((resolve, reject) => {
-        db.query('SELECT * FROM proceedings_victim_relief WHERE fir_id = ?', [firId], (err, existingData) => {
-          if (err) return reject({ step: 'fetch_proceedings_data', error: err });
+          const [existingData] = await db.promise().query('SELECT * FROM victim_relief WHERE victim_id = ?', [victim.victimId]);
 
-          const updates = [];
-          const values = [];
+          if (existingData.length === 0) {
+            const insertQuery = `INSERT INTO victim_relief (victim_id, victim_name, community_certificate, relief_amount_scst, relief_amount_exgratia, relief_amount_first_stage, additional_relief)
+              VALUES (?, ?, ?, ?, ?, ?, ?)`;
+            const insertValues = [
+              victim.victimId,
+              victim.victimName,
+              victim.communityCertificate,
+              victim.reliefAmountScst,
+              victim.reliefAmountExGratia,
+              victim.reliefAmountFirstStage,
+              victim.additionalRelief ? JSON.stringify(victim.additionalRelief) : null,
+            ];
 
-          updates.push('total_compensation = ?', 'proceedings_file_no = ?', 'proceedings_date = ?', 'proceedings_file = ?');
-          values.push(
-            totalCompensation || existingData[0].total_compensation,
-            proceedingsFileNo || existingData[0].proceedings_file_no,
-            proceedingsDate || existingData[0].proceedings_date,
-            proceedingsFile || existingData[0].proceedings_file
-          );
+            await db.promise().query(insertQuery, insertValues);
+          } else {
+            const updateQuery = `UPDATE victim_relief SET victim_name = ?, community_certificate = ?, relief_amount_scst = ?, relief_amount_exgratia = ?, relief_amount_first_stage = ?, additional_relief = ? WHERE victim_id = ?`;
+            const updateValues = [
+              victim.victimName || existingData[0].victim_name,
+              victim.communityCertificate || existingData[0].community_certificate,
+              victim.reliefAmountScst || existingData[0].relief_amount_scst,
+              victim.reliefAmountExGratia || existingData[0].relief_amount_exgratia,
+              victim.reliefAmountFirstStage || existingData[0].relief_amount_first_stage,
+              victim.additionalRelief ? JSON.stringify(victim.additionalRelief) : existingData[0].additional_relief,
+              victim.victimId,
+            ];
+            await db.promise().query(updateQuery, updateValues);
+          }
+        }
 
-          const updateQuery = `UPDATE proceedings_victim_relief SET ${updates.join(', ')} WHERE fir_id = ?`;
-          values.push(firId);
-
-          db.query(updateQuery, values, (err) => {
-            if (err) return reject({ step: 'update_proceedings_victim_relief', error: err });
-
-            db.query('SELECT * FROM proceedings_victim_relief WHERE fir_id = ?', [firId], (err, result) => {
-              if (err) return reject({ step: 'select_updated_proceedings_victim_relief', error: err });
-              updatedData.proceedings = result[0];
-              resolve();
-            });
-          });
-        });
-      });
-      const attachmentPromises = attachments.map((attachment) => {
-        return new Promise((resolve, reject) => {
-          const attachmentId = generateRandomId(8);
-          const insertQuery = `
-            INSERT INTO attachment_relief (
-              attachment_id, fir_id, file_name, file_path
-            ) VALUES (?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE
-              file_name = VALUES(file_name),
-              file_path = VALUES(file_path)
-          `;
-
-          const values = [
-            attachmentId,
+        // Update proceedings data
+        const [existingProceedings] = await db.promise().query('SELECT * FROM proceedings_victim_relief WHERE fir_id = ?', [firId]);
+        if (existingProceedings.length > 0) {
+          const updateProceedingsQuery = `UPDATE proceedings_victim_relief SET total_compensation = ?, proceedings_file_no = ?, proceedings_date = ?, proceedings_file = ? WHERE fir_id = ?`;
+          const updateProceedingsValues = [
+            totalCompensation || existingProceedings[0].total_compensation,
+            proceedingsFileNo || existingProceedings[0].proceedings_file_no,
+            proceedingsDate || existingProceedings[0].proceedings_date,
+            proceedingsFile || existingProceedings[0].proceedings_file,
             firId,
-            attachment.originalname,
-            attachment.filename,
           ];
+          await db.promise().query(updateProceedingsQuery, updateProceedingsValues);
+        }
 
-          db.query(insertQuery, values, (err) => {
-            if (err) return reject({ step: 'attachment_relief', error: err });
 
-            const selectQuery = 'SELECT * FROM attachment_relief WHERE attachment_id = ?';
-            db.query(selectQuery, [attachmentId], (err, result) => {
-              if (err) return reject({ step: 'select_attachment_relief', error: err });
-              updatedData.attachments.push(result[0]);
-              resolve();
-            });
-          });
-        });
-      });
 
-      Promise.all([...updateVictimPromises, updateProceedingsPromise,...attachmentPromises])
-        .then(() => {
-          db.commit((err) => {
-            if (err) {
-              return db.rollback(() => res.status(500).json({ message: 'Commit error', error: err }));
+        let filename = req.body.attachments;
+        let attachmentFromBody = [];
+        
+   
+        if (Array.isArray(filename)) {
+            attachmentFromBody = filename.map(url => url.split('/').pop());
+        } else if (typeof filename === 'string') {
+            attachmentFromBody = [filename.split('/').pop()]; 
+        }
+        
+  
+        if (attachmentFromBody.length > 0) {
+            for (const filePath of attachmentFromBody) {
+                const [existingAttachment] = await db.promise().query(
+                    'SELECT * FROM attachment_relief WHERE fir_id = ? AND file_path = ?',
+                    [firId, filePath]
+                );
+        
+      
+                if (existingAttachment.length > 0) {
+                    updatedData.attachments.push(existingAttachment[0]);
+                }
             }
-            res.status(200).json({ message: 'Step 5 data updated successfully.', data: updatedData });
-          });
-        })
-        .catch((err) => {
-          db.rollback(() => {
-            console.error('Transaction failed at:', err.step, err.error);
-            res.status(500).json({ message: `Transaction failed at ${err.step}`, error: err.error });
-          });
-        });
+        
+     
+            const placeholders = attachmentFromBody.map(() => '?').join(',');
+        
+            if (placeholders.length > 0) { 
+                await db.promise().query(
+                    `DELETE FROM attachment_relief WHERE fir_id = ? AND file_path NOT IN (${placeholders})`,
+                    [firId, ...attachmentFromBody]
+                );
+            }
+        }
+        
+      
+      
+        for (const attachment of attachments) {
+          const [existingAttachment] = await db.promise().query('SELECT * FROM attachment_relief WHERE fir_id = ? AND file_path = ?', [firId, attachment.filename]);
+          const attachmentId = existingAttachment.length > 0 ? existingAttachment[0].attachment_id : generateRandomId(8);
+
+          if (attachment.originalname) {
+            const insertQuery = `INSERT INTO attachment_relief (attachment_id, fir_id, file_name, file_path)
+              VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE file_name = VALUES(file_name), file_path = VALUES(file_path)`;
+            await db.promise().query(insertQuery, [attachmentId, firId, attachment.originalname, attachment.filename]);
+          } else {
+            const updateQuery = `UPDATE attachment_relief SET file_path = ? WHERE attachment_id = ?`;
+            await db.promise().query(updateQuery, [attachment.filename, attachmentId]);
+          }
+        }
+
+        await db.promise().commit();
+        res.status(200).json({ message: 'Step 5 data updated successfully.', data: updatedData });
+      } catch (error) {
+        await db.promise().rollback();
+        console.error('Transaction failed:', error);
+        res.status(500).json({ message: 'Transaction failed', error });
+      }
     });
   });
 };
