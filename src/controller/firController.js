@@ -1600,15 +1600,21 @@ exports.getFirDetails = async  (req, res) => {
       console.error(err);
       return res.status(500).json({ message: 'Error fetching attachment file paths.', error: err });
     }
-    const filePaths = attachmentResults.map(row => row.file_path).filter(path => path !== null);
-
-
+    const filePaths = attachmentResults
+    .map(row => row.file_path)
+    .filter(path => path !== null);
+  
+  //
+  if (result3 && result3.length > 0) {
     result3[0].file_paths = filePaths;
+  } else {
+    console.error("result3 is undefined or empty");
+  }
                 return res.status(200).json({
                   data: result[0],
                   data1: result1,
                   data2: result2,
-                  data3: result3[0],
+                  data3: result3[0] ,
                   data4: chargesheetData, // Includes attachments array
                   data5: result5,
                   casedetail_one:casedetail_one,
