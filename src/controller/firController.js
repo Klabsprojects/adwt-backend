@@ -2199,6 +2199,8 @@ exports.saveStepSevenAsDraft = (req, res) => {
   const parsedAppealDetailsOne = parseJSON(appealDetailsOne);
   const parsedCaseAppealDetailsTwo = parseJSON(caseAppealDetailsTwo);
 
+        const randomCaseId_1 = generateRandomId(10);
+        console.log(randomCaseId_1)
   if (!ogId) {
     return res.status(400).json({ message: 'Missing required firId field.' });
   }
@@ -2235,30 +2237,31 @@ exports.saveStepSevenAsDraft = (req, res) => {
           parsedTrialDetails.publicProsecutor,
           parsedTrialDetails.prosecutorPhone,
           parsedTrialDetails.firstHearingDate,
-          parsedTrialDetails.judgementAwarded,
+          parsedTrialDetails.judgementAwarded ? parsedTrialDetails.judgementAwarded : 'no',
           parsedTrialDetails.CaseHandledBy,
           parsedTrialDetails.NameOfAdvocate,
           parsedTrialDetails.advocateMobNumber,
-          parsedTrialDetails.judgementAwarded1,
+          parsedTrialDetails.judgementAwarded1 ? parsedTrialDetails.judgementAwarded1 : 'no',
           ogId,
         ]);
       } else {
         await queryAsync(`
-          INSERT INTO case_details (fir_id, court_name, court_district, trial_case_number, public_prosecutor, prosecutor_phone, first_hearing_date, judgement_awarded, CaseHandledBy, NameOfAdvocate, advocateMobNumber, judgementAwarded1)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO case_details (fir_id, case_id, court_name, court_district, trial_case_number, public_prosecutor, prosecutor_phone, first_hearing_date, judgement_awarded, CaseHandledBy, NameOfAdvocate, advocateMobNumber, judgementAwarded1)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
           ogId,
+          randomCaseId_1,
           parsedTrialDetails.courtName,
           parsedTrialDetails.courtDistrict,
           parsedTrialDetails.trialCaseNumber,
           parsedTrialDetails.publicProsecutor,
           parsedTrialDetails.prosecutorPhone,
           parsedTrialDetails.firstHearingDate,
-          parsedTrialDetails.judgementAwarded,
+          parsedTrialDetails.judgementAwarded ? parsedTrialDetails.judgementAwarded : 'no',
           parsedTrialDetails.CaseHandledBy,
           parsedTrialDetails.NameOfAdvocate,
           parsedTrialDetails.advocateMobNumber,
-          parsedTrialDetails.judgementAwarded1,
+          parsedTrialDetails.judgementAwarded1 ? parsedTrialDetails.judgementAwarded1 : 'no',
         ]);
       }
 
@@ -2287,8 +2290,8 @@ if (existingCaseCourtDetailOne.length > 0) {
     parsedTrialDetailsOne.trialCaseNumber,
     parsedTrialDetailsOne.publicProsecutor,
     parsedTrialDetailsOne.prosecutorPhone,
-    parsedTrialDetailsOne.firstHearingDate,
-    parsedTrialDetailsOne.judgementAwarded,
+    parsedTrialDetailsOne.firstHearingDate ? parsedTrialDetailsOne.firstHearingDate : null ,
+    parsedTrialDetailsOne.judgementAwarded ? parsedTrialDetails.judgementAwarded : 'no',
     parsedTrialDetailsOne.judgementNature,
   
     ogId
@@ -2296,17 +2299,18 @@ if (existingCaseCourtDetailOne.length > 0) {
 } else {
   await queryAsync(`
     INSERT INTO case_court_detail_one (
-      fir_id, court_name, court_district, case_number, public_prosecutor, prosecutor_phone, second_hearing_date, judgement_awarded, judgementNature
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      fir_id, case_id, court_name, court_district, case_number, public_prosecutor, prosecutor_phone, second_hearing_date, judgement_awarded, judgementNature
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ? , ?)
   `, [
     ogId,
+    randomCaseId_1,
     parsedTrialDetailsOne.courtName,
     parsedTrialDetailsOne.courtDistrict,
     parsedTrialDetailsOne.trialCaseNumber,
     parsedTrialDetailsOne.publicProsecutor,
     parsedTrialDetailsOne.prosecutorPhone,
-    parsedTrialDetailsOne.firstHearingDate,
-    parsedTrialDetailsOne.judgementAwarded,
+    parsedTrialDetailsOne.firstHearingDate ? parsedTrialDetailsOne.firstHearingDate : null,
+    parsedTrialDetailsOne.judgementAwarded ? parsedTrialDetails.judgementAwarded : 'no',
     parsedTrialDetailsOne.judgementNature,
 
   ]);
@@ -2336,8 +2340,8 @@ if (existingCaseCourtDetailTwo.length > 0) {
     parsedTrialDetailsTwo.trialCaseNumber,
     parsedTrialDetailsTwo.publicProsecutor,
     parsedTrialDetailsTwo.prosecutorPhone,
-    parsedTrialDetailsTwo.firstHearingDate,
-    parsedTrialDetailsTwo.judgementAwarded,
+    parsedTrialDetailsTwo.firstHearingDate ? parsedTrialDetailsTwo.firstHearingDate : null,
+    parsedTrialDetailsTwo.judgementAwarded ? parsedTrialDetails.judgementAwarded : 'no',
     parsedTrialDetailsTwo.judgementNature,
 
     ogId
@@ -2345,17 +2349,18 @@ if (existingCaseCourtDetailTwo.length > 0) {
 } else {
   await queryAsync(`
     INSERT INTO case_court_details_two (
-      fir_id, court_name, court_district, case_number, public_prosecutor, prosecutor_phone, second_hearing_date, judgement_awarded, judgementNature
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      fir_id, court_name, case_id, court_district, case_number, public_prosecutor, prosecutor_phone, second_hearing_date, judgement_awarded, judgementNature
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `, [
     ogId,
     parsedTrialDetailsTwo.courtName,
+    randomCaseId_1,
     parsedTrialDetailsTwo.courtDistrict,
     parsedTrialDetailsTwo.trialCaseNumber,
     parsedTrialDetailsTwo.publicProsecutor,
     parsedTrialDetailsTwo.prosecutorPhone,
-    parsedTrialDetailsTwo.firstHearingDate,
-    parsedTrialDetailsTwo.judgementAwarded,
+    parsedTrialDetailsTwo.firstHearingDate ? parsedTrialDetailsTwo.firstHearingDate : null,
+    parsedTrialDetailsTwo.judgementAwarded ? parsedTrialDetails.judgementAwarded : 'no',
     parsedTrialDetailsTwo.judgementNature,
 
   ]);
@@ -2370,8 +2375,8 @@ if (existingCaseCourtDetailTwo.length > 0) {
       // `, [parsedTrialDetails.judgementNature, parsedTrialDetails.uploadJudgement, ogId]);
 
       await queryAsync(`
-        INSERT INTO fir_trial (fir_id, total_amount_third_stage, proceedings_file_no, proceedings_date, Commissionerate_file)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO fir_trial (fir_id, case_id,  total_amount_third_stage, proceedings_file_no, proceedings_date, Commissionerate_file)
+        VALUES (?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE
           total_amount_third_stage = VALUES(total_amount_third_stage),
           proceedings_file_no = VALUES(proceedings_file_no),
@@ -2379,13 +2384,12 @@ if (existingCaseCourtDetailTwo.length > 0) {
           Commissionerate_file = VALUES(Commissionerate_file)
       `, [
         ogId,
+        randomCaseId_1,
         parsedCompensationDetails.totalCompensation,
         parsedCompensationDetails.proceedingsFileNo,
         parsedCompensationDetails.proceedingsDate,
         parsedCompensationDetails.uploadProceedings,
       ]);
-      const randomCaseId_1 = uuidv4();
-
 
       await queryAsync(`
         INSERT INTO compensation_details
@@ -2426,7 +2430,7 @@ if (existingCaseCourtDetailTwo.length > 0) {
     await queryAsync(`
       INSERT INTO compensation_details_2 
           (fir_id, case_id, total_compensation, proceedings_file_no, proceedings_date, upload_proceedings)
-      VALUES (?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, null)
       ON DUPLICATE KEY UPDATE
           total_compensation = VALUES(total_compensation),
           proceedings_file_no = VALUES(proceedings_file_no),
@@ -2438,7 +2442,7 @@ if (existingCaseCourtDetailTwo.length > 0) {
       parsedCompensationDetails_2.totalCompensation,
       parsedCompensationDetails_2.proceedingsFileNo,
       parsedCompensationDetails_2.proceedingsDate,
-      parsedCompensationDetails_2.uploadProceedings
+      parsedCompensationDetails_2.uploadProceedings ? parsedCompensationDetails_2.uploadProceedings : null 
   ]);
   
       
@@ -2570,7 +2574,12 @@ if (existingCaseCourtDetailTwo.length > 0) {
 const queryAsync = (query, params) => {
   return new Promise((resolve, reject) => {
     db.query(query, params, (err, results) => {
-      if (err) return reject(err);
+      // if (err) return reject(err);
+      if(err) {
+        console.log(err)
+        console.log(query)
+        return reject(err)
+      }
       resolve(results);
     });
   });
