@@ -2,7 +2,7 @@ const db = require('../db');
 
 // Get all police divisions
 const getAllPoliceDivisions = (req, res) => {
-  const query = 'SELECT * FROM police_division';
+  const query = "SELECT * FROM police_division where status = '1'";
   db.query(query, (err, result) => {
     if (err) {
       console.error('Database error:', err);

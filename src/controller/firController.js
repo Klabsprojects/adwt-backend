@@ -173,6 +173,8 @@ exports.handleStepTwo = (req, res) => {
     firNumberSuffix,
     dateOfOccurrence,
     timeOfOccurrence,
+    date_of_occurrence_to,
+    time_of_occurrence_to,
     placeOfOccurrence,
     dateOfRegistration,
     timeOfRegistration,
@@ -186,6 +188,8 @@ exports.handleStepTwo = (req, res) => {
       fir_number_suffix = ?,
       date_of_occurrence = ?,
       time_of_occurrence = ?,
+      date_of_occurrence_to = ?,
+      time_of_occurrence_to = ?,
       place_of_occurrence = ?,
       date_of_registration = ?,
       time_of_registration = ?,
@@ -197,6 +201,8 @@ exports.handleStepTwo = (req, res) => {
     firNumberSuffix,
     dateOfOccurrence,
     timeOfOccurrence,
+    date_of_occurrence_to ? date_of_occurrence_to : null,
+    time_of_occurrence_to ? time_of_occurrence_to : null,
     placeOfOccurrence,
     dateOfRegistration,
     timeOfRegistration,
@@ -1208,7 +1214,7 @@ exports.getPoliceStations = (req, res) => {
 
 // Fetch all Offence Names
 exports.getAllOffences = (req, res) => {
-  const query = 'SELECT offence_name FROM offence';
+  const query = 'SELECT id, offence_name FROM offence';
   db.query(query, (err, results) => {
     if (err) {
       return res.status(500).json({ message: 'Failed to fetch offences', error: err });
@@ -1219,7 +1225,8 @@ exports.getAllOffences = (req, res) => {
 
 // Fetch all Offence Act Names
 exports.getAllOffenceActs = (req, res) => {
-  const query = `
+  const { offence } = req.query;
+  let query = `
     SELECT
       id,
       offence_act_name,
@@ -1232,11 +1239,16 @@ exports.getAllOffenceActs = (req, res) => {
     FROM
       offence_acts
   `;
+  
+  if(offence)
+    query = `SELECT GROUP_CONCAT(offence_act_name) offence_act_names, Max(fir_stage_as_per_act) fir_stage_as_per_act, Max(fir_stage_ex_gratia) fir_stage_ex_gratia, Max(chargesheet_stage_as_per_act) chargesheet_stage_as_per_act, Max(chargesheet_stage_ex_gratia) chargesheet_stage_ex_gratia, Max(final_stage_as_per_act) final_stage_as_per_act, Max(final_stage_ex_gratia) final_stage_ex_gratia FROM offence_acts WHERE offence_id IN (${offence})`;
+    // console.log(offence);
   db.query(query, (err, results) => {
     if (err) {
       return res.status(500).json({ message: 'Failed to fetch offence acts', error: err });
     }
-    res.json(results);
+    if(offence)
+      res.json(results[0]);
   });
 };
 
@@ -1450,74 +1462,42 @@ exports.getVictimsReliefDetails = (req, res) => {
 };
 
 
-exports.getFirDetails = async  (req, res) => {
+exports.getFirDetails = async  (req, res) => 
+{
   const { fir_id } = req.query;
-
-  if (!fir_id) {
-    return res.status(400).json({ message: 'FIR ID is required.' });
-  }
+  if (!fir_id) 
+    return res.status(400).json({ message: 'FIR ID is required.' });  
 
   const query = `SELECT * FROM fir_add WHERE fir_id = ?`;
-
-  db.query(query, [fir_id], (err, result) => {
+  db.query(query, [fir_id], async (err, result) => {
     if (err) {
       console.error(err);
       return res.status(500).json({ message: 'Error fetching FIR details.', error: err });
     }
 
     const query1 = `SELECT * FROM victims WHERE fir_id = ?`;
-
-    db.query(query1, [fir_id], (err, result1) => {
+    db.query(query1, [fir_id], async (err, result1) => {
       if (err) {
         console.error(err);
         return res.status(500).json({ message: 'Error fetching victims.', error: err });
       }
 
       const query2 = `SELECT * FROM accuseds WHERE fir_id = ?`;
-
-      db.query(query2, [fir_id], (err, result2) => {
+      db.query(query2, [fir_id], async (err, result2) => {
         if (err) {
           console.error(err);
           return res.status(500).json({ message: 'Error fetching accused.', error: err });
         }
 
-        const query3 = `
-        SELECT 
-          *
-        FROM 
-          proceedings_victim_relief cd
-        LEFT JOIN 
-          attachment_relief ca ON cd.fir_id = ca.fir_id
-        WHERE 
-          cd.fir_id = ?
-        GROUP BY
-          cd.fir_id,
-          cd.total_compensation,
-          cd.proceedings_file_no,
-          cd.proceedings_file,
-          cd.proceedings_date
-        `;
-
-        db.query(query3, [fir_id], (err, result3) => {
+        const query3 = `SELECT * FROM proceedings_victim_relief cd LEFT JOIN attachment_relief ca ON cd.fir_id = ca.fir_id WHERE cd.fir_id = ? GROUP BY cd.fir_id, cd.total_compensation, cd.proceedings_file_no, cd.proceedings_file, cd.proceedings_date`;
+        db.query(query3, [fir_id], async (err, result3) => {
           if (err) {
             console.error(err);
             return res.status(500).json({ message: 'Error fetching proceedings victim relief.', error: err });
           }
 
-          const query4 = `
-          SELECT  
-            cd.*, 
-            ca.attachment_id AS attachment_id, 
-            ca.file_path
-          FROM 
-            chargesheet_details cd
-          LEFT JOIN 
-            chargesheet_attachments ca ON cd.fir_id = ca.fir_id
-          WHERE 
-            cd.fir_id = ?
-          `;
-
-          db.query(query4, [fir_id], (err, result4) => {
+          const query4 = `SELECT cd.*, ca.attachment_id AS attachment_id, ca.file_path FROM chargesheet_details cd LEFT JOIN chargesheet_attachments ca ON cd.fir_id = ca.fir_id WHERE cd.fir_id = ?`;
+          db.query(query4, [fir_id], async (err, result4) => {
             if (err) {
               console.error(err);
               return res.status(500).json({ message: 'Error fetching chargesheet details.', error: err });
@@ -1541,18 +1521,12 @@ exports.getFirDetails = async  (req, res) => {
                 proceedings_file_no: result4[0].proceedings_file_no,
                 proceedings_date: result4[0].proceedings_date,
                 upload_proceedings_path: result4[0].upload_proceedings_path,
-                attachments: result4
-                  .filter(row => row.attachment_id !== null)
-                  .map(row => ({
-                    id: row.attachment_id,
-                    path: row.file_path
-                  }))
-              };
+                attachments: result4.filter(row => row.attachment_id !== null).map(row => ({id: row.attachment_id, path: row.file_path}))};
             }
 
             const query5 = `SELECT * FROM case_details WHERE fir_id = ?`;
 
-            db.query(query5, [fir_id], (err, result5) => {
+            db.query(query5, [fir_id], async (err, result5) => {
               if (err) {
                 console.error(err);
                 return res.status(500).json({ message: 'Error fetching case details.', error: err });
@@ -1565,73 +1539,61 @@ exports.getFirDetails = async  (req, res) => {
                   return res.status(500).json({ message: 'Error fetching FIR trial.', error: err });
                 }
 
+                const hearingDetailsOne = await queryAsync('SELECT * FROM hearing_details_one WHERE fir_id = ?', [fir_id]);
+                const hearingDetailsTwo = await queryAsync('SELECT * FROM hearing_details_two WHERE fir_id = ?', [fir_id]);
+                const hearingDetailsThree = await queryAsync('SELECT * FROM hearing_details_three WHERE fir_id = ?', [fir_id]);
 
- const hearingDetailsOne = await queryAsync('SELECT * FROM hearing_details_one WHERE fir_id = ?', [fir_id]);
-    const hearingDetailsTwo = await queryAsync('SELECT * FROM hearing_details_two WHERE fir_id = ?', [fir_id]);
-    const hearingDetailsThree = await queryAsync('SELECT * FROM hearing_details_three WHERE fir_id = ?', [fir_id]);
+                // Appeal details (all 3)
+                const appealDetails = await queryAsync('SELECT * FROM appeal_details WHERE fir_id = ?', [fir_id]);
+                const appealDetailsOne = await queryAsync('SELECT * FROM appeal_details_one WHERE fir_id = ?', [fir_id]);
+                const caseAppealDetailsTwo = await queryAsync('SELECT * FROM case_appeal_details_two WHERE fir_id = ?', [fir_id]);
 
-    // Appeal details (all 3)
-    const appealDetails = await queryAsync('SELECT * FROM appeal_details WHERE fir_id = ?', [fir_id]);
-    const appealDetailsOne = await queryAsync('SELECT * FROM appeal_details_one WHERE fir_id = ?', [fir_id]);
-    const caseAppealDetailsTwo = await queryAsync('SELECT * FROM case_appeal_details_two WHERE fir_id = ?', [fir_id]);
+                const compensation_details = await queryAsync(`SELECT * FROM compensation_details WHERE fir_id = ?`, [fir_id]);
+                const compensation_details_1 = await queryAsync(`SELECT * FROM compensation_details_1 WHERE fir_id = ?`, [fir_id]);
+                const compensation_details_2 = await queryAsync(`SELECT * FROM compensation_details_2 WHERE fir_id = ?`, [fir_id]);
+                                           
+                // casedetail_one
+                const casedetail_one = await queryAsync('SELECT * FROM case_court_detail_one WHERE fir_id = ?', [fir_id]);
+                const casedetail_two = await queryAsync('SELECT * FROM case_court_details_two WHERE fir_id = ?', [fir_id]);
 
-    const compensation_details = await queryAsync(`SELECT * FROM compensation_details WHERE fir_id = ?`, [fir_id]);
-    const compensation_details_1 = await queryAsync(`SELECT * FROM compensation_details_1 WHERE fir_id = ?`, [fir_id]);
-    const compensation_details_2 = await queryAsync(`SELECT * FROM compensation_details_2 WHERE fir_id = ?`, [fir_id]);
-    
-    
+                console.log(casedetail_two);
 
-    // 
-    // casedetail_one
-    const casedetail_one = await queryAsync('SELECT * FROM case_court_detail_one WHERE fir_id = ?', [fir_id]);
-    const casedetail_two = await queryAsync('SELECT * FROM case_court_details_two WHERE fir_id = ?', [fir_id]);
-
-    console.log(casedetail_two);
-
-
-    const queryAttachments = `
-    SELECT file_path 
-    FROM attachment_relief 
-    WHERE fir_id = ?
-  `;
-
-  db.query(queryAttachments, [fir_id], (err, attachmentResults) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ message: 'Error fetching attachment file paths.', error: err });
-    }
-    const filePaths = attachmentResults
-    .map(row => row.file_path)
-    .filter(path => path !== null);
-  
-  //
-  if (result3 && result3.length > 0) {
-    result3[0].file_paths = filePaths;
-  } else {
-    console.error("result3 is undefined or empty");
-  }
-                return res.status(200).json({
-                  data: result[0],
-                  data1: result1,
-                  data2: result2,
-                  data3: result3[0] ,
-                  data4: chargesheetData, // Includes attachments array
-                  data5: result5,
-                  casedetail_one:casedetail_one,
-                  casedetail_two:casedetail_two,
-                  data6: result6[0],
-                  hearingDetails: hearingDetailsOne,
-                  hearingDetails_one: hearingDetailsTwo,
-                  hearingDetails_two: hearingDetailsThree,
-                  appeal_details: appealDetails,
-                  appeal_details_one: appealDetailsOne,
-                  case_appeal_details_two: caseAppealDetailsTwo,
-                  compensation_details:compensation_details,
-                  compensation_details_1:compensation_details_1,
-                  compensation_details_2:compensation_details_2,
-             
+                const queryAttachments = `SELECT file_path FROM attachment_relief WHERE fir_id = ?`;
+                db.query(queryAttachments, [fir_id], (err, attachmentResults) => {
+                  if (err) {
+                    console.error(err);
+                    return res.status(500).json({ message: 'Error fetching attachment file paths.', error: err });
+                  }
+                  const filePaths = attachmentResults.map(row => row.file_path).filter(path => path !== null);
+      
+                  
+                  if (result3 && result3.length > 0) 
+                    result3[0].file_paths = filePaths;
+                  else 
+                    console.error("result3 is undefined or empty");
+                  
+                  return res.status(200).json({
+                    data: result[0],
+                    data1: result1,
+                    data2: result2,
+                    data3: result3[0] ,
+                    data4: chargesheetData, // Includes attachments array
+                    data5: result5,
+                    casedetail_one:casedetail_one,
+                    casedetail_two:casedetail_two,
+                    data6: result6[0],
+                    hearingDetails: hearingDetailsOne,
+                    hearingDetails_one: hearingDetailsTwo,
+                    hearingDetails_two: hearingDetailsThree,
+                    appeal_details: appealDetails,
+                    appeal_details_one: appealDetailsOne,
+                    case_appeal_details_two: caseAppealDetailsTwo,
+                    compensation_details:compensation_details,
+                    compensation_details_1:compensation_details_1,
+                    compensation_details_2:compensation_details_2,
+              
+                  });
                 });
-              });
               });
             });
           });
@@ -2291,7 +2253,7 @@ if (existingCaseCourtDetailOne.length > 0) {
     parsedTrialDetailsOne.publicProsecutor,
     parsedTrialDetailsOne.prosecutorPhone,
     parsedTrialDetailsOne.firstHearingDate ? parsedTrialDetailsOne.firstHearingDate : null ,
-    parsedTrialDetailsOne.judgementAwarded ? parsedTrialDetails.judgementAwarded : 'no',
+    parsedTrialDetailsOne.judgementAwarded ? parsedTrialDetailsOne.judgementAwarded : 'no',
     parsedTrialDetailsOne.judgementNature,
   
     ogId
@@ -2310,7 +2272,7 @@ if (existingCaseCourtDetailOne.length > 0) {
     parsedTrialDetailsOne.publicProsecutor,
     parsedTrialDetailsOne.prosecutorPhone,
     parsedTrialDetailsOne.firstHearingDate ? parsedTrialDetailsOne.firstHearingDate : null,
-    parsedTrialDetailsOne.judgementAwarded ? parsedTrialDetails.judgementAwarded : 'no',
+    parsedTrialDetailsOne.judgementAwarded ? parsedTrialDetailsOne.judgementAwarded : 'no',
     parsedTrialDetailsOne.judgementNature,
 
   ]);
