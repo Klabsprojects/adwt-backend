@@ -258,6 +258,10 @@ exports.handleStepThree = (req, res) => {
         console.log(victim.victim_id);
         if (victim.victim_id) {
 
+          console.log(victim.offenceCommitted)
+          console.log(victim.sectionDetails)
+          console.log(JSON.stringify(victim.sectionDetails))
+
           const updateVictimQuery = `
             UPDATE victims
             SET
@@ -275,7 +279,7 @@ exports.handleStepThree = (req, res) => {
               native_district = ?,
               offence_committed = ?,
               scst_sections = ?,
-              sectionsIPC = ?,
+              sectionsIPC_JSON = ?,
               fir_stage_as_per_act = ?,
               fir_stage_ex_gratia = ?,
               chargesheet_stage_as_per_act = ?,
@@ -299,7 +303,7 @@ exports.handleStepThree = (req, res) => {
             victim.nativeDistrict || null,
             JSON.stringify(victim.offenceCommitted || []),
             JSON.stringify(victim.scstSections || []),
-            victim.sectionsIPC || null,
+            JSON.stringify(victim.sectionDetails || []),
             victim.fir_stage_as_per_act || null,
             victim.fir_stage_ex_gratia || null,
             victim.chargesheet_stage_as_per_act || null,
@@ -315,13 +319,17 @@ exports.handleStepThree = (req, res) => {
           });
         } else {
           
+          console.log(victim.offenceCommitted)
+          console.log(victim.sectionDetails)
+          console.log(JSON.stringify(victim.sectionDetails))
+
           const victim_id = generateRandomId(6);
           const insertVictimQuery = `
           INSERT INTO victims (
             victim_id, fir_id, victim_name, victim_age, victim_gender, custom_gender,
             mobile_number, address, victim_pincode, community, caste,
             guardian_name, is_native_district_same, native_district,
-            offence_committed, scst_sections, sectionsIPC, fir_stage_as_per_act,
+            offence_committed, scst_sections, sectionsIPC_JSON, fir_stage_as_per_act,
             fir_stage_ex_gratia, chargesheet_stage_as_per_act,
             chargesheet_stage_ex_gratia, final_stage_as_per_act,
             final_stage_ex_gratia
@@ -344,7 +352,7 @@ exports.handleStepThree = (req, res) => {
             victim.nativeDistrict || null,
             JSON.stringify(victim.offenceCommitted || []),
             JSON.stringify(victim.scstSections || []),
-            victim.sectionsIPC || null,
+            JSON.stringify(victim.sectionDetails || []),
             victim.fir_stage_as_per_act || null,
             victim.fir_stage_ex_gratia || null,
             victim.chargesheet_stage_as_per_act || null,
@@ -602,7 +610,7 @@ exports.handleStepFour = (req, res) => {
                 age = ?, name = ?, gender = ?, custom_gender = ?, address = ?, pincode = ?,
                 community = ?, caste = ?, guardian_name = ?, previous_incident = ?,
                 previous_fir_number = ?, previous_fir_number_suffix = ?, scst_offence = ?,
-                scst_fir_number = ?, scst_fir_number_suffix = ?, antecedents = ?, land_o_issues = ?,
+                scst_fir_number = ?, scst_fir_number_suffix = ?, antecedentsOption = ?, antecedents = ?, landOIssueOption = ?, land_o_issues = ?,
                 gist_of_current_case = ?, upload_fir_copy = ?
               WHERE accused_id = ?;
             `;
@@ -622,7 +630,9 @@ exports.handleStepFour = (req, res) => {
               accused.scstOffence,
               accused.scstFIRNumber,
               accused.scstFIRNumberSuffix,
+              accused.antecedentsOption,
               accused.antecedents,
+              accused.landOIssueOption,
               accused.landOIssues,
               accused.gistOfCurrentCase,
               accused.uploadFIRCopy,
@@ -639,8 +649,8 @@ exports.handleStepFour = (req, res) => {
               INSERT INTO accuseds (
                 accused_id, fir_id, age, name, gender, custom_gender, address, pincode, community, caste,
                 guardian_name, previous_incident, previous_fir_number, previous_fir_number_suffix, scst_offence,
-                scst_fir_number, scst_fir_number_suffix, antecedents, land_o_issues, gist_of_current_case,upload_fir_copy
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?);
+                scst_fir_number, scst_fir_number_suffix, antecedentsOption, antecedents, landOIssueOption, land_o_issues, gist_of_current_case,upload_fir_copy
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
             `;
             const accusedValues = [
               accusedId,
@@ -660,7 +670,9 @@ exports.handleStepFour = (req, res) => {
               accused.scstOffence,
               accused.scstFIRNumber,
               accused.scstFIRNumberSuffix,
+              accused.antecedentsOption,
               accused.antecedents,
+              accused.landOIssueOption,
               accused.landOIssues,
               accused.gistOfCurrentCase,
               accused.uploadFIRCopy,
