@@ -1338,8 +1338,26 @@ exports.getCastesByCommunity = (req, res) => {
 
 
 
+// exports.getAllAccusedCommunities = (req, res) => {
+//   const query = 'SELECT DISTINCT community_name FROM acquest_community_caste';
+//   db.query(query, (err, results) => {
+//     if (err) {
+//       return res.status(500).json({ message: 'Failed to fetch accused communities', error: err });
+//     }
+//     res.json(results.map(row => row.community_name));
+//   });
+// };
+
 exports.getAllAccusedCommunities = (req, res) => {
-  const query = 'SELECT DISTINCT community_name FROM acquest_community_caste';
+  const query = `
+    
+    SELECT DISTINCT community_name COLLATE utf8mb4_general_ci AS community_name FROM acquest_community_caste
+
+    UNION 
+
+    SELECT DISTINCT community_name COLLATE utf8mb4_general_ci AS community_name FROM caste_community
+  `;
+
   db.query(query, (err, results) => {
     if (err) {
       return res.status(500).json({ message: 'Failed to fetch accused communities', error: err });
@@ -1351,7 +1369,14 @@ exports.getAllAccusedCommunities = (req, res) => {
 
 exports.getAccusedCastesByCommunity = (req, res) => {
   const { community } = req.query;
-  const query = 'SELECT caste_name FROM acquest_community_caste WHERE community_name = ?';
+  var TableName = ''
+  if(community == 'ST' || community == 'SC'){
+    TableName = 'caste_community'
+  } else {
+    TableName =  'acquest_community_caste'
+  }
+
+  const query = `SELECT caste_name FROM ${TableName} WHERE community_name = ?`;
   db.query(query, [community], (err, results) => {
     if (err) {
       return res.status(500).json({ message: 'Failed to fetch accused castes', error: err });
