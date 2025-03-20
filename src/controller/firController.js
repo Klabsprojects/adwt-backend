@@ -155,10 +155,10 @@ exports.handleStepOne = (req, res) => {
       officerName,
       officerDesignation,
       officerPhone,
-      firId,
       complaintReceivedType,
       complaintRegisteredBy,
-      complaintReceiverName
+      complaintReceiverName,
+      firId,
     ];
   }
   db.query(query, values, (err) => {
@@ -1557,6 +1557,7 @@ exports.getFirDetails = async  (req, res) =>
             if (result4.length > 0) {
               chargesheetData = {
                 fir_id: result4[0].fir_id,
+                chargesheetDate : result4[0].chargesheetDate,
                 charge_sheet_filed: result4[0].charge_sheet_filed,
                 court_district: result4[0].court_district,
                 court_name: result4[0].court_name,
