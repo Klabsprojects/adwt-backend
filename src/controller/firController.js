@@ -108,6 +108,9 @@ exports.handleStepOne = (req, res) => {
     officerName,
     officerDesignation,
     officerPhone,
+    complaintReceivedType,
+    complaintRegisteredBy,
+    complaintReceiverName
   } = firData;
 
   const policeStation = stationName;
@@ -120,8 +123,8 @@ exports.handleStepOne = (req, res) => {
 
   if (!firId || firId === '1' || firId === null) {
     query = `
-      INSERT INTO fir_add (fir_id, police_city, police_zone, police_range, revenue_district, police_station, officer_name, officer_designation, officer_phone, status, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NOW())
+      INSERT INTO fir_add (fir_id, police_city, police_zone, police_range, revenue_district, police_station, officer_name, officer_designation, officer_phone, status, created_at, complaintReceivedType, complaintRegisteredBy, complaintReceiverName)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NOW(), ?, ? ,?)
     `;
     values = [
       newFirId,
@@ -133,11 +136,14 @@ exports.handleStepOne = (req, res) => {
       officerName,
       officerDesignation,
       officerPhone,
+      complaintReceivedType,
+      complaintRegisteredBy,
+      complaintReceiverName
     ];
   } else {
     query = `
       UPDATE fir_add
-      SET police_city = ?, police_zone = ?, police_range = ?, revenue_district = ?, police_station = ?, officer_name = ?, officer_designation = ?, officer_phone = ?, updated_at = NOW()
+      SET police_city = ?, police_zone = ?, police_range = ?, revenue_district = ?, police_station = ?, officer_name = ?, officer_designation = ?, officer_phone = ?, updated_at = NOW(), complaintReceivedType = ? , complaintRegisteredBy = ? , complaintReceiverName = ?
       WHERE fir_id = ?
     `;
     values = [
@@ -150,6 +156,9 @@ exports.handleStepOne = (req, res) => {
       officerDesignation,
       officerPhone,
       firId,
+      complaintReceivedType,
+      complaintRegisteredBy,
+      complaintReceiverName
     ];
   }
   db.query(query, values, (err) => {
@@ -1074,16 +1083,17 @@ exports.handleStepSix = (req, res) => {
         const query = `
           INSERT INTO chargesheet_details (
             chargesheet_id, fir_id, charge_sheet_filed, court_district,
-            court_name, case_type, case_number, rcs_file_number,
+            court_name, case_type, case_number, chargesheetDate, rcs_file_number,
             rcs_filing_date, mf_copy_path, total_compensation_1,
             proceedings_file_no, proceedings_date, upload_proceedings_path
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           ON DUPLICATE KEY UPDATE
             charge_sheet_filed = VALUES(charge_sheet_filed),
             court_district = VALUES(court_district),
             court_name = VALUES(court_name),
             case_type = VALUES(case_type),
             case_number = VALUES(case_number),
+            chargesheetDate = VALUES(chargesheetDate),
             rcs_file_number = VALUES(rcs_file_number),
             rcs_filing_date = VALUES(rcs_filing_date),
             mf_copy_path = VALUES(mf_copy_path),
@@ -1101,6 +1111,7 @@ exports.handleStepSix = (req, res) => {
           parsedChargesheetDetails.courtName || null,
           parsedChargesheetDetails.caseType || null,
           parsedChargesheetDetails.caseNumber || null,
+          parsedChargesheetDetails.chargesheetDate || null,
           parsedChargesheetDetails.rcsFileNumber || null,
           parsedChargesheetDetails.rcsFilingDate || null,
           parsedChargesheetDetails.mfCopyPath || null,
