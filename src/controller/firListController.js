@@ -23,6 +23,241 @@ exports.getFirList = (req, res) => {
   });
 };
 
+
+// exports.getFirListPaginated = (req, res) => {
+//   const page = parseInt(req.query.page) || 1;
+//   const pageSize = parseInt(req.query.pageSize) || 50;
+//   const offset = (page - 1) * pageSize;
+  
+//   // Build WHERE clause based on provided filters
+//   let whereClause = '';
+//   const params = [];
+  
+//   if (req.query.district) {
+//     whereClause += whereClause ? ' AND ' : ' WHERE ';
+//     whereClause += 'police_city = ?';
+//     params.push(req.query.district);
+//   }
+  
+//   if (req.query.status) {
+//     whereClause += whereClause ? ' AND ' : ' WHERE ';
+//     if (req.query.status == 0) {
+//       whereClause += 'status >= 0 AND status <= 5';
+//     } else {
+//       whereClause += 'status = ?';
+//       params.push(req.query.status);
+//     }
+//   }
+  
+//   // Count total records first
+//   const countQuery = `SELECT COUNT(*) as total FROM fir_add${whereClause}`;
+  
+//   db.query(countQuery, params, (err, countResults) => {
+//     if (err) {
+//       return res.status(500).json({ message: 'Failed to count FIR records', error: err });
+//     }
+    
+//     const total = countResults[0].total;
+    
+//     // If no records, return empty array with count
+//     if (total === 0) {
+//       return res.status(200).json({ 
+//         data: [], 
+//         total: 0, 
+//         page: page,
+//         pageSize: pageSize
+//       });
+//     }
+    
+//     // Get paginated records
+//     const query = `SELECT id, fir_id, police_city, police_station, 
+//                   concat(fir_number,'/',fir_number_suffix) fir_number, 
+//                   created_by, created_at, status, relief_status 
+//                   FROM fir_add${whereClause} 
+//                   ORDER BY created_at DESC 
+//                   LIMIT ? OFFSET ?`;
+    
+//     // Add the LIMIT and OFFSET parameters
+//     const queryParams = [...params, pageSize, offset];
+    
+//     db.query(query, queryParams, (err, results) => {
+//       if (err) {
+//         return res.status(500).json({ message: 'Failed to retrieve FIR list', error: err });
+//       }
+      
+//       // Return paginated data with metadata
+//       res.status(200).json({
+//         data: results,
+//         total: total,
+//         page: page,
+//         pageSize: pageSize
+//       });
+//     });
+//   });
+// };
+
+
+exports.getPoliceRanges = (req, res) => {
+  const query = " SELECT distinct police_range FROM fir_add ";
+  db.query(query, (err, result) => {
+    if (err) {
+      console.error('Database error:', err);
+      return res.status(500).send({ error: 'Database error' });
+    }
+    res.send(result);
+  });
+};
+
+exports.getRevenue_district = (req, res) => {
+  const query = " SELECT distinct revenue_district FROM fir_add ";
+  db.query(query, (err, result) => {
+    if (err) {
+      console.error('Database error:', err);
+      return res.status(500).send({ error: 'Database error' });
+    }
+    res.send(result);
+  });
+};
+
+
+
+exports.getFirListPaginated = (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const pageSize = parseInt(req.query.pageSize) || 10;
+  const offset = (page - 1) * pageSize;
+  
+  // Build WHERE clause based on provided filters
+  let whereClause = '';
+  const params = [];
+  
+  // Add filters to where clause
+  if (req.query.search) {
+    const searchValue = `%${req.query.search}%`;
+    const searchValue2 = `${req.query.search}`;
+    whereClause += ` WHERE (fir_id LIKE ? OR CONCAT(fir_number, '/', fir_number_suffix) = ? OR revenue_district LIKE ? OR police_city LIKE ? OR police_station LIKE ?)`;
+    
+    params.push(searchValue, searchValue2, searchValue, searchValue, searchValue);
+  }
+  
+  if (req.query.district) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'police_city = ?';
+    params.push(req.query.district);
+  }
+
+  if (req.query.police_zone) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'police_zone = ?';
+    params.push(req.query.police_zone);
+  }
+
+  if (req.query.police_range) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'police_range = ?';
+    params.push(req.query.police_range);
+  }
+
+  if (req.query.revenue_district) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'revenue_district = ?';
+    params.push(req.query.revenue_district);
+  }
+
+  if (req.query.complaintReceivedType) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'complaintReceivedType = ?';
+    params.push(req.query.complaintReceivedType);
+  }
+  
+  if (req.query.start_date) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'DATE(date_of_registration) >= ?';
+    params.push(req.query.start_date);
+  }
+  
+  if (req.query.end_date) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'DATE(date_of_registration) <= ?';
+    params.push(req.query.end_date);
+  }
+
+  if (req.query.status) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    if (req.query.status == 0) {
+      whereClause += 'status >= 0 AND status <= 5';
+    } else {
+      whereClause += 'status = ?';
+      params.push(req.query.status);
+    }
+  }
+  
+  // Add other filters as needed
+  
+  // Count total records query
+  const countQuery = `SELECT COUNT(*) as total FROM fir_add${whereClause}`;
+  
+  db.query(countQuery, params, (err, countResults) => {
+    if (err) {
+      return res.status(500).json({ 
+        message: 'Failed to count FIR records', 
+        error: err 
+      });
+    }
+    
+    const total = countResults[0].total;
+    
+    // If no records found
+    if (total === 0) {
+      return res.status(200).json({
+        data: [],
+        total: 0,
+        page: page,
+        pageSize: pageSize,
+        totalPages: 0
+      });
+    }
+    
+    // Calculate total pages
+    const totalPages = Math.ceil(total / pageSize);
+    
+    // Ensure the page is within valid range
+    const validPage = Math.min(Math.max(1, page), totalPages);
+    const validOffset = (validPage - 1) * pageSize;
+    
+    // Get paginated data query
+    const query = `SELECT ROW_NUMBER() OVER () AS row_num, id, fir_id, police_city, police_station, police_zone, police_range, revenue_district,  officer_name, complaintReceivedType, complaintRegisteredBy, complaintReceiverName, officer_designation, place_of_occurrence,  DATE_FORMAT(date_of_registration, '%d/%m/%Y') AS date_of_registration,  nature_of_judgement,
+                  concat(fir_number,'/',fir_number_suffix) fir_number, 
+                  created_by, created_at, status, relief_status 
+                  FROM fir_add${whereClause} 
+                  ORDER BY created_at DESC 
+                  LIMIT ? OFFSET ?`;
+    
+    const queryParams = [...params, pageSize, validOffset];
+
+    console.log(query)
+    console.log(queryParams)
+    
+    db.query(query, queryParams, (err, results) => {
+      if (err) {
+        return res.status(500).json({ 
+          message: 'Failed to retrieve FIR list', 
+          error: err 
+        });
+      }
+      
+      // Return paginated data with metadata
+      res.status(200).json({
+        data: results,
+        total: total,
+        page: validPage,
+        pageSize: pageSize,
+        totalPages: totalPages
+      });
+    });
+  });
+};
+
+
 // view
 exports.getFirView = async (req, res)  => {
   const { fir_id } = req.query;

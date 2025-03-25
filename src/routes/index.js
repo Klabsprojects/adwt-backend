@@ -345,6 +345,9 @@ router.post('/fir/handle-step-five', firController.handleStepFive);
 
 router.post('/fir/save-step-six', firController.handleStepSix);
 router.get('/fir_list/list', firListController.getFirList);
+router.get('/fir_list/list_paginated', firListController.getFirListPaginated);
+router.get('/fir_list/getPoliceRanges', firListController.getPoliceRanges);
+router.get('/fir_list/getRevenue_district', firListController.getRevenue_district);
 router.get('/fir_list/view', firListController.getFirView);
 
 
