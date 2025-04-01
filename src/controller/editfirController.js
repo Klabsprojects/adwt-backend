@@ -2532,7 +2532,8 @@ exports.saveEditStepSevenAsDraft = async (req, res) => {
             CaseHandledBy = ?,
             NameOfAdvocate = ?,
             advocateMobNumber = ?,
-            judgementAwarded1 = ?
+            judgementAwarded1 = ?,
+            Conviction_Type = ?
           WHERE fir_id = ?
         `, [
           parsedTrialDetails.courtName,
@@ -2546,12 +2547,13 @@ exports.saveEditStepSevenAsDraft = async (req, res) => {
           parsedTrialDetails.NameOfAdvocate,
           parsedTrialDetails.advocateMobNumber,
           parsedTrialDetails.judgementAwarded1 ? parsedTrialDetails.judgementAwarded1 : 'no',
+          parsedTrialDetails.Conviction_Type ? parsedTrialDetails.Conviction_Type : null,
           ogId,
         ]);
       } else {
         await queryAsync(`
-          INSERT INTO case_details (fir_id, case_id, court_name, court_district, trial_case_number, public_prosecutor, prosecutor_phone, first_hearing_date, judgement_awarded, CaseHandledBy, NameOfAdvocate, advocateMobNumber, judgementAwarded1)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO case_details (fir_id, case_id, court_name, court_district, trial_case_number, public_prosecutor, prosecutor_phone, first_hearing_date, judgement_awarded, CaseHandledBy, NameOfAdvocate, advocateMobNumber, judgementAwarded1, Conviction_Type)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
           ogId,
           randomCaseId_1,
@@ -2566,6 +2568,7 @@ exports.saveEditStepSevenAsDraft = async (req, res) => {
           parsedTrialDetails.NameOfAdvocate,
           parsedTrialDetails.advocateMobNumber,
           parsedTrialDetails.judgementAwarded1 ? parsedTrialDetails.judgementAwarded1 : 'no',
+          parsedTrialDetails.Conviction_Type ? parsedTrialDetails.Conviction_Type : null,
         ]);
       }
 
@@ -2584,7 +2587,8 @@ if (existingCaseCourtDetailOne.length > 0) {
       prosecutor_phone = ?,
       second_hearing_date = ?,
       judgement_awarded = ?,
-      judgementNature = ?
+      judgementNature = ?,
+      Conviction_Type = ?
   
     WHERE fir_id = ?
   `, [
@@ -2597,14 +2601,15 @@ if (existingCaseCourtDetailOne.length > 0) {
     parsedTrialDetailsOne.firstHearingDate ? parsedTrialDetailsOne.firstHearingDate : null ,
     parsedTrialDetailsOne.judgementAwarded ? parsedTrialDetailsOne.judgementAwarded : 'no',
     parsedTrialDetailsOne.judgementNature,
+    parsedTrialDetailsOne.Conviction_Type ? parsedTrialDetailsOne.Conviction_Type : null ,
   
     ogId
   ]);
 } else {
   await queryAsync(`
     INSERT INTO case_court_detail_one (
-      fir_id, case_id , court_name, court_district, case_number, public_prosecutor, prosecutor_phone, second_hearing_date, judgement_awarded, judgementNature
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      fir_id, case_id , court_name, court_district, case_number, public_prosecutor, prosecutor_phone, second_hearing_date, judgement_awarded, judgementNature, Conviction_Type
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `, [
     ogId,
     randomCaseId_1,
@@ -2616,6 +2621,7 @@ if (existingCaseCourtDetailOne.length > 0) {
     parsedTrialDetailsOne.firstHearingDate ? parsedTrialDetailsOne.firstHearingDate : null ,
     parsedTrialDetailsOne.judgementAwarded ? parsedTrialDetailsOne.judgementAwarded : 'no',
     parsedTrialDetailsOne.judgementNature,
+    parsedTrialDetailsOne.Conviction_Type ? parsedTrialDetailsOne.Conviction_Type : null ,
 
   ]);
 }
@@ -2634,7 +2640,8 @@ if (existingCaseCourtDetailTwo.length > 0) {
       prosecutor_phone = ?,
       second_hearing_date = ?,
       judgement_awarded = ?,
-      judgementNature = ?
+      judgementNature = ?,
+      Conviction_Type = ?
 
     WHERE fir_id = ?
   `, [
@@ -2647,14 +2654,15 @@ if (existingCaseCourtDetailTwo.length > 0) {
     parsedTrialDetailsTwo.firstHearingDate ? parsedTrialDetailsTwo.firstHearingDate : null,
     parsedTrialDetailsTwo.judgementAwarded ? parsedTrialDetailsTwo.judgementAwarded : 'no',
     parsedTrialDetailsTwo.judgementNature,
+    parsedTrialDetailsTwo.Conviction_Type ? parsedTrialDetailsTwo.Conviction_Type : null ,
 
     ogId
   ]);
 } else {
   await queryAsync(`
     INSERT INTO case_court_details_two (
-      fir_id, case_id, court_name, court_district, case_number, public_prosecutor, prosecutor_phone, second_hearing_date, judgement_awarded, judgementNature
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      fir_id, case_id, court_name, court_district, case_number, public_prosecutor, prosecutor_phone, second_hearing_date, judgement_awarded, judgementNature, Conviction_Type
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `, [
     ogId,
     randomCaseId_1,
@@ -2666,6 +2674,7 @@ if (existingCaseCourtDetailTwo.length > 0) {
     parsedTrialDetailsTwo.firstHearingDate ? parsedTrialDetailsTwo.firstHearingDate : null,
     parsedTrialDetailsTwo.judgementAwarded ? parsedTrialDetailsTwo.judgementAwarded : 'no',
     parsedTrialDetailsTwo.judgementNature,
+    parsedTrialDetailsTwo.Conviction_Type ? parsedTrialDetailsTwo.Conviction_Type : null ,
 
   ]);
 }
@@ -2674,9 +2683,10 @@ if (existingCaseCourtDetailTwo.length > 0) {
       await queryAsync(`
         UPDATE fir_add SET
           nature_of_judgement = COALESCE(?, nature_of_judgement),
-          judgement_copy = COALESCE(?, judgement_copy)
+          judgement_copy = COALESCE(?, judgement_copy),
+          Conviction_Type = COALESCE(?, Conviction_Type)
         WHERE fir_id = ?
-      `, [parsedTrialDetails.judgementNature, parsedTrialDetails.uploadJudgement, ogId]);
+      `, [parsedTrialDetails.judgementNature, parsedTrialDetails.uploadJudgement, parsedTrialDetails.Conviction_Type, ogId]);
 
       // await queryAsync(`
       //   INSERT INTO fir_trial (fir_id, total_amount_third_stage, proceedings_file_no, proceedings_date, Commissionerate_file)
@@ -2713,7 +2723,7 @@ if (existingCompensation.length > 0) {
   `, [
       parsedCompensationDetails.totalCompensation,
       parsedCompensationDetails.proceedingsFileNo,
-      parsedCompensationDetails.proceedingsDate,
+      parsedCompensationDetails.proceedingsDate ? parsedCompensationDetails.proceedingsDate : null,
       parsedCompensationDetails.uploadProceedings,
       ogId
   ]);
@@ -2733,7 +2743,7 @@ if (existingCompensation.length > 0) {
       randomCaseId_1,
       parsedCompensationDetails.totalCompensation,
       parsedCompensationDetails.proceedingsFileNo,
-      parsedCompensationDetails.proceedingsDate,
+      parsedCompensationDetails.proceedingsDate ? parsedCompensationDetails.proceedingsDate : null,
       parsedCompensationDetails.uploadProceedings
   ]);
 }
@@ -2750,9 +2760,9 @@ if (existingCompensation.length > 0) {
                   SET total_compensation = ?, proceedings_file_no = ?, proceedings_date = ?, upload_proceedings = ?
                   WHERE fir_id = ?
               `, [
-                  parsedCompensationDetails.totalCompensation,
+                  parsedCompensationDetails.totalCompensation ? parsedCompensationDetails.totalCompensation : null ,
                   parsedCompensationDetails.proceedingsFileNo,
-                  parsedCompensationDetails.proceedingsDate,
+                  parsedCompensationDetails.proceedingsDate ? parsedCompensationDetails.proceedingsDate : null,
                   parsedCompensationDetails.uploadProceedings,
                   ogId,
                  
@@ -2767,7 +2777,7 @@ if (existingCompensation.length > 0) {
                   randomCaseId_1,
                   parsedCompensationDetails.totalCompensation ? parsedCompensationDetails.totalCompensation : 0,
                   parsedCompensationDetails.proceedingsFileNo,
-                  parsedCompensationDetails.proceedingsDate,
+                  parsedCompensationDetails.proceedingsDate ? parsedCompensationDetails.proceedingsDate : null,
                   parsedCompensationDetails.uploadProceedings
               ]);
           }

@@ -7,7 +7,7 @@ const db = require('../db'); // Adjust the path to your actual DB config
 // Controller to fetch all FIRs
 exports.getFirList = (req, res) => {
   //console.log("Fetching FIR list"); // For debugging, this should log to your backend console
-  const query = `SELECT id, fir_id, police_city, police_station, concat(fir_number,'/',fir_number_suffix) fir_number, created_by, created_at, status, relief_status FROM fir_add ORDER BY created_at DESC`; // Fetch all FIRs sorted by created_at
+  const query = `SELECT id, fir_id, police_city, police_station, concat(fir_number,'/',fir_number_suffix) fir_number, created_by, created_at, status, relief_status, Offence_group FROM fir_add ORDER BY created_at DESC`; // Fetch all FIRs sorted by created_at
 
   db.query(query, (err, results) => {
     if (err) {
@@ -163,6 +163,12 @@ exports.getFirListPaginated = (req, res) => {
     params.push(req.query.revenue_district);
   }
 
+  if (req.query.Offence_group) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'Offence_group = ?';
+    params.push(req.query.Offence_group);
+  }
+
   if (req.query.complaintReceivedType) {
     whereClause += whereClause ? ' AND ' : ' WHERE ';
     whereClause += 'complaintReceivedType = ?';
@@ -179,6 +185,15 @@ exports.getFirListPaginated = (req, res) => {
     whereClause += whereClause ? ' AND ' : ' WHERE ';
     whereClause += 'DATE(date_of_registration) <= ?';
     params.push(req.query.end_date);
+  }
+
+  if (req.query.UIPT) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    if (req.query.UIPT == 'UI') {
+      whereClause += 'status <= 5';
+    } else {
+      whereClause += 'status >= 6';
+    }
   }
 
   if (req.query.status) {
@@ -225,7 +240,7 @@ exports.getFirListPaginated = (req, res) => {
     const validOffset = (validPage - 1) * pageSize;
     
     // Get paginated data query
-    const query = `SELECT ROW_NUMBER() OVER () AS row_num, id, fir_id, police_city, police_station, police_zone, police_range, revenue_district,  officer_name, complaintReceivedType, complaintRegisteredBy, complaintReceiverName, officer_designation, place_of_occurrence,  DATE_FORMAT(date_of_registration, '%d/%m/%Y') AS date_of_registration,  nature_of_judgement,
+    const query = `SELECT ROW_NUMBER() OVER () AS row_num, id, fir_id, police_city, police_station, police_zone, police_range, revenue_district,  officer_name, complaintReceivedType, complaintRegisteredBy, complaintReceiverName, officer_designation, place_of_occurrence,  DATE_FORMAT(date_of_registration, '%d/%m/%Y') AS date_of_registration,  nature_of_judgement,  DATE_FORMAT(date_of_occurrence, '%d/%m/%Y') AS date_of_occurrence,  time_of_occurrence, DATE_FORMAT(date_of_occurrence_to, '%d/%m/%Y') AS date_of_occurrence_to, time_of_occurrence_to , time_of_registration, name_of_complainant, Offence_group,
                   concat(fir_number,'/',fir_number_suffix) fir_number, 
                   created_by, created_at, status, relief_status 
                   FROM fir_add${whereClause} 
@@ -234,8 +249,8 @@ exports.getFirListPaginated = (req, res) => {
     
     const queryParams = [...params, pageSize, validOffset];
 
-    console.log(query)
-    console.log(queryParams)
+    // console.log(query)
+    // console.log(queryParams)
     
     db.query(query, queryParams, (err, results) => {
       if (err) {

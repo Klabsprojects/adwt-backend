@@ -332,20 +332,19 @@ exports.handleStepThree = (req, res) => {
           console.log(victim.sectionDetails)
           console.log(JSON.stringify(victim.sectionDetails))
 
-          const victim_id = generateRandomId(6);
+          // const victim_id = generateRandomId(6);
           const insertVictimQuery = `
           INSERT INTO victims (
-            victim_id, fir_id, victim_name, victim_age, victim_gender, custom_gender,
+             fir_id, victim_name, victim_age, victim_gender, custom_gender,
             mobile_number, address, victim_pincode, community, caste,
             guardian_name, is_native_district_same, native_district,
             offence_committed, scst_sections, sectionsIPC_JSON, fir_stage_as_per_act,
             fir_stage_ex_gratia, chargesheet_stage_as_per_act,
             chargesheet_stage_ex_gratia, final_stage_as_per_act,
             final_stage_ex_gratia
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
           const insertVictimValues = [
-            victim_id, 
             firId,
             victim.name || '',
             victim.age || '',
@@ -370,11 +369,12 @@ exports.handleStepThree = (req, res) => {
             victim.final_stage_ex_gratia || null,
           ];
 
-          db.query(insertVictimQuery, insertVictimValues, (err) => {
+          db.query(insertVictimQuery, insertVictimValues, (err, result) => {
             if (err) {
               console.error("Database Insert Error:", err);
               return reject(err);
             }
+            const victim_id = result.insertId;
             resolve({ victim_id });
           });
         }
@@ -653,16 +653,15 @@ exports.handleStepFour = (req, res) => {
               resolve({ accusedId: accused.accusedId });
             });
           } else {
-            const accusedId = generateRandomId(6);
+            // const accusedId = generateRandomId(6);
             const insertAccusedQuery = `
               INSERT INTO accuseds (
-                accused_id, fir_id, age, name, gender, custom_gender, address, pincode, community, caste,
+              fir_id, age, name, gender, custom_gender, address, pincode, community, caste,
                 guardian_name, previous_incident, previous_fir_number, previous_fir_number_suffix, scst_offence,
-                scst_fir_number, scst_fir_number_suffix, antecedentsOption, antecedents, landOIssueOption, land_o_issues, gist_of_current_case,upload_fir_copy
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                scst_fir_number, scst_fir_number_suffix, antecedentsOption, antecedents, landOIssueOption, land_o_issues, gist_of_current_case, upload_fir_copy
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
             `;
             const accusedValues = [
-              accusedId,
               firId,
               accused.age,
               accused.name,
@@ -687,8 +686,9 @@ exports.handleStepFour = (req, res) => {
               accused.uploadFIRCopy,
             ];
 
-          db.query(insertAccusedQuery, accusedValues, (err) => {
+          db.query(insertAccusedQuery, accusedValues, (err,result) => {
             if (err) return reject(err);
+            const accusedId = result.insertId;
             resolve({ accusedId });
           });
         }
@@ -1237,7 +1237,7 @@ exports.getPoliceStations = (req, res) => {
 
 // Fetch all Offence Names
 exports.getAllOffences = (req, res) => {
-  const query = 'SELECT id, offence_name FROM offence';
+  const query = 'SELECT ofe.id, ofe.offence_name ,ofa.offence_act_name FROM offence ofe left join offence_acts ofa on ofa.offence_id = ofe.id';
   db.query(query, (err, results) => {
     if (err) {
       return res.status(500).json({ message: 'Failed to fetch offences', error: err });
@@ -1266,6 +1266,7 @@ exports.getAllOffenceActs = (req, res) => {
   if(offence)
     query = `SELECT GROUP_CONCAT(offence_act_name) offence_act_names, Max(fir_stage_as_per_act) fir_stage_as_per_act, Max(fir_stage_ex_gratia) fir_stage_ex_gratia, Max(chargesheet_stage_as_per_act) chargesheet_stage_as_per_act, Max(chargesheet_stage_ex_gratia) chargesheet_stage_ex_gratia, Max(final_stage_as_per_act) final_stage_as_per_act, Max(final_stage_ex_gratia) final_stage_ex_gratia FROM offence_acts WHERE offence_id IN (${offence})`;
     // console.log(offence);
+    console.log(query)
   db.query(query, (err, results) => {
     if (err) {
       return res.status(500).json({ message: 'Failed to fetch offence acts', error: err });
@@ -1516,7 +1517,7 @@ exports.getFirDetails = async  (req, res) =>
   if (!fir_id) 
     return res.status(400).json({ message: 'FIR ID is required.' });  
 
-  const query = `SELECT * FROM fir_add WHERE fir_id = ?`;
+  const query = `SELECT *,DATE_FORMAT(date_of_occurrence, '%Y-%m-%d') AS date_of_occurrence , DATE_FORMAT(date_of_occurrence_to, '%Y-%m-%d') AS date_of_occurrence_to , DATE_FORMAT(date_of_registration, '%Y-%m-%d') AS date_of_registration FROM fir_add WHERE fir_id = ?`;
   db.query(query, [fir_id], async (err, result) => {
     if (err) {
       console.error(err);
