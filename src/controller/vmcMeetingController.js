@@ -1,5 +1,6 @@
 const db = require('../db'); // DB connection
 
+
 // Get districts and their corresponding subdivisions
 exports.getDistricts = (req, res) => {
   const query = `
@@ -25,6 +26,19 @@ exports.getDistricts = (req, res) => {
 
     // Send the structured data as the response
     res.status(200).json(districtMap);
+  });
+};
+
+
+exports.getUserBasedDistrict = (req, res) => {
+  const { userId } = req.query;
+  const query = ` select district from users where id = ?`;
+  const param = [userId];
+  db.query(query,param, (error, results) => {
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+    res.status(200).json(results);
   });
 };
 
@@ -610,86 +624,116 @@ exports.getAttendeesByLocation = (req, res) => {
 //   }
 // };
 
-
-exports.submitMeeting = async (req, res, uploadedFilePath) => {
+exports.submitMeeting = async (req, res) => {
   console.log('checking if changes affect');
-  const { committee, meeting, district, subdivision, meetingDate, meetingTime, attendees } = req.body;
+  const { committee, meeting, district, subdivision, meetingDate, meetingTime, attendees, Year , uploaded_minutes} = req.body;
 
   console.log("Form data received:", req.body);
 
   // Validate required fields
   if (!committee || !meeting || !meetingDate || !meetingTime) {
+    console.log(committee ,meeting,meetingDate,meetingTime)
     return res.status(400).json({ error: "All fields are required." });
   }
-  if (!district && committee !== 'SLVMC') {
-    return res.status(400).json({ error: "district field is required." });
+
+  var IfExists;
+  var IfExistsParam;
+
+  if(committee == 'DLVMC'){
+    IfExists = ' SELECT * FROM vmc_meeting where year = ? and district = ? and meeting_quarter = ? ';
+    IfExistsParam = [Year, district , meeting]
+  } else if(committee == 'SDLVMC'){
+    IfExists = ' SELECT * FROM vmc_meeting where year = ? and district = ? and meeting_quarter = ? and subdivision = ? ';
+    IfExistsParam = [Year, district , meeting, subdivision]
+  } else if( committee =='SLVMC'){
+    IfExists = ' SELECT * FROM vmc_meeting where year = ? and meeting_quarter = ? ';
+    IfExistsParam = [Year, meeting]
   }
 
+  db.query(IfExists, IfExistsParam, async (err, results) => {
+    if (err) {
+      console.error('Database error:', err);
+      return res.status(500).json({ message: 'Backend Error', error: err });
+    }
+    if (results.length > 0) {
+      console.log('Meeting Exists');
+      return res.status(200).json({ message: "Meeting already exists!" });
+    } else {
+      
+      if (!district && committee !== 'SLVMC') {
+        return res.status(400).json({ error: "district field is required." });
+      }
+
+      
   // Insert the meeting into the database
   const meetingQuery = `
-    INSERT INTO vmc_meeting (meeting_type, meeting_quarter, meeting_date, meeting_time, district, subdivision, uploaded_minutes, meeting_status, uploaded_date)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW());
-  `;
-  const meetingParams = [committee, meeting, meetingDate, meetingTime, district || null, subdivision || null, uploadedFilePath, 'Completed'];
+  INSERT INTO vmc_meeting (year, meeting_type, meeting_quarter, meeting_date, meeting_time, district, subdivision, uploaded_minutes, meeting_status, uploaded_date)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW());
+`;
+const meetingParams = [Year, committee, meeting, meetingDate, meetingTime, district || null, subdivision || null, uploaded_minutes, 'Completed'];
 
+try {
+  console.log("Executing meeting insert query...");
+  const meetingResult = await db.execute(meetingQuery, meetingParams);
+
+  // Retrieve the last inserted ID
+  const meetingId = await new Promise((resolve, reject) => {
+    db.query('SELECT id FROM vmc_meeting ORDER BY id DESC LIMIT 1', (err, results) => {
+      if (err) return reject(err);
+      if (results.length === 0) return reject(new Error("No meeting records found."));
+      resolve(results[0].id);
+    });
+  });
+
+  console.log('Last inserted meeting ID:', meetingId);
+
+  let attendeesData = [];
   try {
-    console.log("Executing meeting insert query...");
-    const meetingResult = await db.execute(meetingQuery, meetingParams);
-
-    // Retrieve the last inserted ID
-    const meetingId = await new Promise((resolve, reject) => {
-      db.query('SELECT id FROM vmc_meeting ORDER BY id DESC LIMIT 1', (err, results) => {
-        if (err) return reject(err);
-        if (results.length === 0) return reject(new Error("No meeting records found."));
-        resolve(results[0].id);
-      });
-    });
-
-    console.log('Last inserted meeting ID:', meetingId);
-
-    let attendeesData = [];
-    try {
-      if (typeof attendees === "string" && attendees.trim() !== "") {
-        attendeesData = JSON.parse(attendees); // Parse string into array
-      }
-
-      if (!Array.isArray(attendeesData)) {
-        attendeesData = []; // Default to an empty array if parsing fails
-      }
-    } catch (parseError) {
-      console.error("Error parsing attendees:", parseError);
-      return res.status(400).json({ error: "Invalid attendees data." });
+    if (typeof attendees === "string" && attendees.trim() !== "") {
+      attendeesData = JSON.parse(attendees); // Parse string into array
     }
 
-    console.log("Parsed attendees data:", attendeesData);
-
-    // If attendeesData is not empty, insert attendee records
-    if (attendeesData.length > 0) {
-      console.log("Inserting attendees data...");
-
-      const attendeeInsertQuery = `
-        INSERT INTO vmc_meeting_attendees (vmc_meeting_id, attendee_id, Attendance)
-        VALUES (?, ?, ?);
-      `;
-
-      const attendeePromises = attendeesData.map((attendee) =>
-        db.execute(attendeeInsertQuery, [meetingId, attendee.id, attendee.attended])
-      );
-
-      await Promise.all(attendeePromises);
-    } else {
-      console.log("No attendees to insert, skipping attendees process.");
+    if (!Array.isArray(attendeesData)) {
+      attendeesData = []; // Default to an empty array if parsing fails
     }
-
-    res.status(200).json({
-      message: "Meeting submitted successfully.",
-      meetingId: meetingId,
-      filePath: uploadedFilePath,
-    });
-  } catch (error) {
-    console.error("Error during meeting submission:", error);
-    res.status(500).json({ error: "Failed to submit meeting data." });
+  } catch (parseError) {
+    console.error("Error parsing attendees:", parseError);
+    return res.status(400).json({ error: "Invalid attendees data." });
   }
+
+  console.log("Parsed attendees data:", attendeesData);
+
+  // If attendeesData is not empty, insert attendee records
+  if (attendeesData.length > 0) {
+    console.log("Inserting attendees data...");
+
+    const attendeeInsertQuery = `
+      INSERT INTO vmc_meeting_attendees (vmc_meeting_id, attendee_id, Attendance)
+      VALUES (?, ?, ?);
+    `;
+
+    const attendeePromises = attendeesData.map((attendee) =>
+      db.execute(attendeeInsertQuery, [meetingId, attendee.id, attendee.attended])
+    );
+
+    await Promise.all(attendeePromises);
+  } else {
+    console.log("No attendees to insert, skipping attendees process.");
+  }
+
+  res.status(200).json({
+    message: "Meeting submitted successfully.",
+    meetingId: meetingId,
+    filePath: uploaded_minutes,
+  });
+} catch (error) {
+  console.error("Error during meeting submission:", error);
+  res.status(500).json({ error: "Failed to submit meeting data." });
+}
+
+    }
+  });
+
 };
 
 
@@ -703,22 +747,25 @@ exports.getAttendeesByDistrictbysk = async (req, res) => {
   let query = 'SELECT * FROM vmc_members';
   const params = [];
 
+  query += ' WHERE status = "1"';
+
   try {
     if (committee === 'SLVMC') {
-      query += ' WHERE level_of_member = ?';
+      query += ' AND level_of_member = ?';
       params.push('State Level');
     } else if (committee === 'SDLVMC') {
-      query += ' WHERE level_of_member = ? AND district = ?';
+      query += ' AND level_of_member = ? AND district = ?';
       params.push('Subdivision', district);
       if (subdivision) {
         query += ' AND subdivision = ?';
         params.push(subdivision);
       }
     } else if (committee === 'DLVMC') {
-      query += ' WHERE level_of_member = ? AND district = ?';
+      query += ' AND level_of_member = ? AND district = ?';
       params.push('District Level', district);
     }
 
+    
     
   db.query(query, params, (err, results) => {
     if (err) {
@@ -739,6 +786,59 @@ exports.getAttendeesByDistrictbysk = async (req, res) => {
 };
 
 
+exports.getAllMeeting = async (req, res) => {
+
+  try {
+    
+    const query = `select * from vmc_meeting where year = '2025'`
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Database error:', err);
+      return res.status(500).json({ message: 'Failed to retrieve data', error: err });
+    }
+    if (results.length === 0) {
+      console.log('No records found');
+      return res.status(200).json({ message: 'No records found' });
+    }
+    // console.log('Query results:', results);
+    res.status(200).json({ Data: results });
+  });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to get vmc Meeting data." });
+  }
+};
+
+
+
+exports.getDistrictLevelMeeting = async (req, res) => {
+
+  try {
+    const { district } = req.query;
+    console.log(district,'district')
+
+    console.log("Form data received:", req.query);
+    
+    const query = `select * from vmc_meeting where year = '2025' and district = ?`
+
+    const param = [district]
+
+  db.query(query, param, (err, results) => {
+    if (err) {
+      console.error('Database error:', err);
+      return res.status(500).json({ message: 'Failed to retrieve data', error: err });
+    }
+    if (results.length === 0) {
+      console.log('No records found');
+      return res.status(200).json({ message: 'No records found' });
+    }
+    // console.log('Query results:', results);
+    res.status(200).json({ Data: results });
+  });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to get vmc Meeting data." });
+  }
+};
 
 
 

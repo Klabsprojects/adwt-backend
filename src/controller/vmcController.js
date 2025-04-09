@@ -4,6 +4,7 @@ const db = require('../db');
 const getAllMembers = async (req, res) => {
   const query = `
     SELECT 
+    id,
       vmc_id, 
       salutation, 
       member_type, 
@@ -13,7 +14,8 @@ const getAllMembers = async (req, res) => {
       subdivision,
       designation, 
       other_designation,  
-      validity_end_date, 
+      DATE_FORMAT(appointment_date, '%Y-%m-%d') AS appointment_date,
+      DATE_FORMAT(validity_end_date, '%Y-%m-%d') AS validityEndDate,
       status, 
       created_at, 
       updated_at 
@@ -21,6 +23,43 @@ const getAllMembers = async (req, res) => {
   `;
 
   db.query(query, (err, data) => {
+    if (err) {
+      console.error('Database error:', err);
+      return res.status(500).send({ error: 'Database error' });
+    }
+    res.send(data);
+  });
+};
+
+const getDistrictLevelMember = async (req, res) => {
+
+  console.log(req.query)
+  const { district } = req.query;
+
+  const query = `
+    SELECT 
+    id,
+      vmc_id, 
+      salutation, 
+      member_type, 
+      name, 
+      level_of_member, 
+      district,
+      subdivision,
+      designation, 
+      other_designation,
+      DATE_FORMAT(appointment_date, '%Y-%m-%d') AS appointment_date,
+      DATE_FORMAT(validity_end_date, '%Y-%m-%d') AS validityEndDate,
+      status, 
+      created_at, 
+      updated_at 
+    FROM vmc_members where district = ?
+  `;
+
+  const param = [district]
+  // console.log(query,district)
+
+  db.query(query,param, (err, data) => {
     if (err) {
       console.error('Database error:', err);
       return res.status(500).send({ error: 'Database error' });
@@ -248,5 +287,6 @@ module.exports = {
   deleteMember,
   toggleMemberStatus,
   getSubdivisionsByDistrict,
-  getAllDistricts
+  getAllDistricts,
+  getDistrictLevelMember
 };

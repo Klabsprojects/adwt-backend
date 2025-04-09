@@ -4,6 +4,7 @@ const router = express.Router();
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+
 const userController = require('../controller/userController');
 const roleController = require('../controller/roleController');
 const authController = require("../controller/authController");
@@ -314,26 +315,17 @@ router.post(
 );
 
 
-router.post(
-  "/vmcmeeting/submit-meeting",
-  upload.single("uploadedFile"), // Multer middleware for file upload
-  (req, res) => {
-    // Validate file upload
-    if (!req.file) {
-      console.error("File upload failed: No file received");
-      return res.status(400).json({ message: "No file uploaded" });
-    }
+// router.post(
+//   "/vmcmeeting/submit-meeting", (req, res) => {
+//     vmcMeetingController.submitMeeting(req, res);
+//   }
+// );
 
-    // Construct the file path for storage in the database
-    const uploadedFilePath = `/uploads/fir_copy/${req.file.filename}`;
-    console.log("Uploaded file path:", uploadedFilePath);
-
-    // Pass the request to the controller, including the file path
-    vmcMeetingController.submitMeeting(req, res, uploadedFilePath);
-  }
-);
+router.post('/vmcmeeting/submit-meeting', vmcMeetingController.submitMeeting);
 
 router.post('/vmcmeeting/getAttendeesByDistrictbysk', vmcMeetingController.getAttendeesByDistrictbysk);
+router.get('/vmcmeeting/getAllMeeting', vmcMeetingController.getAllMeeting);
+router.get('/vmcmeeting/getDistrictLevelMeeting', vmcMeetingController.getDistrictLevelMeeting);
 // Reports
 router.get('/monthlyreport/get-monthly-report-details', monthlyreportController.getmonthlyreportdetail);
 router.get('/monetaryRelief/get-monetary-relief-details', monetaryReliefController.getmonetaryReliefDetails);
@@ -427,6 +419,7 @@ router.get('/user/:id', dashboardController.getUserById);
 
 // Get all users
 router.get('/vmc', vmcController.getAllMembers);
+router.get('/vmc/getDistrictLevelMember', vmcController.getDistrictLevelMember);
 // Create a new user
 router.post('/vmc', vmcController.createMember);
 router.put('/vmc/:id', vmcController.updateMember);
@@ -438,6 +431,7 @@ router.get('/vmc/subdivisions', vmcController.getSubdivisionsByDistrict);
 
 
 router.get('/vmcmeeting/districts', vmcMeetingController.getDistricts);
+router.get('/vmcmeeting/getUserBasedDistrict', vmcMeetingController.getUserBasedDistrict);
 router.get('/vmcmeeting/attendees/', vmcMeetingController.getAttendeesByLocation);
 
 router.get('/dadtwo-dashboard-data', dadtwodashboardController.getDashboardData);
