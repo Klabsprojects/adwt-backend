@@ -322,10 +322,13 @@ router.post(
 // );
 
 router.post('/vmcmeeting/submit-meeting', vmcMeetingController.submitMeeting);
+router.post('/vmcmeeting/updateMeeting', vmcMeetingController.updateMeeting);
 
 router.post('/vmcmeeting/getAttendeesByDistrictbysk', vmcMeetingController.getAttendeesByDistrictbysk);
+router.get('/vmcmeeting/GetMeetingAttendiesById', vmcMeetingController.GetMeetingAttendiesById);
 router.get('/vmcmeeting/getAllMeeting', vmcMeetingController.getAllMeeting);
-router.get('/vmcmeeting/getDistrictLevelMeeting', vmcMeetingController.getDistrictLevelMeeting);
+// router.get('/vmcmeeting/getDistrictLevelMeeting', vmcMeetingController.getDistrictLevelMeeting);
+router.get('/vmcmeeting/GetVmcMeetings', vmcMeetingController.GetVmcMeetings);
 // Reports
 router.get('/monthlyreport/get-monthly-report-details', monthlyreportController.getmonthlyreportdetail);
 router.get('/monetaryRelief/get-monetary-relief-details', monetaryReliefController.getmonetaryReliefDetails);
