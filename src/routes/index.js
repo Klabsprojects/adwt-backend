@@ -336,6 +336,13 @@ router.get('/additionalreport/get-additional-report-details', additionalreportCo
 router.put('/monthlyreport/update-monthly-report-details', monthlyreportController.updateMonthlyReports);
 router.put('/monetaryRelief/update-monetary-relief-details', monetaryReliefController.updateMonetaryRelief);
 
+router.get('/monthlyreport/GetDistrictWisePendingUI', monthlyreportController.GetDistrictWisePendingUI);
+router.get('/monthlyreport/GetReasonWisePendingUI', monthlyreportController.GetReasonWisePendingUI);
+router.get('/monthlyreport/GetCommunity_Certificate_Report', monthlyreportController.GetCommunity_Certificate_Report);
+router.get('/monthlyreport/GetDistrictWisePendingPT', monthlyreportController.GetDistrictWisePendingPT);
+router.get('/monthlyreport/GetConvictionTypeRepot', monthlyreportController.GetConvictionTypeRepot);
+router.put('/monthlyreport/MonnthlyUpdate', monthlyreportController.MonnthlyUpdate);
+
 router.post('/fir/handle-step-five', firController.handleStepFive);
 
 router.post('/fir/save-step-six', firController.handleStepSix);
