@@ -16,23 +16,52 @@ const mysql = require('mysql2');
 // });
 
 
-const db = mysql.createConnection({
-  host: 'localhost', // Your server's IP
-  user: 'onlinetn_adw_usr',            // Your database username
-  password: 'KharW4UQuQhA',  // Your database password
+// const db = mysql.createConnection({
+//   host: 'localhost', // Your server's IP
+//   user: 'onlinetn_adw_usr',            // Your database username
+//   password: 'KharW4UQuQhA',  // Your database password
+//   database: 'onlinetn_adw_database',
+// });
+
+// const db = mysql.createPool({
+//   host: 'localhost',
+//   user: 'root',
+//   password: 'Pass',
+//   database: 'adw',
+//   waitForConnections: true,
+//   connectionLimit: 10,
+//   queueLimit: 0
+// });
+
+const db = mysql.createPool({
+  host: 'localhost',
+  user: 'onlinetn_adw_usr',
+  password: 'KharW4UQuQhA',
   database: 'onlinetn_adw_database',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 });
 
 
 // Connect to the database
-db.connect((err) => {
+// db.connect((err) => {
+//   if (err) {
+//     console.error('Error connecting to the database:', err.message);
+//     return;
+//   }
+//   console.log('Connected to MySQL database');
+
+
+// });
+
+db.getConnection((err, connection) => {
   if (err) {
-    console.error('Error connecting to the database:', err.message);
-    return;
+    console.error('❌ Error connecting to MySQL:', err.message);
+  } else {
+    console.log('✅ Successfully connected to MySQL database');
+    connection.release(); // Always release after use
   }
-  console.log('Connected to MySQL database');
-
-
 });
 
 module.exports = db;

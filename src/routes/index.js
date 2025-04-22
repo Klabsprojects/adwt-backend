@@ -109,6 +109,11 @@ router.post('/apply-filters',
 
 router.get('/dashboard-data', getdashboardController.getDashboardData);
 
+router.post('/GetNatureOfOffenceChartValue', getdashboardController.GetNatureOfOffenceChartValue);
+router.post('/GetAnnualOverViewRegisterdCases', getdashboardController.GetAnnualOverViewRegisterdCases);
+router.post('/GetPendingCaseZoneWise', getdashboardController.GetPendingCaseZoneWise);
+router.post('/ReasonForPendingUICases', getdashboardController.ReasonForPendingUICases);
+
 
 // Get all districts
 router.get('/districts', districtController.getAllDistricts);

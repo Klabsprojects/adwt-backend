@@ -751,3 +751,192 @@ exports.getDashboardData = (req, res) => {
 //       res.json(results);
 //   });
 // };
+
+
+
+
+exports.GetNatureOfOffenceChartValue = (req, res) => {
+  
+  // Build WHERE clause based on provided filters
+  let whereClause = '';
+  const params = [];
+
+
+  if (req.body.district) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'revenue_district = ?';
+    params.push(req.body.district);
+  }
+
+    // Get paginated data query
+    const query = `
+    select count(fir_id) as total , count(case when Offence_group = 'Non GCR' then 1 end) as non_gcr , count(case when Offence_group != 'Non GCR' then 1 end) as gcr from fir_add${whereClause} 
+    `;
+    
+    const queryParams = [...params];
+
+    // console.log(query)
+    // console.log(queryParams)
+    
+    db.query(query, queryParams, (err, results) => {
+      if (err) {
+        return res.status(500).json({ 
+          message: 'Failed to retrieve Chart Data', 
+          error: err 
+        });
+      }
+      
+      res.status(200).json({
+        data: results,
+      });
+    });
+};
+
+
+exports.GetAnnualOverViewRegisterdCases = (req, res) => {
+  const params = [];
+  let whereConditions = [];
+
+  // Optional filter for district
+  if (req.body.district) {
+    whereConditions.push('revenue_district = ?');
+    params.push(req.body.district);
+  }
+
+  // Always include date filter for last 5 years
+  whereConditions.push("date_of_registration >= DATE_FORMAT(NOW() - INTERVAL 4 YEAR, '%Y-01-01')");
+
+  // Build the WHERE clause
+  const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
+  // Query to ensure all 5 years are present
+  const query = `
+    SELECT y.year, IFNULL(f.total_cases, 0) AS total_cases
+    FROM (
+      SELECT YEAR(CURDATE()) AS year
+      UNION ALL SELECT YEAR(CURDATE()) - 1
+      UNION ALL SELECT YEAR(CURDATE()) - 2
+      UNION ALL SELECT YEAR(CURDATE()) - 3
+      UNION ALL SELECT YEAR(CURDATE()) - 4
+    ) y
+    LEFT JOIN (
+      SELECT 
+        YEAR(date_of_registration) AS year,
+        COUNT(*) AS total_cases
+      FROM fir_add
+      ${whereClause}
+      GROUP BY YEAR(date_of_registration)
+    ) f ON y.year = f.year
+    ORDER BY y.year;
+  `;
+
+  db.query(query, params, (err, results) => {
+    if (err) {
+      console.error('Error fetching registered cases:', err);
+      return res.status(500).json({ 
+        message: 'Failed to retrieve registered case data', 
+        error: err 
+      });
+    }
+
+    res.status(200).json({ data: results });
+  });
+};
+
+
+exports.GetPendingCaseZoneWise = (req, res) => {
+  const params = [];
+  let whereClause = 'WHERE status >= 5';
+
+  // Add optional district filter
+  if (req.body.district) {
+    whereClause += ' AND revenue_district = ?';
+    params.push(req.body.district);
+  }
+
+  const query = `
+    WITH RECURSIVE years AS (
+      SELECT 1993 AS year
+      UNION ALL
+      SELECT year + 1 FROM years WHERE year + 1 <= YEAR(CURDATE())
+    ),
+    zones AS (
+      SELECT DISTINCT police_zone AS zone FROM fir_add
+      ${req.body.district ? 'WHERE revenue_district = ?' : ''}
+    ),
+    raw_data AS (
+      SELECT 
+        YEAR(date_of_registration) AS year,
+        police_zone AS zone,
+        COUNT(*) AS total_cases
+      FROM fir_add
+      ${whereClause}
+      GROUP BY YEAR(date_of_registration), police_zone
+    )
+    SELECT 
+      y.year, 
+      z.zone, 
+      IFNULL(r.total_cases, 0) AS total_cases
+    FROM years y
+    CROSS JOIN zones z
+    LEFT JOIN raw_data r ON r.year = y.year AND r.zone = z.zone
+    ORDER BY y.year, z.zone;
+  `;
+
+  // Include the district param again if needed (first time for zones)
+  if (req.body.district) {
+    params.unshift(req.body.district);
+  }
+
+  db.query(query, params, (err, results) => {
+    if (err) {
+      console.error('Error fetching zone-wise pending cases:', err);
+      return res.status(500).json({
+        message: 'Failed to retrieve pending zone-wise cases',
+        error: err
+      });
+    }
+
+    res.status(200).json({ data: results });
+  });
+};
+
+
+exports.ReasonForPendingUICases = (req, res) => {
+  const params = [];
+  let whereConditions = [];
+
+  // Optional filter for district
+  if (req.body.district) {
+    whereConditions.push('fa.revenue_district = ?');
+    params.push(req.body.district);
+  }
+
+  // WHERE clause for FIRs only (NOT for JOIN)
+  const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
+  const query = `
+    SELECT 
+      COALESCE(rr.reason_for_status, 'Reason not updated yet') AS reason,
+      COUNT(*) AS ui_total_cases
+    FROM fir_add fa
+    LEFT JOIN report_reasons rr ON rr.fir_id = fa.fir_id
+    ${whereClause}
+    AND fa.status <= 5
+    GROUP BY reason
+    HAVING ui_total_cases > 0
+    ORDER BY reason;
+  `;
+
+  db.query(query, params, (err, results) => {
+    if (err) {
+      console.error('Error fetching pending case reasons:', err);
+      return res.status(500).json({
+        message: 'Failed to retrieve reason-wise pending case data',
+        error: err
+      });
+    }
+
+    res.status(200).json({ data: results });
+  });
+};
