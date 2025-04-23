@@ -780,6 +780,7 @@ exports.GetNatureOfOffenceChartValue = (req, res) => {
     
     db.query(query, queryParams, (err, results) => {
       if (err) {
+        console.log(err);
         return res.status(500).json({ 
           message: 'Failed to retrieve Chart Data', 
           error: err 
@@ -938,5 +939,308 @@ exports.ReasonForPendingUICases = (req, res) => {
     }
 
     res.status(200).json({ data: results });
+  });
+};
+
+
+
+
+// VMC Dashboard 
+
+
+
+exports.GetVmcDashboardCardsValues = (req, res) => {
+  
+  // Build WHERE clause based on provided filters
+  let whereClause = '';
+  const params = [];
+
+
+  if (req.body.district) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'district = ?';
+    params.push(req.body.district);
+  }
+
+  if (req.body.subdivision) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'subdivision = ?';
+    params.push(req.body.subdivision);
+  }
+
+    // Get paginated data query
+    const query = `
+    select 
+      count(case when meeting_type = 'DLVMC' and meeting_status = 'Completed' then 1 end) as Total_dlvmc_meeting_as_per_quarter ,
+      count(case when meeting_type = 'DLVMC' and meeting_status = 'Completed' and meeting_quarter = 'Jan-Mar' then 1 end) as Total_dlvmc_meting_conducted_q1 ,
+      count(case when meeting_type = 'DLVMC' and meeting_status = 'Completed' and meeting_quarter = 'Apr-Jun' then 1 end) as Total_dlvmc_meting_conducted_q2 ,
+      count(case when meeting_type = 'DLVMC' and meeting_status = 'Completed' and meeting_quarter = 'Jul-Sep' then 1 end) as Total_dlvmc_meting_conducted_q3 ,
+      count(case when meeting_type = 'DLVMC' and meeting_status = 'Completed' and meeting_quarter = 'Oct-Dec' then 1 end) as Total_dlvmc_meting_conducted_q4 ,
+
+      count(case when meeting_type = 'SDLVMC' and meeting_status = 'Completed' then 1 end) as Total_No_of_Sub_dividion_meeting ,
+      count(case when meeting_type = 'SDLVMC' and meeting_status = 'Completed' and meeting_quarter = 'Jan-Mar' then 1 end) as Total_sdlvmc_meting_conducted_q1 ,
+      count(case when meeting_type = 'SDLVMC' and meeting_status = 'Completed' and meeting_quarter = 'Apr-Jun' then 1 end) as Total_sdlvmc_meting_conducted_q2 ,
+      count(case when meeting_type = 'SDLVMC' and meeting_status = 'Completed' and meeting_quarter = 'Jul-Sep' then 1 end) as Total_sdlvmc_meting_conducted_q3 ,
+      count(case when meeting_type = 'SDLVMC' and meeting_status = 'Completed' and meeting_quarter = 'Oct-Dec' then 1 end) as Total_sdlvmc_meting_conducted_q4 
+    
+    from 
+      vmc_meeting${whereClause} 
+    `;
+    
+    const queryParams = [...params];
+
+    // console.log(query)
+    // console.log(queryParams)
+    
+    db.query(query, queryParams, (err, results) => {
+      if (err) {
+        console.log(err);
+        return res.status(500).json({ 
+          message: 'Failed to retrieve Chart Data', 
+          error: err 
+        });
+      }
+      
+      res.status(200).json({
+        data: results,
+      });
+    });
+};
+
+
+exports.GetVmcQuarterlyMeetingStats = (req, res) => {
+  const params = [];
+  let whereConditions = [];
+
+  // Always enforce district and subdivision rules
+  whereConditions.push("(district IS NOT NULL AND district != '')");
+  whereConditions.push("(subdivision IS NULL OR subdivision = '')");
+
+  // Optional filters
+  if (req.body.district) {
+    whereConditions.push("district = ?");
+    params.push(req.body.district);
+  }
+
+  if (req.body.subdivision) {
+    whereConditions.push("subdivision = ?");
+    params.push(req.body.subdivision);
+  }
+
+  const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
+  const query = `
+    SELECT 
+      district,
+      meeting_quarter,
+      meeting_status,
+      COUNT(*) AS count
+    FROM 
+      vmc_meeting
+    ${whereClause}
+    GROUP BY 
+      district, meeting_quarter, meeting_status
+  `;
+
+  db.query(query, params, (err, results) => {
+    if (err) {
+      console.error('Error fetching VMC data:', err);
+      return res.status(500).json({ message: 'Failed to retrieve data', error: err });
+    }
+
+    const data = {};
+
+    results.forEach(row => {
+      const district = row.district;
+      const quarter = getQuarterKey(row.meeting_quarter); // e.g., 'q1'
+      const status = row.meeting_status?.toLowerCase(); // 'completed' or 'pending'
+      const count = row.count;
+
+      if (!data[district]) {
+        data[district] = {
+          q1: { completed: "0", pending: "0" },
+          q2: { completed: "0", pending: "0" },
+          q3: { completed: "0", pending: "0" },
+          q4: { completed: "0", pending: "0" },
+          total: { total_completed: 0 }
+        };
+      }
+
+      if (quarter && (status === 'completed' || status === 'pending')) {
+        data[district][quarter][status] = count.toString();
+
+        if (status === 'completed') {
+          data[district].total.total_completed += count;
+        }
+      }
+    });
+
+    res.status(200).json({ data });
+  });
+};
+
+// Helper to map meeting_quarter values to q1-q4
+function getQuarterKey(quarterStr) {
+  switch (quarterStr) {
+    case 'Jan-Mar': return 'q1';
+    case 'Apr-Jun': return 'q2';
+    case 'Jul-Sep': return 'q3';
+    case 'Oct-Dec': return 'q4';
+    default: return null;
+  }
+}
+
+
+
+exports.GetVmcSubdivisionMeetingStats = (req, res) => {
+  const params = [];
+  let whereConditions = [];
+
+  // Basic conditions
+  whereConditions.push("(district IS NOT NULL AND district != '')");
+  whereConditions.push("(subdivision IS NOT NULL AND subdivision != '')");
+
+  // Optional filter
+  if (req.body.district) {
+    whereConditions.push("district = ?");
+    params.push(req.body.district);
+  }
+
+  if (req.body.subdivision) {
+    whereConditions.push("subdivision = ?");
+    params.push(req.body.subdivision);
+  }
+
+  const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
+  const query = `
+    SELECT 
+      subdivision,
+      meeting_quarter,
+      COUNT(*) AS count
+    FROM 
+      vmc_meeting
+    ${whereClause}
+    GROUP BY 
+      subdivision, meeting_quarter
+  `;
+
+  db.query(query, params, (err, results) => {
+    if (err) {
+      console.error('Error fetching VMC subdivision data:', err);
+      return res.status(500).json({ message: 'Failed to retrieve data', error: err });
+    }
+
+    const data = {};
+
+    results.forEach(row => {
+      const subdivision = row.subdivision;
+      const quarter = getQuarterKey(row.meeting_quarter);
+      const count = row.count;
+
+      if (!data[subdivision]) {
+        data[subdivision] = {
+          q1: 0,
+          q2: 0,
+          q3: 0,
+          q4: 0,
+          total: 0
+        };
+      }
+
+      if (quarter) {
+        data[subdivision][quarter] += count;
+        data[subdivision].total += count;
+      }
+    });
+
+    res.status(200).json({ data });
+  });
+};
+
+// Helper function
+function getQuarterKey(quarterStr) {
+  switch (quarterStr) {
+    case 'Jan-Mar': return 'q1';
+    case 'Apr-Jun': return 'q2';
+    case 'Jul-Sep': return 'q3';
+    case 'Oct-Dec': return 'q4';
+    default: return null;
+  }
+}
+
+exports.GetQuarterWiseMeetingStatus = (req, res) => {
+  const params = [];
+  let whereConditions = [`meeting_type = 'SDLVMC'`];
+
+  // Add district filter if present
+  if (req.body.district) {
+    whereConditions.push('district = ?');
+    params.push(req.body.district);
+  } else {
+    // Common condition
+    whereConditions.push("(district IS NOT NULL AND district != '')");
+  }
+
+  // Add subdivision filter if present
+  if (req.body.subdivision) {
+    whereConditions.push('subdivision = ?');
+    params.push(req.body.subdivision);
+  } else {
+    // Common condition
+    whereConditions.push("(subdivision IS NOT NULL OR subdivision != '')");
+  }
+
+  const whereClause = whereConditions.length ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
+  const query = `
+    SELECT 
+      meeting_quarter AS quarter,
+      meeting_status,
+      COUNT(*) AS count
+    FROM 
+      vmc_meeting
+    ${whereClause}
+    GROUP BY 
+      meeting_quarter, meeting_status
+    ORDER BY 
+      FIELD(meeting_quarter, 'Jan-Mar', 'Apr-Jun', 'Jul-Sep', 'Oct-Dec')
+  `;
+
+  db.query(query, params, (err, results) => {
+    if (err) {
+      console.error('Error fetching quarter-wise data:', err);
+      return res.status(500).json({ 
+        message: 'Failed to retrieve data', 
+        error: err 
+      });
+    }
+
+    // Structure output
+    const formatted = {
+      Q1: { completed: 0, pending: 0 },
+      Q2: { completed: 0, pending: 0 },
+      Q3: { completed: 0, pending: 0 },
+      Q4: { completed: 0, pending: 0 }
+    };
+
+    results.forEach(row => {
+      let key = '';
+      switch (row.quarter) {
+        case 'Jan-Mar': key = 'Q1'; break;
+        case 'Apr-Jun': key = 'Q2'; break;
+        case 'Jul-Sep': key = 'Q3'; break;
+        case 'Oct-Dec': key = 'Q4'; break;
+      }
+
+      if (key) {
+        const status = row.meeting_status.toLowerCase();
+        if (status === 'completed' || status === 'pending') {
+          formatted[key][status] = row.count;
+        }
+      }
+    });
+
+    res.status(200).json({ data: formatted });
   });
 };

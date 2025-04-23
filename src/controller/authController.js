@@ -41,7 +41,17 @@ const login = async (req, res) => {
     console.log('Login request received with email:', email); // Debug log
   
     // Query to check if the user exists
-    const query = 'SELECT * FROM users WHERE email = ?';
+    const query = `
+                SELECT 
+                    us.*, 
+                    rls.access_type 
+                FROM 
+                    users us
+                LEFT JOIN 
+                    roles rls ON rls.role_id = us.role 
+                WHERE 
+                    us.email = ?
+                `;
     db.query(query, [email], (err, results) => {
       if (err) {
         console.error('Database error:', err); // Log detailed database error
@@ -69,6 +79,7 @@ const login = async (req, res) => {
               role: user.role,  // Make sure 'role' is available in your user object
               email: user.email,
               district : user.district,
+              access_type : user.access_type,
               profileImagePath: user.profile_image_path, // Assuming there's a column 'profile_image_path'
             };
   

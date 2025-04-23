@@ -115,6 +115,13 @@ router.post('/GetPendingCaseZoneWise', getdashboardController.GetPendingCaseZone
 router.post('/ReasonForPendingUICases', getdashboardController.ReasonForPendingUICases);
 
 
+// vmc dashboard API
+router.post('/GetVmcDashboardCardsValues', getdashboardController.GetVmcDashboardCardsValues);
+router.post('/GetVmcQuarterlyMeetingStats', getdashboardController.GetVmcQuarterlyMeetingStats);
+router.post('/GetVmcSubdivisionMeetingStats', getdashboardController.GetVmcSubdivisionMeetingStats);
+router.post('/GetQuarterWiseMeetingStatus', getdashboardController.GetQuarterWiseMeetingStatus);
+
+
 // Get all districts
 router.get('/districts', districtController.getAllDistricts);
 
