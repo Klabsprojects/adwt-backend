@@ -187,6 +187,8 @@ exports.handleStepTwo = (req, res) => {
     placeOfOccurrence,
     dateOfRegistration,
     timeOfRegistration,
+    is_case_altered,
+    altered_date
 
   } = firData;
 
@@ -200,6 +202,8 @@ exports.handleStepTwo = (req, res) => {
       date_of_occurrence_to = ?,
       time_of_occurrence_to = ?,
       place_of_occurrence = ?,
+      is_case_altered = ?,
+      altered_date = ?,
       date_of_registration = ?,
       time_of_registration = ?,
       updated_at = NOW()
@@ -213,6 +217,8 @@ exports.handleStepTwo = (req, res) => {
     date_of_occurrence_to ? date_of_occurrence_to : null,
     time_of_occurrence_to ? time_of_occurrence_to : null,
     placeOfOccurrence,
+    is_case_altered,
+    altered_date ? altered_date : null,
     dateOfRegistration,
     timeOfRegistration,
     firId,
