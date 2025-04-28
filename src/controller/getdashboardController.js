@@ -752,7 +752,7 @@ exports.getDashboardData = (req, res) => {
 //   });
 // };
 
-
+// case dashboard
 
 
 exports.GetNatureOfOffenceChartValue = (req, res) => {
@@ -768,9 +768,22 @@ exports.GetNatureOfOffenceChartValue = (req, res) => {
     params.push(req.body.district);
   }
 
+  if (req.body.Status_Of_Case) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+   
+    if(req.body.Status_Of_Case == 'UI'){
+      whereClause += 'fa.status <= 5';
+    } else if(req.body.Status_Of_Case == 'PT'){
+      whereClause += 'fa.status > 5';
+    }
+  }
+
+
+
+
     // Get paginated data query
     const query = `
-    select count(fir_id) as total , count(case when Offence_group = 'Non GCR' then 1 end) as non_gcr , count(case when Offence_group != 'Non GCR' then 1 end) as gcr from fir_add${whereClause} 
+    select count(fa.fir_id) as total , count(case when fa.Offence_group = 'Non GCR' then 1 end) as non_gcr , count(case when fa.Offence_group != 'Non GCR' then 1 end) as gcr from fir_add fa${whereClause} 
     `;
     
     const queryParams = [...params];
@@ -847,7 +860,7 @@ exports.GetAnnualOverViewRegisterdCases = (req, res) => {
 
 exports.GetPendingCaseZoneWise = (req, res) => {
   const params = [];
-  let whereClause = 'WHERE status >= 5';
+  let whereClause = 'WHERE status > 5';
 
   // Add optional district filter
   if (req.body.district) {
@@ -955,6 +968,26 @@ exports.GetVmcDashboardCardsValues = (req, res) => {
   let whereClause = '';
   const params = [];
 
+  if (req.body.quarter) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+  
+    switch (req.body.quarter) {
+      case 'Q1':
+        whereClause += "meeting_quarter = 'Jan-Mar'";
+        break;
+      case 'Q2':
+        whereClause += "meeting_quarter = 'Apr-Jun'";
+        break;
+      case 'Q3':
+        whereClause += "meeting_quarter = 'Jul-Sep'";
+        break;
+      case 'Q4':
+        whereClause += "meeting_quarter = 'Oct-Dec'";
+        break;
+    }
+  }
+
+
 
   if (req.body.district) {
     whereClause += whereClause ? ' AND ' : ' WHERE ';
@@ -968,10 +1001,10 @@ exports.GetVmcDashboardCardsValues = (req, res) => {
     params.push(req.body.subdivision);
   }
 
-    // Get paginated data query
+  // count(case when meeting_type = 'DLVMC' and meeting_status = 'Completed' then 1 end) as Total_dlvmc_meeting_as_per_quarter ,
+  
     const query = `
-    select 
-      count(case when meeting_type = 'DLVMC' and meeting_status = 'Completed' then 1 end) as Total_dlvmc_meeting_as_per_quarter ,
+    select '38' as Total_dlvmc_meeting_as_per_quarter ,
       count(case when meeting_type = 'DLVMC' and meeting_status = 'Completed' and meeting_quarter = 'Jan-Mar' then 1 end) as Total_dlvmc_meting_conducted_q1 ,
       count(case when meeting_type = 'DLVMC' and meeting_status = 'Completed' and meeting_quarter = 'Apr-Jun' then 1 end) as Total_dlvmc_meting_conducted_q2 ,
       count(case when meeting_type = 'DLVMC' and meeting_status = 'Completed' and meeting_quarter = 'Jul-Sep' then 1 end) as Total_dlvmc_meting_conducted_q3 ,
@@ -1017,6 +1050,27 @@ exports.GetVmcQuarterlyMeetingStats = (req, res) => {
   whereConditions.push("(subdivision IS NULL OR subdivision = '')");
 
   // Optional filters
+
+
+  if (req.body.quarter) {
+  
+    switch (req.body.quarter) {
+      case 'Q1':
+        whereConditions.push("meeting_quarter = 'Jan-Mar'");
+        break;
+      case 'Q2':
+        whereConditions.push("meeting_quarter = 'Apr-Jun'");
+        break;
+      case 'Q3':
+        whereConditions.push("meeting_quarter = 'Jul-Sep'");
+        break;
+      case 'Q4':
+        whereConditions.push("meeting_quarter = 'Oct-Dec'");
+        break;
+    }
+  }
+
+
   if (req.body.district) {
     whereConditions.push("district = ?");
     params.push(req.body.district);
@@ -1101,6 +1155,25 @@ exports.GetVmcSubdivisionMeetingStats = (req, res) => {
   whereConditions.push("(subdivision IS NOT NULL AND subdivision != '')");
 
   // Optional filter
+
+  if (req.body.quarter) {
+  
+    switch (req.body.quarter) {
+      case 'Q1':
+        whereConditions.push("meeting_quarter = 'Jan-Mar'");
+        break;
+      case 'Q2':
+        whereConditions.push("meeting_quarter = 'Apr-Jun'");
+        break;
+      case 'Q3':
+        whereConditions.push("meeting_quarter = 'Jul-Sep'");
+        break;
+      case 'Q4':
+        whereConditions.push("meeting_quarter = 'Oct-Dec'");
+        break;
+    }
+  }
+
   if (req.body.district) {
     whereConditions.push("district = ?");
     params.push(req.body.district);
@@ -1174,6 +1247,25 @@ exports.GetQuarterWiseMeetingStatus = (req, res) => {
   let whereConditions = [`meeting_type = 'SDLVMC'`];
 
   // Add district filter if present
+
+  if (req.body.quarter) {
+  
+    switch (req.body.quarter) {
+      case 'Q1':
+        whereConditions.push("meeting_quarter = 'Jan-Mar'");
+        break;
+      case 'Q2':
+        whereConditions.push("meeting_quarter = 'Apr-Jun'");
+        break;
+      case 'Q3':
+        whereConditions.push("meeting_quarter = 'Jul-Sep'");
+        break;
+      case 'Q4':
+        whereConditions.push("meeting_quarter = 'Oct-Dec'");
+        break;
+    }
+  }
+
   if (req.body.district) {
     whereConditions.push('district = ?');
     params.push(req.body.district);
@@ -1243,4 +1335,999 @@ exports.GetQuarterWiseMeetingStatus = (req, res) => {
 
     res.status(200).json({ data: formatted });
   });
+};
+
+
+// relief Dashbboard
+
+
+
+
+exports.GetOffence = (req, res) => {
+  
+  let offenceGroupsList = [
+    "Non GCR",
+    "Murder",
+    "Rape",
+    "POCSO",
+    "Other POCSO",
+    "Gang Rape",
+    "Rape by Cheating",
+    "Arson",
+    "Death",
+    "GCR",
+    "Attempt Murder",
+    "Rape POCSO"
+  ];
+      res.status(200).json({
+        data: offenceGroupsList,
+      });
+};
+
+exports.Relief_Status = (req, res) => {
+  
+  let Status = [
+    "Fir Stage",
+    "ChargeSheet Stage",
+    "Conviction Stage"
+  ];
+    res.status(200).json({
+      data: Status,
+    });
+};
+
+exports.Get_Two_thousand_sixteen_Status = (req, res) => {
+  
+  let Status = [
+    "Before 2016",
+    "After 2016"
+  ];
+    res.status(200).json({
+      data: Status,
+    });
+};
+
+
+exports.ReliefDashboardStaticValues = (req, res) => {
+  
+  // Build WHERE clause based on provided filters
+  let whereClause = '';
+  const params = [];
+
+
+  if (req.body.district) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'revenue_district = ?';
+    params.push(req.body.district);
+  }
+
+    const query = `
+    select 
+      count(*) as Total_Reported_Cases ,
+      count(case when date_of_registration < '2016-04-14' then 1 end) as Case_Register_Before_14_04_2026 ,
+      count(case when date_of_registration >= '2016-04-14' then 1 end) as Case_Register_after_14_04_2026 ,
+      count(case when relief_status <= '1' then 1 end) as Fir_Stage ,
+      count(case when relief_status = '2' then 1 end) as Chargesheet_Stage ,
+      count(case when relief_status = '3' then 1 end) as Conviction_Stage 
+    from 
+      fir_add${whereClause} 
+    `;
+    
+    const queryParams = [...params];
+
+    // console.log(query)
+    // console.log(queryParams)
+    
+    db.query(query, queryParams, (err, results) => {
+      if (err) {
+        console.log(err);
+        return res.status(500).json({ 
+          message: 'Failed to retrieve Data', 
+          error: err 
+        });
+      }
+      
+      res.status(200).json({
+        data: results,
+      });
+    });
+};
+
+
+exports.ReliefDashboardDynamicValues = (req, res) => {
+  
+  // Build WHERE clause based on provided filters
+  let whereClause = '';
+  const params = [];
+
+  if (req.body.Two_thousand_sixteen) {
+    if(req.body.Two_thousand_sixteen == 'Before 2016'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.date_of_registration < '2016-04-14'";
+    } else if(req.body.Two_thousand_sixteen == 'After 2016'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.date_of_registration >= '2016-04-14'";
+    }
+  }
+
+  if (req.body.district) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'fa.revenue_district = ?';
+    params.push(req.body.district);
+  }
+
+  if (req.body.community) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'vm.community = ?';
+    params.push(req.body.community);
+  }
+
+  if (req.body.caste) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'vm.caste = ?';
+    params.push(req.body.caste);
+  }
+
+  if (req.body.offence) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'fa.Offence_group = ?';
+    params.push(req.body.offence);
+  }
+  
+
+  if (req.body.relief_status) {
+    if(req.body.relief_status == 'Fir Stage'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.relief_status = '1'";
+    } else if(req.body.relief_status == 'ChargeSheet Stage'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.relief_status = '2'";
+    } else if(req.body.relief_status == 'Conviction Stage'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.relief_status = '3'";
+    }
+  }
+
+    const query = `
+    select 
+      count(fa.fir_id) as Filtered_Total_Reported_Cases ,
+      count(case when fa.date_of_registration < '2016-04-14' then 1 end) as Filtered_Case_Register_Before_14_04_2026 ,
+      count(case when fa.date_of_registration >= '2016-04-14' then 1 end) as Filtered_Case_Register_after_14_04_2026 ,
+      count(case when fa.relief_status <= '1' then 1 end) as Filtered_Fir_Stage ,
+      count(case when fa.relief_status = '2' then 1 end) as Filtered_Chargesheet_Stage ,
+      count(case when fa.relief_status = '3' then 1 end) as Filtered_Conviction_Stage 
+    from 
+      fir_add fa left join victims vm on vm.fir_id = fa.fir_id  ${whereClause} 
+    `;
+    
+    const queryParams = [...params];
+
+    console.log(query)
+    console.log(queryParams)
+    
+    db.query(query, queryParams, (err, results) => {
+      if (err) {
+        console.log(err);
+        return res.status(500).json({ 
+          message: 'Failed to retrieve Data', 
+          error: err 
+        });
+      }
+      
+      res.status(200).json({
+        data: results,
+      });
+    });
+};
+
+
+
+
+exports.ReliefDashboarTableData = (req, res) => {
+  
+  // Build WHERE clause based on provided filters
+  let whereClause = '';
+  const params = [];
+
+  if (req.body.Two_thousand_sixteen) {
+    if(req.body.Two_thousand_sixteen == 'Before 2016'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.date_of_registration < '2016-04-14'";
+    } else if(req.body.Two_thousand_sixteen == 'After 2016'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.date_of_registration >= '2016-04-14'";
+    }
+  }
+
+  if (req.body.district) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'fa.revenue_district = ?';
+    params.push(req.body.district);
+  }
+
+  if (req.body.community) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'vm.community = ?';
+    params.push(req.body.community);
+  }
+
+  if (req.body.caste) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'vm.caste = ?';
+    params.push(req.body.caste);
+  }
+
+  if (req.body.offence) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'fa.Offence_group = ?';
+    params.push(req.body.offence);
+  }
+
+  if (req.body.relief_status) {
+    if(req.body.relief_status == 'Fir Stage'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.relief_status = '1'";
+    } else if(req.body.relief_status == 'ChargeSheet Stage'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.relief_status = '2'";
+    } else if(req.body.relief_status == 'Conviction Stage'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.relief_status = '3'";
+    }
+  }
+
+    const query = `
+      SELECT 
+        fa.fir_id,
+        fa.revenue_district AS District,
+        CASE 
+          WHEN fa.relief_status = 0 THEN 'Pending 1st Relief'
+          WHEN fa.relief_status = 1 THEN 'Pending 2nd Relief'
+          WHEN fa.relief_status = 2 THEN 'Pending 3rd Relief'
+          WHEN fa.relief_status = 3 THEN 'Completed 3rd Relief'
+          ELSE 'Unknown'
+        END AS Relief_Stage,
+        DATEDIFF(CURDATE(), fa.date_of_registration) AS Pending_Days,
+        'Critical' AS Priority,
+        'Immediate' AS Next_Action_Due
+      FROM 
+        fir_add fa
+      LEFT JOIN 
+        victims vm ON vm.fir_id = fa.fir_id
+      ${whereClause};
+    `;
+    
+    const queryParams = [...params];
+
+    console.log(query)
+    console.log(queryParams)
+    
+    db.query(query, queryParams, (err, results) => {
+      if (err) {
+        console.log(err);
+        return res.status(500).json({ 
+          message: 'Failed to retrieve Data', 
+          error: err 
+        });
+      }
+      
+      res.status(200).json({
+        data: results,
+      });
+    });
+};
+
+
+
+exports.JobStatus = (req, res) => {
+  
+  // Build WHERE clause based on provided filters
+  let whereClause = '';
+  const params = [];
+
+  if (req.body.Two_thousand_sixteen) {
+    if(req.body.Two_thousand_sixteen == 'Before 2016'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.date_of_registration < '2016-04-14'";
+    } else if(req.body.Two_thousand_sixteen == 'After 2016'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.date_of_registration >= '2016-04-14'";
+    }
+  }
+
+  if (req.body.district) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'fa.revenue_district = ?';
+    params.push(req.body.district);
+  }
+
+  if (req.body.offence) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'fa.Offence_group = ?';
+    params.push(req.body.offence);
+  }
+
+  if (req.body.community) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'vm.community = ?';
+    params.push(req.body.community);
+  }
+
+  if (req.body.caste) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'vm.caste = ?';
+    params.push(req.body.caste);
+  }
+
+  if (req.body.relief_status) {
+    if(req.body.relief_status == 'Fir Stage'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.relief_status = '1'";
+    } else if(req.body.relief_status == 'ChargeSheet Stage'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.relief_status = '2'";
+    } else if(req.body.relief_status == 'Conviction Stage'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.relief_status = '3'";
+    }
+  }
+
+    const query = `
+
+    SELECT 
+        COALESCE(SUM(CASE 
+              WHEN a.section LIKE '%Employment%' AND ad.employment_status = 'yes' THEN 1 
+              ELSE 0 
+            END), 0) AS Given,
+        COALESCE(SUM(CASE 
+              WHEN a.section LIKE '%Employment%' AND (ad.employment_status IS NULL OR ad.employment_status != 'yes') THEN 1 
+              ELSE 0 
+            END), 0) AS Pending
+      FROM 
+        fir_add fa
+      LEFT JOIN 
+        additional_relief a ON fa.fir_id = a.fir_id
+      LEFT JOIN 
+        victims vm ON vm.victim_id = a.victim_id
+      LEFT JOIN 
+        additional_relief_details ad ON a.id = ad.additional_relief_id
+      ${whereClause};
+    `;
+    
+    const queryParams = [...params];
+
+    console.log(query)
+    console.log(queryParams)
+    
+    db.query(query, queryParams, (err, results) => {
+      if (err) {
+        console.log(err);
+        return res.status(500).json({ 
+          message: 'Failed to retrieve Data', 
+          error: err 
+        });
+      }
+      
+      res.status(200).json({
+        data: results,
+      });
+    });
+};
+
+
+
+exports.PensionStatus = (req, res) => {
+  
+  // Build WHERE clause based on provided filters
+  let whereClause = '';
+  const params = [];
+
+  if (req.body.Two_thousand_sixteen) {
+    if(req.body.Two_thousand_sixteen == 'Before 2016'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.date_of_registration < '2016-04-14'";
+    } else if(req.body.Two_thousand_sixteen == 'After 2016'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.date_of_registration >= '2016-04-14'";
+    }
+  }
+
+  if (req.body.district) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'fa.revenue_district = ?';
+    params.push(req.body.district);
+  }
+
+  if (req.body.offence) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'fa.Offence_group = ?';
+    params.push(req.body.offence);
+  }
+
+  if (req.body.community) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'vm.community = ?';
+    params.push(req.body.community);
+  }
+
+  if (req.body.caste) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'vm.caste = ?';
+    params.push(req.body.caste);
+  }
+
+  if (req.body.relief_status) {
+    if(req.body.relief_status == 'Fir Stage'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.relief_status = '1'";
+    } else if(req.body.relief_status == 'ChargeSheet Stage'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.relief_status = '2'";
+    } else if(req.body.relief_status == 'Conviction Stage'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.relief_status = '3'";
+    }
+  }
+
+    const query = `
+
+      SELECT 
+        COALESCE(SUM(CASE 
+              WHEN a.section LIKE '%Pension%' AND ad.pension_status = 'yes' THEN 1 
+              ELSE 0 
+            END), 0) AS Given,
+        COALESCE(SUM(CASE 
+              WHEN a.section LIKE '%Pension%' AND (ad.pension_status IS NULL OR ad.pension_status != 'yes') THEN 1 
+              ELSE 0 
+            END), 0) AS Pending
+      FROM 
+        fir_add fa
+      LEFT JOIN 
+        additional_relief a ON fa.fir_id = a.fir_id
+      LEFT JOIN 
+        victims vm ON vm.victim_id = a.victim_id
+      LEFT JOIN 
+        additional_relief_details ad ON a.id = ad.additional_relief_id
+      ${whereClause};
+
+    `;
+    
+    const queryParams = [...params];
+
+    console.log(query)
+    console.log(queryParams)
+    
+    db.query(query, queryParams, (err, results) => {
+      if (err) {
+        console.log(err);
+        return res.status(500).json({ 
+          message: 'Failed to retrieve Data', 
+          error: err 
+        });
+      }
+      
+      res.status(200).json({
+        data: results,
+      });
+    });
+};
+
+
+
+exports.PattaStatus = (req, res) => {
+  
+  // Build WHERE clause based on provided filters
+  let whereClause = '';
+  const params = [];
+
+  if (req.body.Two_thousand_sixteen) {
+    if(req.body.Two_thousand_sixteen == 'Before 2016'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.date_of_registration < '2016-04-14'";
+    } else if(req.body.Two_thousand_sixteen == 'After 2016'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.date_of_registration >= '2016-04-14'";
+    }
+  }
+
+  if (req.body.district) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'fa.revenue_district = ?';
+    params.push(req.body.district);
+  }
+
+  if (req.body.offence) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'fa.Offence_group = ?';
+    params.push(req.body.offence);
+  }
+
+  if (req.body.community) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'vm.community = ?';
+    params.push(req.body.community);
+  }
+
+  if (req.body.caste) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'vm.caste = ?';
+    params.push(req.body.caste);
+  }
+
+  if (req.body.relief_status) {
+    if(req.body.relief_status == 'Fir Stage'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.relief_status = '1'";
+    } else if(req.body.relief_status == 'ChargeSheet Stage'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.relief_status = '2'";
+    } else if(req.body.relief_status == 'Conviction Stage'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.relief_status = '3'";
+    }
+  }
+
+    const query = `
+
+      SELECT 
+        COALESCE(SUM(CASE 
+              WHEN a.section LIKE '%House site Patta%' AND ad.house_site_patta_status = 'yes' THEN 1 
+              ELSE 0 
+            END), 0) AS Given,
+        COALESCE(SUM(CASE 
+              WHEN a.section LIKE '%House site Patta%' AND (ad.house_site_patta_status IS NULL OR ad.house_site_patta_status != 'yes') THEN 1 
+              ELSE 0 
+            END), 0) AS Pending
+      FROM 
+        fir_add fa
+      LEFT JOIN 
+        additional_relief a ON fa.fir_id = a.fir_id
+      LEFT JOIN 
+        victims vm ON vm.victim_id = a.victim_id
+      LEFT JOIN 
+        additional_relief_details ad ON a.id = ad.additional_relief_id
+      ${whereClause};
+    `;
+    
+    const queryParams = [...params];
+
+    console.log(query)
+    console.log(queryParams)
+    
+    db.query(query, queryParams, (err, results) => {
+      if (err) {
+        console.log(err);
+        return res.status(500).json({ 
+          message: 'Failed to retrieve Data', 
+          error: err 
+        });
+      }
+      
+      res.status(200).json({
+        data: results,
+      });
+    });
+};
+
+
+
+exports.EducationConsissionStatus = (req, res) => {
+  
+  // Build WHERE clause based on provided filters
+  let whereClause = '';
+  const params = [];
+
+  if (req.body.Two_thousand_sixteen) {
+    if(req.body.Two_thousand_sixteen == 'Before 2016'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.date_of_registration < '2016-04-14'";
+    } else if(req.body.Two_thousand_sixteen == 'After 2016'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.date_of_registration >= '2016-04-14'";
+    }
+  }
+
+  if (req.body.district) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'fa.revenue_district = ?';
+    params.push(req.body.district);
+  }
+
+  if (req.body.offence) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'fa.Offence_group = ?';
+    params.push(req.body.offence);
+  }
+
+  if (req.body.community) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'vm.community = ?';
+    params.push(req.body.community);
+  }
+
+  if (req.body.caste) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'vm.caste = ?';
+    params.push(req.body.caste);
+  }
+
+  if (req.body.relief_status) {
+    if(req.body.relief_status == 'Fir Stage'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.relief_status = '1'";
+    } else if(req.body.relief_status == 'ChargeSheet Stage'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.relief_status = '2'";
+    } else if(req.body.relief_status == 'Conviction Stage'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.relief_status = '3'";
+    }
+  }
+
+    const query = `
+
+      SELECT 
+        COALESCE(SUM(CASE 
+              WHEN a.section LIKE '%Education concession%' AND ad.education_concession_status = 'yes' THEN 1 
+              ELSE 0 
+            END), 0) AS Given,
+        COALESCE(SUM(CASE 
+              WHEN a.section LIKE '%Education concession%' AND (ad.education_concession_status IS NULL OR ad.education_concession_status != 'yes') THEN 1 
+              ELSE 0 
+            END), 0) AS Pending
+      FROM 
+        fir_add fa
+      LEFT JOIN 
+        additional_relief a ON fa.fir_id = a.fir_id
+      LEFT JOIN 
+        victims vm ON vm.victim_id = a.victim_id
+      LEFT JOIN 
+        additional_relief_details ad ON a.id = ad.additional_relief_id
+      ${whereClause};
+      
+    `;
+    
+    const queryParams = [...params];
+
+    console.log(query)
+    console.log(queryParams)
+    
+    db.query(query, queryParams, (err, results) => {
+      if (err) {
+        console.log(err);
+        return res.status(500).json({ 
+          message: 'Failed to retrieve Data', 
+          error: err 
+        });
+      }
+      
+      res.status(200).json({
+        data: results,
+      });
+    });
+};
+
+
+
+exports.DistrictWiseGivenStatus = (req, res) => {
+  
+  // Build WHERE clause based on provided filters
+  let whereClause = '';
+  const params = [];
+
+  if (req.body.Two_thousand_sixteen) {
+    if(req.body.Two_thousand_sixteen == 'Before 2016'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.date_of_registration < '2016-04-14'";
+    } else if(req.body.Two_thousand_sixteen == 'After 2016'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.date_of_registration >= '2016-04-14'";
+    }
+  }
+
+  if (req.body.district) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'fa.revenue_district = ?';
+    params.push(req.body.district);
+  }
+
+  if (req.body.offence) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'fa.Offence_group = ?';
+    params.push(req.body.offence);
+  }
+
+  if (req.body.community) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'vm.community = ?';
+    params.push(req.body.community);
+  }
+
+  if (req.body.caste) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'vm.caste = ?';
+    params.push(req.body.caste);
+  }
+
+  if (req.body.relief_status) {
+    if(req.body.relief_status == 'Fir Stage'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.relief_status = '1'";
+    } else if(req.body.relief_status == 'ChargeSheet Stage'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.relief_status = '2'";
+    } else if(req.body.relief_status == 'Conviction Stage'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.relief_status = '3'";
+    }
+  }
+
+    const query = `
+
+      SELECT 
+      fa.revenue_district,
+        COALESCE(SUM(CASE 
+              WHEN a.section LIKE '%Employment%' AND ad.employment_status = 'yes' THEN 1 
+              ELSE 0 
+            END), 0) AS job_Given,
+
+        COALESCE(SUM(CASE 
+              WHEN a.section LIKE '%Pension%' AND ad.pension_status = 'yes' THEN 1 
+              ELSE 0 
+            END), 0) AS Pension_Given,
+
+        COALESCE(SUM(CASE 
+              WHEN a.section LIKE '%House site Patta%' AND ad.house_site_patta_status = 'yes' THEN 1 
+              ELSE 0 
+            END), 0) AS Patta_Given,
+
+        COALESCE(SUM(CASE 
+              WHEN a.section LIKE '%Education concession%' AND ad.education_concession_status = 'yes' THEN 1 
+              ELSE 0 
+            END), 0) AS Education_Given
+
+      FROM 
+        fir_add fa
+      LEFT JOIN 
+        additional_relief a ON fa.fir_id = a.fir_id
+      LEFT JOIN 
+        victims vm ON vm.victim_id = a.victim_id
+      LEFT JOIN 
+        additional_relief_details ad ON a.id = ad.additional_relief_id
+      ${whereClause} 
+      GROUP BY 
+        fa.revenue_district
+      
+    `;
+    
+    const queryParams = [...params];
+
+    console.log(query)
+    console.log(queryParams)
+    
+    db.query(query, queryParams, (err, results) => {
+      if (err) {
+        console.log(err);
+        return res.status(500).json({ 
+          message: 'Failed to retrieve Data', 
+          error: err 
+        });
+      }
+      
+      res.status(200).json({
+        data: results,
+      });
+    });
+};
+
+
+
+
+exports.DistrictWisePedingStatus = (req, res) => {
+  
+  // Build WHERE clause based on provided filters
+  let whereClause = '';
+  const params = [];
+
+  if (req.body.Two_thousand_sixteen) {
+    if(req.body.Two_thousand_sixteen == 'Before 2016'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.date_of_registration < '2016-04-14'";
+    } else if(req.body.Two_thousand_sixteen == 'After 2016'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.date_of_registration >= '2016-04-14'";
+    }
+  }
+
+  if (req.body.district) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'fa.revenue_district = ?';
+    params.push(req.body.district);
+  }
+
+  if (req.body.offence) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'fa.Offence_group = ?';
+    params.push(req.body.offence);
+  }
+
+  if (req.body.community) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'vm.community = ?';
+    params.push(req.body.community);
+  }
+
+  if (req.body.caste) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'vm.caste = ?';
+    params.push(req.body.caste);
+  }
+
+  if (req.body.relief_status) {
+    if(req.body.relief_status == 'Fir Stage'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.relief_status = '1'";
+    } else if(req.body.relief_status == 'ChargeSheet Stage'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.relief_status = '2'";
+    } else if(req.body.relief_status == 'Conviction Stage'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.relief_status = '3'";
+    }
+  }
+
+    const query = `
+
+      SELECT 
+      fa.revenue_district,
+
+        COALESCE(SUM(CASE 
+              WHEN a.section LIKE '%Employment%' AND (ad.employment_status IS NULL OR ad.employment_status != 'yes') THEN 1 
+              ELSE 0 
+            END), 0) AS Job_Pending,
+
+        COALESCE(SUM(CASE 
+              WHEN a.section LIKE '%Pension%' AND (ad.pension_status IS NULL OR ad.pension_status != 'yes') THEN 1 
+              ELSE 0 
+            END), 0) AS Pension_Pending,
+
+        COALESCE(SUM(CASE 
+              WHEN a.section LIKE '%House site Patta%' AND (ad.house_site_patta_status IS NULL OR ad.house_site_patta_status != 'yes') THEN 1 
+              ELSE 0 
+            END), 0) AS Patta_Pending,
+
+        COALESCE(SUM(CASE 
+              WHEN a.section LIKE '%Education concession%' AND (ad.education_concession_status IS NULL OR ad.education_concession_status != 'yes') THEN 1 
+              ELSE 0 
+            END), 0) AS Education_Pending
+
+      FROM 
+        fir_add fa
+      LEFT JOIN 
+        additional_relief a ON fa.fir_id = a.fir_id
+      LEFT JOIN 
+        victims vm ON vm.victim_id = a.victim_id
+      LEFT JOIN 
+        additional_relief_details ad ON a.id = ad.additional_relief_id
+      ${whereClause} 
+      GROUP BY 
+        fa.revenue_district
+      
+    `;
+    
+    const queryParams = [...params];
+
+    console.log(query)
+    console.log(queryParams)
+    
+    db.query(query, queryParams, (err, results) => {
+      if (err) {
+        console.log(err);
+        return res.status(500).json({ 
+          message: 'Failed to retrieve Data', 
+          error: err 
+        });
+      }
+      
+      res.status(200).json({
+        data: results,
+      });
+    });
+};
+
+
+
+
+exports.ReliefStatus_donut_chart = (req, res) => {
+  
+  // Build WHERE clause based on provided filters
+  let whereClause = '';
+  const params = [];
+
+  if (req.body.Two_thousand_sixteen) {
+    if(req.body.Two_thousand_sixteen == 'Before 2016'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.date_of_registration < '2016-04-14'";
+    } else if(req.body.Two_thousand_sixteen == 'After 2016'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.date_of_registration >= '2016-04-14'";
+    }
+  }
+
+  if (req.body.district) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'fa.revenue_district = ?';
+    params.push(req.body.district);
+  }
+
+  if (req.body.offence) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'fa.Offence_group = ?';
+    params.push(req.body.offence);
+  }
+
+  if (req.body.community) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'vm.community = ?';
+    params.push(req.body.community);
+  }
+
+  if (req.body.caste) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'vm.caste = ?';
+    params.push(req.body.caste);
+  }
+
+  if (req.body.relief_status) {
+    if(req.body.relief_status == 'Fir Stage'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.relief_status = '1'";
+    } else if(req.body.relief_status == 'ChargeSheet Stage'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.relief_status = '2'";
+    } else if(req.body.relief_status == 'Conviction Stage'){
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += "fa.relief_status = '3'";
+    }
+  }
+
+    const query = `
+
+      SELECT 
+        COALESCE(SUM(CASE WHEN fa.relief_status = 0 THEN 1 ELSE 0 END), 0) AS Pending_1st_Relief,
+        
+        COALESCE(SUM(CASE WHEN fa.relief_status = 1 THEN 1 ELSE 0 END), 0) AS Pending_2nd_Relief,
+
+        COALESCE(SUM(CASE WHEN fa.relief_status = 2 THEN 1 ELSE 0 END), 0) AS Pending_3rd_Relief
+
+      FROM
+        fir_add fa
+      LEFT JOIN
+        additional_relief a ON fa.fir_id = a.fir_id
+      LEFT JOIN
+        victims vm ON vm.victim_id = a.victim_id
+      LEFT JOIN
+        additional_relief_details ad ON a.id = ad.additional_relief_id
+      ${whereClause} 
+      
+    `;
+    
+    const queryParams = [...params];
+
+    console.log(query)
+    console.log(queryParams)
+    
+    db.query(query, queryParams, (err, results) => {
+      if (err) {
+        console.log(err);
+        return res.status(500).json({ 
+          message: 'Failed to retrieve Data', 
+          error: err 
+        });
+      }
+      
+      res.status(200).json({
+        data: results,
+      });
+    });
 };

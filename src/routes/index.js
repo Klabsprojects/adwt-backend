@@ -122,6 +122,22 @@ router.post('/GetVmcSubdivisionMeetingStats', getdashboardController.GetVmcSubdi
 router.post('/GetQuarterWiseMeetingStatus', getdashboardController.GetQuarterWiseMeetingStatus);
 
 
+// Relief Dashboard API
+router.get('/GetOffence', getdashboardController.GetOffence);
+router.get('/Relief_Status', getdashboardController.Relief_Status);
+router.get('/Get_Two_thousand_sixteen_Status', getdashboardController.Get_Two_thousand_sixteen_Status);
+router.post('/ReliefDashboardStaticValues', getdashboardController.ReliefDashboardStaticValues);
+router.post('/ReliefDashboardDynamicValues', getdashboardController.ReliefDashboardDynamicValues);
+router.post('/ReliefDashboarTableData', getdashboardController.ReliefDashboarTableData);
+router.post('/JobStatus', getdashboardController.JobStatus);
+router.post('/PensionStatus', getdashboardController.PensionStatus);
+router.post('/PattaStatus', getdashboardController.PattaStatus);
+router.post('/EducationConsissionStatus', getdashboardController.EducationConsissionStatus);
+router.post('/DistrictWiseGivenStatus', getdashboardController.DistrictWiseGivenStatus);
+router.post('/DistrictWisePedingStatus', getdashboardController.DistrictWisePedingStatus);
+router.post('/ReliefStatus_donut_chart', getdashboardController.ReliefStatus_donut_chart);
+
+
 // Get all districts
 router.get('/districts', districtController.getAllDistricts);
 
