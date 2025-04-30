@@ -107,8 +107,15 @@ router.post('/apply-filters',
   getdashboardController.getDashboardData,
 );
 
+// case dashboard
 router.get('/dashboard-data', getdashboardController.getDashboardData);
-
+router.get('/Zone_Filter_Data', getdashboardController.Zone_Filter_Data);
+router.post('/GetCaseDashboardCardStaticValue', getdashboardController.GetCaseDashboardCardStaticValue);
+router.post('/GetCaseDashboardCardDynamicValue', getdashboardController.GetCaseDashboardCardDynamicValue);
+router.post('/GetPTPendencyCasesGroupedByYears', getdashboardController.GetPTPendencyCasesGroupedByYears);
+router.post('/GetUIPendencyCasesGrouped', getdashboardController.GetUIPendencyCasesGrouped);
+router.post('/GetUIDistrictWiseHeatMap', getdashboardController.GetUIDistrictWiseHeatMap);
+router.post('/GetPTDistrictWiseHeatMap', getdashboardController.GetPTDistrictWiseHeatMap);
 router.post('/GetNatureOfOffenceChartValue', getdashboardController.GetNatureOfOffenceChartValue);
 router.post('/GetAnnualOverViewRegisterdCases', getdashboardController.GetAnnualOverViewRegisterdCases);
 router.post('/GetPendingCaseZoneWise', getdashboardController.GetPendingCaseZoneWise);

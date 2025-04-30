@@ -755,6 +755,443 @@ exports.getDashboardData = (req, res) => {
 // case dashboard
 
 
+
+exports.Zone_Filter_Data = (req, res) => {
+  
+  const params = [];
+
+    const query = `
+    select 
+      police_zone
+    from 
+      fir_add
+    group by police_zone`;
+    
+    const queryParams = [...params];
+
+    // console.log(query)
+    // console.log(queryParams)
+    
+    db.query(query, queryParams, (err, results) => {
+      if (err) {
+        console.log(err);
+        return res.status(500).json({ 
+          message: 'Failed to retrieve Data', 
+          error: err 
+        });
+      }
+      
+      res.status(200).json({
+        data: results,
+      });
+    });
+};
+
+
+exports.GetCaseDashboardCardStaticValue = (req, res) => {
+  
+  // Build WHERE clause based on provided filters
+  const whereConditions = [];
+  const params = [];
+
+  if (req.body.district) {
+    whereConditions.push('fa.revenue_district = ?');
+    params.push(req.body.district);
+  }
+
+  const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : '';
+
+  // SQL Query
+  const query = `
+    SELECT 
+      COUNT(fa.fir_id) AS Static_Total_Reported_Cases,
+      COUNT(CASE WHEN fa.status <= 5 THEN 1 END) AS Static_Total_UI_Cases,
+      COUNT(CASE WHEN fa.status > 5 THEN 1 END) AS Static_Total_PT_Cases,
+      COUNT(CASE WHEN fa.nature_of_judgement = 'acquitted' THEN 1 END) AS Static_Total_Acquitted,
+      COUNT(CASE WHEN fa.nature_of_judgement = 'convicted' THEN 1 END) AS Static_Total_Convicted,
+      COUNT(CASE WHEN YEAR(fa.date_of_registration) = YEAR(NOW()) THEN 1 END) AS Static_Total_FIR_currentyear,
+      COUNT(CASE WHEN fa.status = 6 THEN 1 END) AS Static_Total_Chargesheeted_Cases,
+      COUNT(CASE WHEN fa.status = 6 THEN 1 END) AS Static_Total_Reffered_Chargesheeted_Cases,
+      COUNT(CASE WHEN fa.nature_of_judgement != '' AND fa.nature_of_judgement IS NOT NULL THEN 1 END) AS Static_Total_Judgements
+    FROM 
+      fir_add fa
+    LEFT JOIN 
+      victims vm ON vm.fir_id = fa.fir_id
+    ${whereClause}
+  `;
+
+  const queryParams = [...params];
+
+  // Execute Query
+  db.query(query, queryParams, (err, results) => {
+    if (err) {
+      console.error('Error fetching Nature of Offence Chart Value:', err);
+      return res.status(500).json({ 
+        message: 'Failed to retrieve Chart Data', 
+        error: err 
+      });
+    }
+
+    res.status(200).json({
+      data: results,
+    });
+  });
+};
+
+
+exports.GetCaseDashboardCardDynamicValue = (req, res) => {
+  
+  // Build WHERE clause based on provided filters
+  const whereConditions = [];
+  const params = [];
+
+  if (req.body.district) {
+    whereConditions.push('fa.revenue_district = ?');
+    params.push(req.body.district);
+  }
+
+  if (req.body.Status_Of_Case) {
+    if (req.body.Status_Of_Case === 'UI') {
+      whereConditions.push('fa.status <= 5');
+    } else if (req.body.Status_Of_Case === 'PT') {
+      whereConditions.push('fa.status > 5');
+    }
+  }
+
+  if (req.body.community) {
+    whereConditions.push('vm.community = ?');
+    params.push(req.body.community);
+  }
+
+  if (req.body.caste) {
+    whereConditions.push('vm.caste = ?');
+    params.push(req.body.caste);
+  }
+
+  if (req.body.police_zone) {
+    whereConditions.push('fa.police_zone = ?');
+    params.push(req.body.police_zone);
+  }
+
+  if (req.body.offence) {
+    whereConditions.push('fa.Offence_group = ?');
+    params.push(req.body.offence);
+  }
+
+  if (req.body.Filter_From_Date) {
+    whereConditions.push('fa.date_of_registration >= ?');
+    params.push(req.body.Filter_From_Date);
+  }
+
+  if (req.body.Filter_To_Date) {
+    whereConditions.push('fa.date_of_registration <= ?');
+    params.push(req.body.Filter_To_Date);
+  }
+
+  const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : '';
+
+  // SQL Query
+  const query = `
+    SELECT 
+      COUNT(fa.fir_id) AS Total_Reported_Cases,
+      COUNT(CASE WHEN fa.status <= 5 THEN 1 END) AS Total_UI_Cases,
+      COUNT(CASE WHEN fa.status > 5 THEN 1 END) AS Total_PT_Cases,
+      COUNT(CASE WHEN fa.nature_of_judgement = 'acquitted' THEN 1 END) AS Total_Acquitted,
+      COUNT(CASE WHEN fa.nature_of_judgement = 'convicted' THEN 1 END) AS Total_Convicted,
+      COUNT(CASE WHEN YEAR(fa.date_of_registration) = YEAR(NOW()) THEN 1 END) AS Total_FIR_currentyear,
+      COUNT(CASE WHEN fa.status = 6 THEN 1 END) AS Total_Chargesheeted_Cases,
+      COUNT(CASE WHEN fa.status = 6 THEN 1 END) AS Total_Reffered_Chargesheeted_Cases,
+      COUNT(CASE WHEN fa.nature_of_judgement != '' AND fa.nature_of_judgement IS NOT NULL THEN 1 END) AS Total_Judgements
+    FROM 
+      fir_add fa
+    LEFT JOIN 
+      victims vm ON vm.fir_id = fa.fir_id
+    ${whereClause}
+  `;
+
+  const queryParams = [...params];
+
+  // Execute Query
+  db.query(query, queryParams, (err, results) => {
+    if (err) {
+      console.error('Error fetching Nature of Offence Chart Value:', err);
+      return res.status(500).json({ 
+        message: 'Failed to retrieve Chart Data', 
+        error: err 
+      });
+    }
+
+    res.status(200).json({
+      data: results,
+    });
+  });
+};
+
+
+
+exports.GetPTPendencyCasesGroupedByYears = (req, res) => {
+  const params = [];
+  const whereConditions = [];
+
+  // Optional filters
+  if (req.body.district) {
+    whereConditions.push('fa.revenue_district = ?');
+    params.push(req.body.district);
+  }
+
+  if (req.body.community) {
+    whereConditions.push('vm.community = ?');
+    params.push(req.body.community);
+  }
+
+  if (req.body.caste) {
+    whereConditions.push('vm.caste = ?');
+    params.push(req.body.caste);
+  }
+
+  if (req.body.police_zone) {
+    whereConditions.push('fa.police_zone = ?');
+    params.push(req.body.police_zone);
+  }
+
+
+  // Final WHERE clause
+  const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
+  // Query
+  const query = `
+    SELECT
+      SUM(CASE WHEN fa.status >= 6 AND DATEDIFF(CURDATE(), date_of_registration) <= 365 THEN 1 ELSE 0 END) AS pt_less_than_1_year,
+      SUM(CASE WHEN fa.status >= 6 AND DATEDIFF(CURDATE(), date_of_registration) > 365 AND DATEDIFF(CURDATE(), date_of_registration) <= 1825 THEN 1 ELSE 0 END) AS pt_1_to_5_years,
+      SUM(CASE WHEN fa.status >= 6 AND DATEDIFF(CURDATE(), date_of_registration) > 1825 AND DATEDIFF(CURDATE(), date_of_registration) <= 3650 THEN 1 ELSE 0 END) AS pt_6_to_10_years,
+      SUM(CASE WHEN fa.status >= 6 AND DATEDIFF(CURDATE(), date_of_registration) > 3650 AND DATEDIFF(CURDATE(), date_of_registration) <= 7300 THEN 1 ELSE 0 END) AS pt_11_to_20_years,
+      SUM(CASE WHEN fa.status >= 6 AND DATEDIFF(CURDATE(), date_of_registration) > 7300 THEN 1 ELSE 0 END) AS pt_greater_than_20_years
+    FROM fir_add fa
+    LEFT JOIN victims vm ON vm.fir_id = fa.fir_id
+    ${whereClause}
+
+  `;
+
+  db.query(query, params, (err, results) => {
+    if (err) {
+      console.error('Error fetching pendency cases:', err);
+      return res.status(500).json({
+        message: 'Failed to retrieve pendency case data',
+        error: err
+      });
+    }
+
+    res.status(200).json({
+      data: results
+    });
+  });
+};
+
+
+
+exports.GetUIPendencyCasesGrouped = (req, res) => {
+  const params = [];
+  const whereConditions = [];
+
+  // Optional filters
+  if (req.body.district) {
+    whereConditions.push('fa.revenue_district = ?');
+    params.push(req.body.district);
+  }
+
+  if (req.body.community) {
+    whereConditions.push('vm.community = ?');
+    params.push(req.body.community);
+  }
+
+  if (req.body.caste) {
+    whereConditions.push('vm.caste = ?');
+    params.push(req.body.caste);
+  }
+
+  if (req.body.police_zone) {
+    whereConditions.push('fa.police_zone = ?');
+    params.push(req.body.police_zone);
+  }
+
+
+  // Final WHERE clause
+  const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
+  // Query
+  const query = `
+      SELECT
+        SUM(CASE WHEN fa.status <= 5 AND DATEDIFF(CURDATE(), fa.date_of_registration) < 60 THEN 1 ELSE 0 END) AS ui_less_than_2_month,
+        SUM(CASE WHEN fa.status <= 5 AND DATEDIFF(CURDATE(), fa.date_of_registration) BETWEEN 60 AND 119 THEN 1 ELSE 0 END) AS ui_2_to_4_month,
+        SUM(CASE WHEN fa.status <= 5 AND DATEDIFF(CURDATE(), fa.date_of_registration) BETWEEN 120 AND 179 THEN 1 ELSE 0 END) AS ui_4_to_6_month,
+        SUM(CASE WHEN fa.status <= 5 AND DATEDIFF(CURDATE(), fa.date_of_registration) BETWEEN 180 AND 364 THEN 1 ELSE 0 END) AS ui_6_to_12_month,
+        SUM(CASE WHEN fa.status <= 5 AND DATEDIFF(CURDATE(), fa.date_of_registration) >= 365 THEN 1 ELSE 0 END) AS ui_greater_than_1_year
+      FROM fir_add fa
+      LEFT JOIN victims vm ON vm.fir_id = fa.fir_id
+    ${whereClause}
+
+  `;
+  console.log(query);
+  console.log(params);
+
+  db.query(query, params, (err, results) => {
+    if (err) {
+      console.error('Error fetching pendency cases:', err);
+      return res.status(500).json({
+        message: 'Failed to retrieve pendency case data',
+        error: err
+      });
+    }
+
+    res.status(200).json({
+      data: results
+    });
+  });
+};
+
+
+
+exports.GetUIDistrictWiseHeatMap = (req, res) => {
+  const params = [];
+  const whereConditions = [];
+
+  // Optional filters
+  if (req.body.district) {
+    whereConditions.push('fa.revenue_district = ?');
+    params.push(req.body.district);
+  }
+
+  if (req.body.community) {
+    whereConditions.push('vm.community = ?');
+    params.push(req.body.community);
+  }
+
+  if (req.body.caste) {
+    whereConditions.push('vm.caste = ?');
+    params.push(req.body.caste);
+  }
+
+  if (req.body.police_zone) {
+    whereConditions.push('fa.police_zone = ?');
+    params.push(req.body.police_zone);
+  }
+
+  if (req.body.Filter_From_Date) {
+    whereConditions.push('fa.date_of_registration >= ?');
+    params.push(req.body.Filter_From_Date);
+  }
+
+  if (req.body.Filter_To_Date) {
+    whereConditions.push('fa.date_of_registration <= ?');
+    params.push(req.body.Filter_To_Date);
+  }
+
+
+  // Final WHERE clause
+  const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
+  // Query
+  const query = `
+      SELECT
+      fa.revenue_district as district,
+      SUM(CASE WHEN fa.status <= 5 THEN 1 ELSE 0 END) AS UI_Count
+      FROM fir_add fa
+      LEFT JOIN victims vm ON vm.fir_id = fa.fir_id
+    ${whereClause}
+
+    GROUP BY fa.revenue_district
+
+  `;
+  console.log(query);
+  console.log(params);
+
+  db.query(query, params, (err, results) => {
+    if (err) {
+      console.error('Error fetching pendency cases:', err);
+      return res.status(500).json({
+        message: 'Failed to retrieve pendency case data',
+        error: err
+      });
+    }
+
+    res.status(200).json({
+      data: results
+    });
+  });
+};
+
+
+
+exports.GetPTDistrictWiseHeatMap = (req, res) => {
+  const params = [];
+  const whereConditions = [];
+
+  // Optional filters
+  if (req.body.district) {
+    whereConditions.push('fa.revenue_district = ?');
+    params.push(req.body.district);
+  }
+
+  if (req.body.community) {
+    whereConditions.push('vm.community = ?');
+    params.push(req.body.community);
+  }
+
+  if (req.body.caste) {
+    whereConditions.push('vm.caste = ?');
+    params.push(req.body.caste);
+  }
+
+  if (req.body.police_zone) {
+    whereConditions.push('fa.police_zone = ?');
+    params.push(req.body.police_zone);
+  }
+
+  if (req.body.Filter_From_Date) {
+    whereConditions.push('fa.date_of_registration >= ?');
+    params.push(req.body.Filter_From_Date);
+  }
+
+  if (req.body.Filter_To_Date) {
+    whereConditions.push('fa.date_of_registration <= ?');
+    params.push(req.body.Filter_To_Date);
+  }
+
+
+  // Final WHERE clause
+  const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
+  // Query
+  const query = `
+      SELECT
+      fa.revenue_district as district,
+      SUM(CASE WHEN fa.status >= 6 THEN 1 ELSE 0 END) AS PT_Count
+      FROM fir_add fa
+      LEFT JOIN victims vm ON vm.fir_id = fa.fir_id
+    ${whereClause}
+
+    GROUP BY fa.revenue_district
+
+  `;
+  console.log(query);
+  console.log(params);
+
+  db.query(query, params, (err, results) => {
+    if (err) {
+      console.error('Error fetching pendency cases:', err);
+      return res.status(500).json({
+        message: 'Failed to retrieve pendency case data',
+        error: err
+      });
+    }
+
+    res.status(200).json({
+      data: results
+    });
+  });
+};
+
+
 exports.GetNatureOfOffenceChartValue = (req, res) => {
   
   // Build WHERE clause based on provided filters
@@ -764,7 +1201,7 @@ exports.GetNatureOfOffenceChartValue = (req, res) => {
 
   if (req.body.district) {
     whereClause += whereClause ? ' AND ' : ' WHERE ';
-    whereClause += 'revenue_district = ?';
+    whereClause += 'fa.revenue_district = ?';
     params.push(req.body.district);
   }
 
@@ -778,13 +1215,50 @@ exports.GetNatureOfOffenceChartValue = (req, res) => {
     }
   }
 
+  if (req.body.community) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'vm.community = ?';
+    params.push(req.body.community);
+  }
+
+  if (req.body.caste) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'vm.caste = ?';
+    params.push(req.body.caste);
+  }
+
+  if (req.body.police_zone) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'fa.police_zone = ?';
+    params.push(req.body.police_zone);
+  }
+
+  if (req.body.offence) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'fa.Offence_group = ?';
+    params.push(req.body.offence);
+  }
+
+  if (req.body.Filter_From_Date) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'fa.date_of_registration >= ?';
+    params.push(req.body.Filter_From_Date);
+  }
+
+  if (req.body.Filter_To_Date) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'fa.date_of_registration <= ?';
+    params.push(req.body.Filter_To_Date);
+  }
+
 
 
 
     // Get paginated data query
     const query = `
-    select count(fa.fir_id) as total , count(case when fa.Offence_group = 'Non GCR' then 1 end) as non_gcr , count(case when fa.Offence_group != 'Non GCR' then 1 end) as gcr from fir_add fa${whereClause} 
-    `;
+    select count(fa.fir_id) as total , count(case when fa.Offence_group = 'Non GCR' then 1 end) as non_gcr , count(case when fa.Offence_group != 'Non GCR' then 1 end) as gcr from fir_add fa
+    left join victims vm on vm.fir_id = fa.fir_id
+    ${whereClause} `;
     
     const queryParams = [...params];
 
@@ -813,36 +1287,71 @@ exports.GetAnnualOverViewRegisterdCases = (req, res) => {
 
   // Optional filter for district
   if (req.body.district) {
-    whereConditions.push('revenue_district = ?');
+    whereConditions.push('fa.revenue_district = ?');
     params.push(req.body.district);
   }
 
+  if (req.body.Status_Of_Case) {
+    if (req.body.Status_Of_Case == 'UI') {
+      whereConditions.push('fa.status <= 5');
+    } else if (req.body.Status_Of_Case == 'PT') {
+      whereConditions.push('fa.status > 5');
+    }
+  }
+
+  if (req.body.offence) {
+    whereConditions.push('fa.Offence_group = ?');
+    params.push(req.body.offence);
+  }
+
+
+  if (req.body.community) {
+    whereConditions.push('vm.community = ?');
+    params.push(req.body.community);
+  }
+
+  if (req.body.caste) {
+    whereConditions.push('vm.caste = ?');
+    params.push(req.body.caste);
+  }
+
+  if (req.body.police_zone) {
+    whereConditions.push('fa.police_zone = ?');
+    params.push(req.body.police_zone);
+  }
+
+
   // Always include date filter for last 5 years
-  whereConditions.push("date_of_registration >= DATE_FORMAT(NOW() - INTERVAL 4 YEAR, '%Y-01-01')");
+  whereConditions.push("fa.date_of_registration >= DATE_FORMAT(NOW() - INTERVAL 4 YEAR, '%Y-01-01')");
 
   // Build the WHERE clause
   const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
 
   // Query to ensure all 5 years are present
+  
   const query = `
-    SELECT y.year, IFNULL(f.total_cases, 0) AS total_cases
-    FROM (
-      SELECT YEAR(CURDATE()) AS year
-      UNION ALL SELECT YEAR(CURDATE()) - 1
-      UNION ALL SELECT YEAR(CURDATE()) - 2
-      UNION ALL SELECT YEAR(CURDATE()) - 3
-      UNION ALL SELECT YEAR(CURDATE()) - 4
-    ) y
-    LEFT JOIN (
-      SELECT 
-        YEAR(date_of_registration) AS year,
-        COUNT(*) AS total_cases
-      FROM fir_add
-      ${whereClause}
-      GROUP BY YEAR(date_of_registration)
-    ) f ON y.year = f.year
-    ORDER BY y.year;
-  `;
+  SELECT y.year, IFNULL(f.total_cases, 0) AS total_cases
+  FROM (
+    SELECT YEAR(CURDATE()) AS year
+    UNION ALL SELECT YEAR(CURDATE()) - 1
+    UNION ALL SELECT YEAR(CURDATE()) - 2
+    UNION ALL SELECT YEAR(CURDATE()) - 3
+    UNION ALL SELECT YEAR(CURDATE()) - 4
+  ) y
+  LEFT JOIN (
+    SELECT 
+      YEAR(fa.date_of_registration) AS year,
+      COUNT(fa.fir_id) AS total_cases
+    FROM fir_add fa
+    LEFT JOIN victims vm ON vm.fir_id = fa.fir_id
+    ${whereClause}
+    GROUP BY YEAR(fa.date_of_registration)
+  ) f ON y.year = f.year
+  ORDER BY y.year;
+`;
+
+console.log(query)
+console.log(params)
 
   db.query(query, params, (err, results) => {
     if (err) {
@@ -860,41 +1369,79 @@ exports.GetAnnualOverViewRegisterdCases = (req, res) => {
 
 exports.GetPendingCaseZoneWise = (req, res) => {
   const params = [];
-  let whereClause = 'WHERE status > 5';
+  let whereClause = '';
+
+  if (req.body.Status_Of_Case) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+   
+    if(req.body.Status_Of_Case == 'UI'){
+      whereClause += 'fa.status <= 5';
+    } else if(req.body.Status_Of_Case == 'PT'){
+      whereClause += 'fa.status > 5';
+    }
+  } else {
+    whereClause = 'WHERE status <= 5';
+  }
+
 
   // Add optional district filter
   if (req.body.district) {
-    whereClause += ' AND revenue_district = ?';
+    whereClause += ' AND fa.revenue_district = ?';
     params.push(req.body.district);
   }
 
+  if (req.body.community) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'vm.community = ?';
+    params.push(req.body.community);
+  }
+
+  if (req.body.caste) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'vm.caste = ?';
+    params.push(req.body.caste);
+  }
+
+  if (req.body.police_zone) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'fa.police_zone = ?';
+    params.push(req.body.police_zone);
+  }
+
+  if (req.body.offence) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'fa.Offence_group = ?';
+    params.push(req.body.offence);
+  }
+
   const query = `
-    WITH RECURSIVE years AS (
+        WITH RECURSIVE years AS (
       SELECT 1993 AS year
       UNION ALL
       SELECT year + 1 FROM years WHERE year + 1 <= YEAR(CURDATE())
-    ),
-    zones AS (
+      ),
+      zones AS (
       SELECT DISTINCT police_zone AS zone FROM fir_add
       ${req.body.district ? 'WHERE revenue_district = ?' : ''}
-    ),
-    raw_data AS (
+      ),
+      raw_data AS (
       SELECT 
-        YEAR(date_of_registration) AS year,
-        police_zone AS zone,
-        COUNT(*) AS total_cases
-      FROM fir_add
+        YEAR(fa.date_of_registration) AS year,
+        fa.police_zone AS zone,
+        COUNT(fa.fir_id) AS total_cases
+      FROM fir_add fa
+      LEFT JOIN victims vm ON vm.fir_id = fa.fir_id
       ${whereClause}
-      GROUP BY YEAR(date_of_registration), police_zone
-    )
-    SELECT 
+      GROUP BY YEAR(fa.date_of_registration), fa.police_zone
+      )
+      SELECT 
       y.year, 
       z.zone, 
       IFNULL(r.total_cases, 0) AS total_cases
-    FROM years y
-    CROSS JOIN zones z
-    LEFT JOIN raw_data r ON r.year = y.year AND r.zone = z.zone
-    ORDER BY y.year, z.zone;
+      FROM years y
+      CROSS JOIN zones z
+      LEFT JOIN raw_data r ON r.year = y.year AND r.zone = z.zone
+      ORDER BY y.year, z.zone;
   `;
 
   // Include the district param again if needed (first time for zones)
@@ -926,6 +1473,45 @@ exports.ReasonForPendingUICases = (req, res) => {
     params.push(req.body.district);
   }
 
+  if (req.body.Status_Of_Case) {
+    if (req.body.Status_Of_Case == 'UI') {
+      whereConditions.push('fa.status <= 5');
+    } else if (req.body.Status_Of_Case == 'PT') {
+      whereConditions.push('fa.status > 5');
+    }
+  }
+
+  if (req.body.offence) {
+    whereConditions.push('fa.Offence_group = ?');
+    params.push(req.body.offence);
+  }
+
+
+  if (req.body.community) {
+    whereConditions.push('vm.community = ?');
+    params.push(req.body.community);
+  }
+
+  if (req.body.caste) {
+    whereConditions.push('vm.caste = ?');
+    params.push(req.body.caste);
+  }
+
+  if (req.body.police_zone) {
+    whereConditions.push('fa.police_zone = ?');
+    params.push(req.body.police_zone);
+  }
+
+  if (req.body.Filter_From_Date) {
+     whereConditions.push('fa.date_of_registration >= ?');
+     params.push(req.body.Filter_From_Date);
+  }
+
+  if (req.body.Filter_To_Date) {
+     whereConditions.push('fa.date_of_registration <= ?');
+     params.push(req.body.Filter_To_Date);
+  }
+
   // WHERE clause for FIRs only (NOT for JOIN)
   const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
 
@@ -935,6 +1521,7 @@ exports.ReasonForPendingUICases = (req, res) => {
       COUNT(*) AS ui_total_cases
     FROM fir_add fa
     LEFT JOIN report_reasons rr ON rr.fir_id = fa.fir_id
+    LEFT JOIN victims vm ON vm.fir_id = fa.fir_id
     ${whereClause}
     AND fa.status <= 5
     GROUP BY reason
