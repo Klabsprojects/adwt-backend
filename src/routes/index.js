@@ -109,6 +109,7 @@ router.post('/apply-filters',
 
 // case dashboard
 router.get('/dashboard-data', getdashboardController.getDashboardData);
+router.get('/Police_City_filtet_data', getdashboardController.Police_City_filtet_data);
 router.get('/Zone_Filter_Data', getdashboardController.Zone_Filter_Data);
 router.post('/GetCaseDashboardCardStaticValue', getdashboardController.GetCaseDashboardCardStaticValue);
 router.post('/GetCaseDashboardCardDynamicValue', getdashboardController.GetCaseDashboardCardDynamicValue);

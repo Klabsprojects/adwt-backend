@@ -79,6 +79,7 @@ const login = async (req, res) => {
               role: user.role,  // Make sure 'role' is available in your user object
               email: user.email,
               district : user.district,
+              police_city : user.police_city,
               access_type : user.access_type,
               profileImagePath: user.profile_image_path, // Assuming there's a column 'profile_image_path'
             };

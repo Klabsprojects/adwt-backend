@@ -755,6 +755,40 @@ exports.getDashboardData = (req, res) => {
 // case dashboard
 
 
+exports.Police_City_filtet_data = (req, res) => {
+  
+  const params = [];
+
+    const query = `
+    SELECT 
+      police_city 
+    FROM 
+      fir_add 
+    GROUP BY 
+      police_city 
+    ORDER BY 
+      police_city;`;
+    
+    const queryParams = [...params];
+
+    // console.log(query)
+    // console.log(queryParams)
+    
+    db.query(query, queryParams, (err, results) => {
+      if (err) {
+        console.log(err);
+        return res.status(500).json({ 
+          message: 'Failed to retrieve Data', 
+          error: err 
+        });
+      }
+      
+      res.status(200).json({
+        data: results,
+      });
+    });
+};
+
 
 exports.Zone_Filter_Data = (req, res) => {
   
@@ -799,6 +833,11 @@ exports.GetCaseDashboardCardStaticValue = (req, res) => {
     params.push(req.body.district);
   }
 
+  if (req.body.police_city) {
+    whereConditions.push('fa.police_city = ?');
+    params.push(req.body.police_city);
+  }
+
   const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : '';
 
   // SQL Query
@@ -811,7 +850,7 @@ exports.GetCaseDashboardCardStaticValue = (req, res) => {
       COUNT(CASE WHEN fa.nature_of_judgement = 'convicted' THEN 1 END) AS Static_Total_Convicted,
       COUNT(CASE WHEN YEAR(fa.date_of_registration) = YEAR(NOW()) THEN 1 END) AS Static_Total_FIR_currentyear,
       COUNT(CASE WHEN fa.status = 6 THEN 1 END) AS Static_Total_Chargesheeted_Cases,
-      COUNT(CASE WHEN fa.status = 6 THEN 1 END) AS Static_Total_Reffered_Chargesheeted_Cases,
+      COUNT(CASE WHEN fa.status = 9 THEN 1 END) AS Static_Total_Reffered_Chargesheeted_Cases,
       COUNT(CASE WHEN fa.nature_of_judgement != '' AND fa.nature_of_judgement IS NOT NULL THEN 1 END) AS Static_Total_Judgements
     FROM 
       fir_add fa
@@ -848,6 +887,11 @@ exports.GetCaseDashboardCardDynamicValue = (req, res) => {
   if (req.body.district) {
     whereConditions.push('fa.revenue_district = ?');
     params.push(req.body.district);
+  }
+
+  if (req.body.police_city) {
+    whereConditions.push('fa.police_city = ?');
+    params.push(req.body.police_city);
   }
 
   if (req.body.Status_Of_Case) {
@@ -900,7 +944,7 @@ exports.GetCaseDashboardCardDynamicValue = (req, res) => {
       COUNT(CASE WHEN fa.nature_of_judgement = 'convicted' THEN 1 END) AS Total_Convicted,
       COUNT(CASE WHEN YEAR(fa.date_of_registration) = YEAR(NOW()) THEN 1 END) AS Total_FIR_currentyear,
       COUNT(CASE WHEN fa.status = 6 THEN 1 END) AS Total_Chargesheeted_Cases,
-      COUNT(CASE WHEN fa.status = 6 THEN 1 END) AS Total_Reffered_Chargesheeted_Cases,
+      COUNT(CASE WHEN fa.status = 9 THEN 1 END) AS Total_Reffered_Chargesheeted_Cases,
       COUNT(CASE WHEN fa.nature_of_judgement != '' AND fa.nature_of_judgement IS NOT NULL THEN 1 END) AS Total_Judgements
     FROM 
       fir_add fa
@@ -937,6 +981,11 @@ exports.GetPTPendencyCasesGroupedByYears = (req, res) => {
   if (req.body.district) {
     whereConditions.push('fa.revenue_district = ?');
     params.push(req.body.district);
+  }
+
+  if (req.body.police_city) {
+    whereConditions.push('fa.police_city = ?');
+    params.push(req.body.police_city);
   }
 
   if (req.body.community) {
@@ -999,6 +1048,11 @@ exports.GetUIPendencyCasesGrouped = (req, res) => {
     params.push(req.body.district);
   }
 
+  if (req.body.police_city) {
+    whereConditions.push('fa.police_city = ?');
+    params.push(req.body.police_city);
+  }
+
   if (req.body.community) {
     whereConditions.push('vm.community = ?');
     params.push(req.body.community);
@@ -1059,6 +1113,11 @@ exports.GetUIDistrictWiseHeatMap = (req, res) => {
   if (req.body.district) {
     whereConditions.push('fa.revenue_district = ?');
     params.push(req.body.district);
+  }
+
+  if (req.body.police_city) {
+    whereConditions.push('fa.police_city = ?');
+    params.push(req.body.police_city);
   }
 
   if (req.body.community) {
@@ -1132,6 +1191,11 @@ exports.GetPTDistrictWiseHeatMap = (req, res) => {
     params.push(req.body.district);
   }
 
+  if (req.body.police_city) {
+    whereConditions.push('fa.police_city = ?');
+    params.push(req.body.police_city);
+  }
+
   if (req.body.community) {
     whereConditions.push('vm.community = ?');
     params.push(req.body.community);
@@ -1203,6 +1267,12 @@ exports.GetNatureOfOffenceChartValue = (req, res) => {
     whereClause += whereClause ? ' AND ' : ' WHERE ';
     whereClause += 'fa.revenue_district = ?';
     params.push(req.body.district);
+  }
+
+  if (req.body.police_city) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'fa.police_city = ?';
+    params.push(req.body.police_city);
   }
 
   if (req.body.Status_Of_Case) {
@@ -1289,6 +1359,12 @@ exports.GetAnnualOverViewRegisterdCases = (req, res) => {
   if (req.body.district) {
     whereConditions.push('fa.revenue_district = ?');
     params.push(req.body.district);
+  }
+
+  
+  if (req.body.police_city) {
+    whereConditions.push('fa.police_city = ?');
+    params.push(req.body.police_city);
   }
 
   if (req.body.Status_Of_Case) {
@@ -1390,6 +1466,12 @@ exports.GetPendingCaseZoneWise = (req, res) => {
     params.push(req.body.district);
   }
 
+  
+  if (req.body.police_city) {
+    whereConditions.push('fa.police_city = ?');
+    params.push(req.body.police_city);
+  }
+
   if (req.body.community) {
     whereClause += whereClause ? ' AND ' : ' WHERE ';
     whereClause += 'vm.community = ?';
@@ -1471,6 +1553,12 @@ exports.ReasonForPendingUICases = (req, res) => {
   if (req.body.district) {
     whereConditions.push('fa.revenue_district = ?');
     params.push(req.body.district);
+  }
+
+  
+  if (req.body.police_city) {
+    whereConditions.push('fa.police_city = ?');
+    params.push(req.body.police_city);
   }
 
   if (req.body.Status_Of_Case) {
@@ -1589,15 +1677,17 @@ exports.GetVmcDashboardCardsValues = (req, res) => {
   }
 
   // count(case when meeting_type = 'DLVMC' and meeting_status = 'Completed' then 1 end) as Total_dlvmc_meeting_as_per_quarter ,
+  // count(case when meeting_type = 'SDLVMC' and meeting_status = 'Completed' then 1 end) as Total_No_of_Sub_dividion_meeting ,
   
     const query = `
-    select '38' as Total_dlvmc_meeting_as_per_quarter ,
+    select 
+      '38' as Total_dlvmc_meeting_as_per_quarter ,
       count(case when meeting_type = 'DLVMC' and meeting_status = 'Completed' and meeting_quarter = 'Jan-Mar' then 1 end) as Total_dlvmc_meting_conducted_q1 ,
       count(case when meeting_type = 'DLVMC' and meeting_status = 'Completed' and meeting_quarter = 'Apr-Jun' then 1 end) as Total_dlvmc_meting_conducted_q2 ,
       count(case when meeting_type = 'DLVMC' and meeting_status = 'Completed' and meeting_quarter = 'Jul-Sep' then 1 end) as Total_dlvmc_meting_conducted_q3 ,
       count(case when meeting_type = 'DLVMC' and meeting_status = 'Completed' and meeting_quarter = 'Oct-Dec' then 1 end) as Total_dlvmc_meting_conducted_q4 ,
 
-      count(case when meeting_type = 'SDLVMC' and meeting_status = 'Completed' then 1 end) as Total_No_of_Sub_dividion_meeting ,
+      '94' as Total_No_of_Sub_dividion_meeting ,
       count(case when meeting_type = 'SDLVMC' and meeting_status = 'Completed' and meeting_quarter = 'Jan-Mar' then 1 end) as Total_sdlvmc_meting_conducted_q1 ,
       count(case when meeting_type = 'SDLVMC' and meeting_status = 'Completed' and meeting_quarter = 'Apr-Jun' then 1 end) as Total_sdlvmc_meting_conducted_q2 ,
       count(case when meeting_type = 'SDLVMC' and meeting_status = 'Completed' and meeting_quarter = 'Jul-Sep' then 1 end) as Total_sdlvmc_meting_conducted_q3 ,
