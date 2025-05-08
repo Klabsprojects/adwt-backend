@@ -2352,119 +2352,372 @@ exports.editStepSevenAsDraft = (req, res) => {
 // }
 
 
+// commanded for reference
 // exports.saveStepSevenAsDraft = (req, res) => {
-//   // Destructure the request body
+
+//   console.log(req.body);
+
 //   const {
-//     firId,
-//     trialDetails,
-//     compensationDetails,
-//     attachments,
-//     appealDetails,
-//     appealDetailsOne,
-//     caseAppealDetailsTwo,
-//     hearingdetail
+//     firId, trialDetails, trialDetails_one, trialDetails_two, compensationDetails, attachments,
+//     appealDetails, appealDetailsOne, caseAppealDetailsTwo, hearingdetail,compensationDetails_1,compensationDetails_2
 //   } = req.body;
 
-//   console.log("Received request body:", hearingdetail);
+//   const ogId = firId.replace(/(^")|("$)/g, '');
 
 //   const parseJSON = (data) => {
 //     try {
-//       return typeof data === "string" ? JSON.parse(data) : data;
+//       return typeof data === 'string' ? JSON.parse(data) : data;
 //     } catch (error) {
-//       console.error("Error parsing JSON:", error);
+//       console.error('Error parsing JSON:', error);
 //       return {};
 //     }
 //   };
 //   const parsedHearingDetails = parseJSON(hearingdetail);
-
 //   const parsedTrialDetails = parseJSON(trialDetails);
+//   const parsedTrialDetailsOne = parseJSON(trialDetails_one);
+//   const parsedTrialDetailsTwo = parseJSON(trialDetails_two);
 //   const parsedCompensationDetails = parseJSON(compensationDetails);
+//   const parsedCompensationDetails_1 = parseJSON(compensationDetails_1);
+//   const parsedCompensationDetails_2 = parseJSON(compensationDetails_2);
 //   const parsedAppealDetails = parseJSON(appealDetails);
 //   const parsedAppealDetailsOne = parseJSON(appealDetailsOne);
 //   const parsedCaseAppealDetailsTwo = parseJSON(caseAppealDetailsTwo);
 
-//   // Check if mandatory fields are missing
-//   if (!firId || !trialDetails || !compensationDetails) {
-//     console.log("Missing required fields:", { firId, trialDetails, compensationDetails });
-//     return res.status(400).json({ message: "Missing required fields." });
+//         const randomCaseId_1 = generateRandomId(10);
+//         console.log(randomCaseId_1)
+//   if (!ogId) {
+//     return res.status(400).json({ message: 'Missing required firId field.' });
 //   }
 
-//   const convertArrayToString = (value) => {
-//     if (Array.isArray(value)) {
-//       return value.length ? value.join(',') : null;
-//     }
-//     return value;
-//   };
-
-//   const judgementAwarded = convertArrayToString(parsedTrialDetails.judgementAwarded);
-//   const judgementAwarded1 = convertArrayToString(parsedTrialDetails.judgementAwarded1);
-//   const judgementAwarded2 = convertArrayToString(parsedTrialDetails.judgementAwarded2);
-//   const judgementAwarded3 = convertArrayToString(parsedTrialDetails.judgementAwarded3);
-
-//   const caseId = generateRandomId(8);
-//   console.log("Generated case ID:", caseId);
-
-//   // Start a database transaction
 //   db.beginTransaction(async (err) => {
 //     if (err) {
-//       console.error("Transaction error:", err);
-//       return res.status(500).json({ message: "Transaction error", error: err });
+//       console.error('Transaction error:', err);
+//       return res.status(500).json({ message: 'Transaction error', error: err });
 //     }
 
-//     console.log("Transaction started.");
-
 //     try {
+   
+//       const existingCaseDetails = await queryAsync('SELECT * FROM case_details WHERE fir_id = ?', [ogId]);
+
+//       if (existingCaseDetails.length > 0) {
+//         await queryAsync(`
+//           UPDATE case_details SET
+//             court_name = ?,
+//             court_district = ?,
+//             trial_case_number = ?,
+//             public_prosecutor = ?,
+//             prosecutor_phone = ?,
+//             first_hearing_date = ?,
+//             judgement_awarded = ?,
+//             CaseHandledBy = ?,
+//             NameOfAdvocate = ?,
+//             advocateMobNumber = ?,
+//             judgementAwarded1 = ?
+//           WHERE fir_id = ?
+//         `, [
+//           parsedTrialDetails.courtName,
+//           parsedTrialDetails.courtDistrict,
+//           parsedTrialDetails.trialCaseNumber,
+//           parsedTrialDetails.publicProsecutor,
+//           parsedTrialDetails.prosecutorPhone,
+//           parsedTrialDetails.firstHearingDate,
+//           parsedTrialDetails.judgementAwarded ? parsedTrialDetails.judgementAwarded : 'no',
+//           parsedTrialDetails.CaseHandledBy,
+//           parsedTrialDetails.NameOfAdvocate,
+//           parsedTrialDetails.advocateMobNumber,
+//           parsedTrialDetails.judgementAwarded1 ? parsedTrialDetails.judgementAwarded1 : 'no',
+//           ogId,
+//         ]);
+//       } else {
+//         await queryAsync(`
+//           INSERT INTO case_details (fir_id, case_id, court_name, court_district, trial_case_number, public_prosecutor, prosecutor_phone, first_hearing_date, judgement_awarded, CaseHandledBy, NameOfAdvocate, advocateMobNumber, judgementAwarded1)
+//           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+//         `, [
+//           ogId,
+//           randomCaseId_1,
+//           parsedTrialDetails.courtName,
+//           parsedTrialDetails.courtDistrict,
+//           parsedTrialDetails.trialCaseNumber,
+//           parsedTrialDetails.publicProsecutor,
+//           parsedTrialDetails.prosecutorPhone,
+//           parsedTrialDetails.firstHearingDate,
+//           parsedTrialDetails.judgementAwarded ? parsedTrialDetails.judgementAwarded : 'no',
+//           parsedTrialDetails.CaseHandledBy,
+//           parsedTrialDetails.NameOfAdvocate,
+//           parsedTrialDetails.advocateMobNumber,
+//           parsedTrialDetails.judgementAwarded1 ? parsedTrialDetails.judgementAwarded1 : 'no',
+//         ]);
+//       }
+
+    
+
+// const existingCaseCourtDetailOne = await queryAsync('SELECT * FROM case_court_detail_one WHERE fir_id = ?', [ogId]);
+
+// if (existingCaseCourtDetailOne.length > 0) {
+//   await queryAsync(`
+//     UPDATE case_court_detail_one SET
+//     fir_id = ?,
+//       court_name = ?,
+//       court_district = ?,
+//       case_number = ?,
+//       public_prosecutor = ?,
+//       prosecutor_phone = ?,
+//       second_hearing_date = ?,
+//       judgement_awarded = ?,
+//       judgementNature = ?
+  
+//     WHERE fir_id = ?
+//   `, [
+//     ogId,
+//     parsedTrialDetailsOne.courtName,
+//     parsedTrialDetailsOne.courtDistrict,
+//     parsedTrialDetailsOne.trialCaseNumber,
+//     parsedTrialDetailsOne.publicProsecutor,
+//     parsedTrialDetailsOne.prosecutorPhone,
+//     parsedTrialDetailsOne.firstHearingDate ? parsedTrialDetailsOne.firstHearingDate : null ,
+//     parsedTrialDetailsOne.judgementAwarded ? parsedTrialDetailsOne.judgementAwarded : 'no',
+//     parsedTrialDetailsOne.judgementNature,
+  
+//     ogId
+//   ]);
+// } else {
+//   await queryAsync(`
+//     INSERT INTO case_court_detail_one (
+//       fir_id, case_id, court_name, court_district, case_number, public_prosecutor, prosecutor_phone, second_hearing_date, judgement_awarded, judgementNature
+//     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ? , ?)
+//   `, [
+//     ogId,
+//     randomCaseId_1,
+//     parsedTrialDetailsOne.courtName,
+//     parsedTrialDetailsOne.courtDistrict,
+//     parsedTrialDetailsOne.trialCaseNumber,
+//     parsedTrialDetailsOne.publicProsecutor,
+//     parsedTrialDetailsOne.prosecutorPhone,
+//     parsedTrialDetailsOne.firstHearingDate ? parsedTrialDetailsOne.firstHearingDate : null,
+//     parsedTrialDetailsOne.judgementAwarded ? parsedTrialDetailsOne.judgementAwarded : 'no',
+//     parsedTrialDetailsOne.judgementNature,
+
+//   ]);
+// }
+
+
+// const existingCaseCourtDetailTwo = await queryAsync('SELECT * FROM case_court_details_two WHERE fir_id = ?', [ogId]);
+
+// if (existingCaseCourtDetailTwo.length > 0) {
+//   await queryAsync(`
+//     UPDATE case_court_details_two SET
+//     fir_id = ?,
+//       court_name = ?,
+//       court_district = ?,
+//       case_number = ?,
+//       public_prosecutor = ?,
+//       prosecutor_phone = ?,
+//       second_hearing_date = ?,
+//       judgement_awarded = ?,
+//       judgementNature = ?
+
+//     WHERE fir_id = ?
+//   `, [
+//     ogId,
+//     parsedTrialDetailsTwo.courtName,
+//     parsedTrialDetailsTwo.courtDistrict,
+//     parsedTrialDetailsTwo.trialCaseNumber,
+//     parsedTrialDetailsTwo.publicProsecutor,
+//     parsedTrialDetailsTwo.prosecutorPhone,
+//     parsedTrialDetailsTwo.firstHearingDate ? parsedTrialDetailsTwo.firstHearingDate : null,
+//     parsedTrialDetailsTwo.judgementAwarded ? parsedTrialDetails.judgementAwarded : 'no',
+//     parsedTrialDetailsTwo.judgementNature,
+
+//     ogId
+//   ]);
+// } else {
+//   await queryAsync(`
+//     INSERT INTO case_court_details_two (
+//       fir_id, court_name, case_id, court_district, case_number, public_prosecutor, prosecutor_phone, second_hearing_date, judgement_awarded, judgementNature
+//     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+//   `, [
+//     ogId,
+//     parsedTrialDetailsTwo.courtName,
+//     randomCaseId_1,
+//     parsedTrialDetailsTwo.courtDistrict,
+//     parsedTrialDetailsTwo.trialCaseNumber,
+//     parsedTrialDetailsTwo.publicProsecutor,
+//     parsedTrialDetailsTwo.prosecutorPhone,
+//     parsedTrialDetailsTwo.firstHearingDate ? parsedTrialDetailsTwo.firstHearingDate : null,
+//     parsedTrialDetailsTwo.judgementAwarded ? parsedTrialDetails.judgementAwarded : 'no',
+//     parsedTrialDetailsTwo.judgementNature,
+
+//   ]);
+// }
+
+
+//       // await queryAsync(`
+//       //   UPDATE fir_add SET
+//       //     nature_of_judgement = COALESCE(?, nature_of_judgement),
+//       //     judgement_copy = COALESCE(?, judgement_copy)
+//       //   WHERE fir_id = ?
+//       // `, [parsedTrialDetails.judgementNature, parsedTrialDetails.uploadJudgement, ogId]);
+
+//       await queryAsync(`
+//         INSERT INTO fir_trial (fir_id, case_id,  total_amount_third_stage, proceedings_file_no, proceedings_date, Commissionerate_file)
+//         VALUES (?, ?, ?, ?, ?, ?)
+//         ON DUPLICATE KEY UPDATE
+//           total_amount_third_stage = VALUES(total_amount_third_stage),
+//           proceedings_file_no = VALUES(proceedings_file_no),
+//           proceedings_date = VALUES(proceedings_date),
+//           Commissionerate_file = VALUES(Commissionerate_file)
+//       `, [
+//         ogId,
+//         randomCaseId_1,
+//         parsedCompensationDetails.totalCompensation,
+//         parsedCompensationDetails.proceedingsFileNo,
+//         parsedCompensationDetails.proceedingsDate,
+//         parsedCompensationDetails.uploadProceedings,
+//       ]);
+
+//       await queryAsync(`
+//         INSERT INTO compensation_details
+//             (fir_id, case_id, total_compensation, proceedings_file_no, proceedings_date, upload_proceedings)
+//         VALUES (?, ?, ?, ?, ?, ?)
+//         ON DUPLICATE KEY UPDATE
+//             total_compensation = VALUES(total_compensation),
+//             proceedings_file_no = VALUES(proceedings_file_no),
+//             proceedings_date = VALUES(proceedings_date),
+//             upload_proceedings = VALUES(upload_proceedings)
+//     `, [
+//         ogId,
+//         randomCaseId_1, 
+//         parsedCompensationDetails.totalCompensation,
+//         parsedCompensationDetails.proceedingsFileNo,
+//         parsedCompensationDetails.proceedingsDate,
+//         parsedCompensationDetails.uploadProceedings
+//     ]);
+//       await queryAsync(`
+//         INSERT INTO compensation_details_1 
+//             (fir_id, case_id, total_compensation, proceedings_file_no, proceedings_date, upload_proceedings)
+//         VALUES (?, ?, ?, ?, ?, ?)
+//         ON DUPLICATE KEY UPDATE
+//             total_compensation = VALUES(total_compensation),
+//             proceedings_file_no = VALUES(proceedings_file_no),
+//             proceedings_date = VALUES(proceedings_date),
+//             upload_proceedings = VALUES(upload_proceedings)
+//     `, [
+//         ogId,
+//         randomCaseId_1, 
+//         parsedCompensationDetails_1.totalCompensation,
+//         parsedCompensationDetails_1.proceedingsFileNo,
+//         parsedCompensationDetails_1.proceedingsDate,
+//         parsedCompensationDetails_1.uploadProceedings
+//     ]);
+
+    
+//     await queryAsync(`
+//       INSERT INTO compensation_details_2 
+//           (fir_id, case_id, total_compensation, proceedings_file_no, proceedings_date, upload_proceedings)
+//       VALUES (?, ?, ?, ?, ?, null)
+//       ON DUPLICATE KEY UPDATE
+//           total_compensation = VALUES(total_compensation),
+//           proceedings_file_no = VALUES(proceedings_file_no),
+//           proceedings_date = VALUES(proceedings_date),
+//           upload_proceedings = VALUES(upload_proceedings)
+//   `, [
+//       ogId,
+//       randomCaseId_1, 
+//       parsedCompensationDetails_2.totalCompensation,
+//       parsedCompensationDetails_2.proceedingsFileNo,
+//       parsedCompensationDetails_2.proceedingsDate,
+//       parsedCompensationDetails_2.uploadProceedings ? parsedCompensationDetails_2.uploadProceedings : null 
+//   ]);
+  
+      
+//       const appealTables = [
+//         { table: 'appeal_details', data: parsedAppealDetails },
+//         { table: 'appeal_details_one', data: parsedAppealDetailsOne },
+//         { table: 'case_appeal_details_two', data: parsedCaseAppealDetailsTwo },
+//       ];
+      
+//       for (const { table, data } of appealTables) {
+//         if (data) {
+       
+//           const existingRecord = await queryAsync(`SELECT * FROM ${table} WHERE fir_id = ?`, [ogId]);
+//           console.log('ogId:', ogId);
+      
+//           if (existingRecord.length > 0) {
+          
+//             await queryAsync(`DELETE FROM ${table} WHERE fir_id = ?`, [ogId]);
+//           }
+      
+       
+//           await queryAsync(
+//             `
+//             INSERT INTO ${table} (fir_id, legal_opinion_obtained, case_fit_for_appeal, government_approval_for_appeal, filed_by, designated_court, judgementNature)
+//             VALUES (?, ?, ?, ?, ?, ?, ?)
+//           `,
+//             [
+//               ogId,
+//               data.legal_opinion_obtained,
+//               data.case_fit_for_appeal,
+//               data.government_approval_for_appeal,
+//               data.filed_by,
+//               data.designated_court,
+//               data.judgementNature,
+//             ]
+//           );
+//         }
+//       }
+      
+      
+  
 //       const hearingTables = {
 //         hearingDetails: 'hearing_details_one',
 //         hearingDetails_one: 'hearing_details_two',
 //         hearingDetails_two: 'hearing_details_three',
 //       };
-
+      
 //       for (const key in parsedHearingDetails) {
-//         if (!parsedHearingDetails.hasOwnProperty(key)) {
-//           continue;
-//         }
 //         const tableData = parsedHearingDetails[key];
 //         const tableName = hearingTables[key];
-
+      
 //         if (!Array.isArray(tableData) || tableData.length === 0) {
 //           console.warn(`Skipping key "${key}" because it has no valid data.`);
 //           continue;
 //         }
-
+      
 //         if (!tableName) {
 //           console.warn(`Skipping key "${key}" as no table is mapped.`);
 //           continue;
 //         }
+      
 //         try {
-//           await queryAsync(`DELETE FROM ${tableName} WHERE fir_id = ?`, [firId]);
-//           console.log(`Cleared existing data for fir_id: ${firId} in ${tableName}`);
+//           await queryAsync(`DELETE FROM ${tableName} WHERE fir_id = ?`, [ogId]);
+//           console.log(`Cleared existing data for fir_id: ${ogId} in ${tableName}`);
 //         } catch (error) {
-//           console.error(`Failed to clear existing data for fir_id: ${firId} in ${tableName}`, error);
+//           console.error(`Failed to clear existing data for fir_id: ${ogId} in ${tableName}`, error);
 //           continue;
 //         }
+      
 //         for (const entry of tableData) {
 //           let suffix = '';
-
+      
 //           if (key === 'hearingDetails_one') {
 //             suffix = '_one';
 //           } else if (key === 'hearingDetails_two') {
 //             suffix = '_two';
 //           }
-
+      
 //           const nextHearingDate = entry[`nextHearingDate${suffix}`] || null;
 //           const reasonNextHearing = entry[`reasonNextHearing${suffix}`] || null;
-
+      
 //           if (!nextHearingDate && !reasonNextHearing) {
 //             console.warn(`Skipping empty record for table "${tableName}"`);
 //             continue;
 //           }
-
+      
 //           try {
 //             await queryAsync(
 //               `INSERT INTO ${tableName} (fir_id, next_hearing_date, reason_next_hearing) 
 //                VALUES (?, ?, ?)`,
-//               [firId, nextHearingDate, reasonNextHearing]
+//               [ogId, nextHearingDate, reasonNextHearing]
 //             );
 //             console.log(`Inserted record into ${tableName}: ${nextHearingDate}, ${reasonNextHearing}`);
 //           } catch (error) {
@@ -2472,168 +2725,32 @@ exports.editStepSevenAsDraft = (req, res) => {
 //           }
 //         }
 //       }
-
-
-//       await queryAsync(
-//         `INSERT INTO case_details (
-//           fir_id, case_id, court_name, court_district, trial_case_number,
-//           public_prosecutor, prosecutor_phone, first_hearing_date, judgement_awarded,
-//           CaseHandledBy, NameOfAdvocate, advocateMobNumber,
-//           judgementAwarded1, judgementAwarded2, judgementAwarded3
-//         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-//         [
-//           firId,
-//           caseId,
-//           parsedTrialDetails.courtName,
-//           parsedTrialDetails.courtDistrict,
-//           parsedTrialDetails.trialCaseNumber,
-//           parsedTrialDetails.publicProsecutor,
-//           parsedTrialDetails.prosecutorPhone,
-//           parsedTrialDetails.firstHearingDate,
-//           judgementAwarded,
-//           parsedTrialDetails.CaseHandledBy || null,
-//           parsedTrialDetails.NameOfAdvocate || null,
-//           parsedTrialDetails.advocateMobNumber || null,
-//           judgementAwarded1,
-//           judgementAwarded2,
-//           judgementAwarded3
-//         ]
-//       );
-
-//       if (parsedTrialDetails.judgementNature || parsedTrialDetails.uploadJudgement) {
-//         await queryAsync(
-//           `UPDATE fir_add SET nature_of_judgement = ?, judgement_copy = ? WHERE fir_id = ?`,
-//           [
-//             parsedTrialDetails.judgementNature,
-//             parsedTrialDetails.uploadJudgement,
-//             firId
-//           ]
-//         );
-//         console.log("Judgment details updated.");
-//       }
-
-//       await queryAsync(
-//         `INSERT INTO fir_trial (
-//           fir_id, case_id, total_amount_third_stage, proceedings_file_no,
-//           proceedings_date, Commissionerate_file
-//         ) VALUES (?, ?, ?, ?, ?, ?)
-//         ON DUPLICATE KEY UPDATE
-//           total_amount_third_stage = VALUES(total_amount_third_stage),
-//           proceedings_file_no = VALUES(proceedings_file_no),
-//           proceedings_date = VALUES(proceedings_date),
-//           Commissionerate_file = VALUES(Commissionerate_file)`,
-//         [
-//           firId,
-//           caseId,
-//           parsedCompensationDetails.totalCompensation,
-//           parsedCompensationDetails.proceedingsFileNo,
-//           parsedCompensationDetails.proceedingsDate,
-//           parsedCompensationDetails.uploadProceedings
-//         ]
-//       );
-
-//       if (appealDetails) {
-//         await queryAsync(
-//           `INSERT INTO appeal_details (
-//             fir_id, case_id, legal_opinion_obtained, case_fit_for_appeal,
-//             government_approval_for_appeal, filed_by, designated_court
-//           ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-//           [
-//             firId,
-//             caseId,
-//             parsedAppealDetails.legalOpinionObtained,
-//             parsedAppealDetails.caseFitForAppeal,
-//             parsedAppealDetails.governmentApprovalForAppeal,
-//             parsedAppealDetails.filedBy,
-//             parsedAppealDetails.designatedCourt
-//           ]
-//         );
-//         console.log("Appeal details saved.");
-//       }
-
-//       if (appealDetailsOne) {
-//         await queryAsync(
-//           `INSERT INTO appeal_details_one (
-//             fir_id, case_id, legal_opinion_obtained, case_fit_for_appeal,
-//             government_approval_for_appeal, filed_by, designated_court, created_at, updated_at
-//           ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-//           [
-//             firId,
-//             caseId,
-//             parsedAppealDetailsOne.legalOpinionObtained,
-//             parsedAppealDetailsOne.caseFitForAppeal,
-//             parsedAppealDetailsOne.governmentApprovalForAppeal,
-//             parsedAppealDetailsOne.filedBy,
-//             parsedAppealDetailsOne.designatedCourt
-//           ]
-//         );
-//         console.log("Appeal details one saved.");
-//       }
-
-//       if (caseAppealDetailsTwo) {
-//         await queryAsync(
-//           `INSERT INTO case_appeal_details_two (
-//             fir_id, case_id, legal_opinion_obtained, case_fit_for_appeal,
-//             government_approval_for_appeal, filed_by, designated_court, created_at, updated_at
-//           ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-//           [
-//             firId,
-//             caseId,
-//             parsedCaseAppealDetailsTwo.legalOpinionObtained,
-//             parsedCaseAppealDetailsTwo.caseFitForAppeal,
-//             parsedCaseAppealDetailsTwo.governmentApprovalForAppeal,
-//             parsedCaseAppealDetailsTwo.filedBy,
-//             parsedCaseAppealDetailsTwo.designatedCourt
-//           ]
-//         );
-//         console.log("Case appeal details two saved.");
-//       }
+      
+      
+      
+      
 
 //       if (attachments && attachments.length > 0) {
-//         const attachmentQueries = attachments.map((attachment) => {
-//           return queryAsync(
-//             `INSERT INTO case_attachments (fir_id, case_id, file_name, uploaded_at, created_at, updated_at)
-//              VALUES (?, ?, ?, NOW(), NOW(), NOW())`,
-//             [firId, caseId, attachment]
-//           );
-//         });
-//         await Promise.all(attachmentQueries);
-//         console.log("Attachments saved.");
+//         for (const attachment of attachments) {
+//           await queryAsync(`
+//             INSERT INTO case_attachments (fir_id, file_name)
+//             VALUES (?, ?)
+//           `, [ogId, attachment]);
+//         }
 //       }
-
-//       await queryAsync(
-//         `INSERT INTO case_court_details_two (
-//           fir_id, case_id, case_number, public_prosecutor, prosecutor_phone, created_at, updated_at
-//         ) VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
-//         [
-//           firId,
-//           caseId,
-//           parsedTrialDetails.trialCaseNumber,
-//           parsedTrialDetails.publicProsecutor,
-//           parsedTrialDetails.prosecutorPhone
-//         ]
-//       );
-
-//       console.log("Case court details two saved.");
 
 //       db.commit((err) => {
 //         if (err) {
-//           console.error("Transaction commit error:", err);
-//           return db.rollback(() =>
-//             res.status(500).json({ message: "Transaction commit error", error: err })
-//           );
+//           db.rollback(() => res.status(500).json({ message: 'Transaction commit error', error: err }));
 //         }
-//         console.log("fir_trial details saved successfully.");
-//         res.status(200).json({ message: "Step seven details saved successfully." }); // Send success response
+//         res.status(200).json({ message: 'Step 7 updated successfully.' });
 //       });
-
 //     } catch (error) {
-//       console.error("Transaction failed:", error);
-//       db.rollback(() => res.status(500).json({ message: "Transaction failed", error }));
+//       db.rollback(() => res.status(500).json({ message: 'Transaction failed', error }));
 //     }
 //   });
-// };
 
+// }
 
 exports.saveStepSevenAsDraft = (req, res) => {
 
@@ -3033,8 +3150,6 @@ if (existingCaseCourtDetailTwo.length > 0) {
   });
 
 }
-
-    
 
 
 const queryAsync = (query, params) => {
