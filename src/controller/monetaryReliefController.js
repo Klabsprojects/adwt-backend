@@ -167,3 +167,73 @@ exports.updateMonetaryRelief = async (req, res) => {
     res.status(500).json({ error: "Failed to update Monetary Relief report." });
   }
 };
+
+
+
+
+exports.getVmcReportList = (req, res) => {
+  
+  // Build WHERE clause based on provided filters
+  let whereClause = '';
+  const params = [];
+  
+  // Add filters to where clause
+  if (req.query.search) {
+    const searchValue = `%${req.query.search}%`;
+    whereClause += ` WHERE (year LIKE ? OR meeting_type LIKE ? OR meeting_quarter LIKE ? OR meeting_date LIKE ? OR subdivision LIKE ?)`;
+    
+    params.push(searchValue, searchValue, searchValue, searchValue, searchValue);
+  }
+  
+  if (req.query.meeting_type) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'meeting_type = ?';
+    params.push(req.query.meeting_type);
+  }
+
+  if (req.query.meeting_quarter) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'meeting_quarter = ?';
+    params.push(req.query.meeting_quarter);
+  }
+
+  if (req.query.district) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'district = ?';
+    params.push(req.query.district);
+  }
+
+  if (req.query.year) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'year = ?';
+    params.push(req.query.year);
+  }
+
+  if (req.query.subdivision) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'subdivision = ?';
+    params.push(req.query.subdivision);
+  }
+
+    // Get paginated data query
+    const query = `SELECT year, meeting_type, meeting_quarter, meeting_date, meeting_time, district, subdivision, meeting_status, DATE_FORMAT(uploaded_date ,"%d %M %Y") as uploaded_date FROM vmc_meeting${whereClause} `;
+    
+    const queryParams = [...params];
+
+    console.log(query)
+    console.log(queryParams)
+    
+    db.query(query, queryParams, (err, results) => {
+      if (err) {
+        return res.status(500).json({ 
+          message: 'Failed to retrieve FIR list', 
+          error: err 
+        });
+      }
+      
+      // Return paginated data with metadata
+      res.status(200).json({
+        data: results,
+      });
+    });
+  };

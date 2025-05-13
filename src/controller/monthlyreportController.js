@@ -122,6 +122,28 @@ exports.GetDistrictWisePendingUI = async (req, res) => {
         return res.status(200).json({ message: "No records found" });
       }
 
+      // Calculate totals
+      const totals = {
+        revenue_district: 'Grand Total',
+        ui_total_cases: 0,
+        less_than_60_days: 0,
+        more_than_60_current_year: 0,
+        more_than_60_last_year: 0,
+        more_than_60_two_years_ago: 0
+      };
+
+      // Sum all values for each column
+      results.forEach(row => {
+        totals.ui_total_cases += row.ui_total_cases || 0;
+        totals.less_than_60_days += row.less_than_60_days || 0;
+        totals.more_than_60_current_year += row.more_than_60_current_year || 0;
+        totals.more_than_60_last_year += row.more_than_60_last_year || 0;
+        totals.more_than_60_two_years_ago += row.more_than_60_two_years_ago || 0;
+      });
+
+      // Add the totals row to the results
+      results.push(totals);
+
       res.status(200).json({ data: results });
     });
   } catch (error) {
@@ -163,6 +185,30 @@ exports.GetReasonWisePendingUI = async (req, res) => {
       if (results.length === 0) {
         return res.status(200).json({ message: "No records found" });
       }
+
+      // Calculate totals
+      const totals = {
+        reason_for_status: 'Grand Total',
+        ui_total_cases: 0,
+        less_than_60_days: 0,
+        more_than_60_current_year: 0,
+        more_than_60_last_year: 0,
+        more_than_60_two_years_ago: 0
+
+      };
+
+      // Sum all values for each column
+      results.forEach(row => {
+        totals.ui_total_cases += row.ui_total_cases || 0;
+        totals.less_than_60_days += row.less_than_60_days || 0;
+        totals.more_than_60_current_year += row.more_than_60_current_year || 0;
+        totals.more_than_60_last_year += row.more_than_60_last_year || 0;
+        totals.more_than_60_two_years_ago += row.more_than_60_two_years_ago || 0;
+      });
+
+      // Add the totals row to the results
+      results.push(totals);
+
 
       res.status(200).json({ data: results });
     });
@@ -208,6 +254,28 @@ exports.GetCommunity_Certificate_Report = async (req, res) => {
       if (results.length === 0) {
         return res.status(200).json({ message: "No records found" });
       }
+      // Calculate totals
+      const totals = {
+        revenue_district: 'Grand Total',
+        ui_total_cases: 0,
+        less_than_60_days: 0,
+        more_than_60_current_year: 0,
+        more_than_60_last_year: 0,
+        more_than_60_two_years_ago: 0
+
+      };
+
+      // Sum all values for each column
+      results.forEach(row => {
+        totals.ui_total_cases += row.ui_total_cases || 0;
+        totals.less_than_60_days += row.less_than_60_days || 0;
+        totals.more_than_60_current_year += row.more_than_60_current_year || 0;
+        totals.more_than_60_last_year += row.more_than_60_last_year || 0;
+        totals.more_than_60_two_years_ago += row.more_than_60_two_years_ago || 0;
+      });
+
+      // Add the totals row to the results
+      results.push(totals);
 
       res.status(200).json({ data: results });
     });
@@ -254,6 +322,35 @@ exports.GetDistrictWisePendingPT = async (req, res) => {
         return res.status(200).json({ message: "No records found" });
       }
 
+      // Calculate totals
+      const totals = {
+        revenue_district: 'Grand Total',
+        total: 0,
+        less_than_one_year: 0,
+        between_1_and_5_years: 0,
+        between_6_and_10_years: 0,
+        between_11_and_15_years: 0,
+        between_16_and_20_years: 0,
+        above_20_years: 0,
+ 
+
+      };
+
+      // Sum all values for each column
+      results.forEach(row => {
+        totals.total += row.total || 0;
+        totals.less_than_one_year += row.less_than_one_year || 0;
+        totals.between_1_and_5_years += row.between_1_and_5_years || 0;
+        totals.between_6_and_10_years += row.between_6_and_10_years || 0;
+        totals.between_11_and_15_years += row.between_11_and_15_years || 0;
+        totals.between_16_and_20_years += row.between_16_and_20_years || 0;
+        totals.above_20_years += row.above_20_years || 0;
+
+      });
+
+      // Add the totals row to the results
+      results.push(totals);
+
       res.status(200).json({ data: results });
     });
   } catch (error) {
@@ -291,6 +388,21 @@ exports.GetConvictionTypeRepot = async (req, res) => {
       if (results.length === 0) {
         return res.status(200).json({ message: "No records found" });
       }
+
+      // Calculate totals
+      const totals = {
+        Conviction_Type: 'Grand Total',
+        case_count: 0
+
+      };
+
+      // Sum all values for each column
+      results.forEach(row => {
+        totals.case_count += row.case_count || 0;
+      });
+
+      // Add the totals row to the results
+      results.push(totals);
 
       res.status(200).json({ data: results });
     });
