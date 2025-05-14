@@ -913,14 +913,168 @@ const upload_step5 = multer({ storage: storage_step5 }).fields([
 //   });
 // };
 
+// modify for attachemnt
+// exports.updateStepFive = (req, res) => {
+//   upload_step5(req, res, async (err) => {
+//     if (err) return res.status(500).json({ message: 'File upload error', error: err });
+
+//     const { firId, totalCompensation, proceedingsFileNo, proceedingsDate } = req.body;
+//     const victimsRelief = req.body.victimsRelief ? JSON.parse(req.body.victimsRelief) : [];
+//     const proceedingsFile = req.files['proceedingsFile'] ? req.files['proceedingsFile'][0].filename : null;
+//     const attachments = req.files['attachments'] || [];
+//     const reliefId = generateRandomId(6);
+
+//     if (!firId) {
+//       return res.status(400).json({ message: 'FIR ID is missing.' });
+//     }
+
+//     const connection = await db.promise().getConnection();
+//     try {
+//       await connection.beginTransaction();
+
+//       const updatedData = { victims: [], proceedings: null, attachments: [] };
+
+//       // Insert or update victim_relief
+//       for (const victim of victimsRelief) {
+//         if (!victim.victimId) continue;
+
+//         console.log(victim.victimId)
+//         const [existingData] = await connection.query('SELECT * FROM victim_relief WHERE victim_id = ?', [victim.victimId]);
+//         console.log(existingData)
+
+//         if (existingData.length === 0) {
+//           const insertQuery = `INSERT INTO victim_relief (victim_id, fir_id, relief_id, victim_name, community_certificate, relief_amount_scst, relief_amount_exgratia, relief_amount_first_stage, additional_relief)
+//               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+//           const insertValues = [
+//             victim.victimId,
+//             firId,
+//             reliefId,
+//             victim.victimName,
+//             victim.communityCertificate,
+//             victim.reliefAmountScst,
+//             victim.reliefAmountExGratia,
+//             victim.reliefAmountFirstStage,
+//             victim.additionalRelief ? JSON.stringify(victim.additionalRelief) : null,
+//           ];
+
+//           await connection.query(insertQuery, insertValues);
+//         } else {
+//           const updateQuery = `UPDATE victim_relief SET victim_name = ?, community_certificate = ?, relief_amount_scst = ?, relief_amount_exgratia = ?, relief_amount_first_stage = ?, additional_relief = ? WHERE id = ?`;
+//           const updateValues = [
+//             victim.victimName || existingData[0].victim_name,
+//             victim.communityCertificate || existingData[0].community_certificate,
+//             victim.reliefAmountScst !== undefined ? parseInt(victim.reliefAmountScst) || null : existingData[0].relief_amount_scst,
+//             victim.reliefAmountExGratia !== undefined ? parseInt(victim.reliefAmountExGratia) || null : existingData[0].relief_amount_exgratia,
+//             victim.reliefAmountFirstStage !== undefined ? parseInt(victim.reliefAmountFirstStage) || null : existingData[0].relief_amount_first_stage,
+//             victim.additionalRelief ? JSON.stringify(victim.additionalRelief) : existingData[0].additional_relief,
+//             existingData[0].id,
+//           ];
+//           console.log(updateQuery);
+//           console.log(updateValues);
+//           await connection.query(updateQuery, updateValues);
+//         }
+//       }
+
+//       // Update proceedings
+//       const [existingProceedings] = await connection.query('SELECT * FROM proceedings_victim_relief WHERE fir_id = ?', [firId]);
+//       if (existingProceedings.length > 0) {
+//         const updateProceedingsQuery = `UPDATE proceedings_victim_relief SET total_compensation = ?, proceedings_file_no = ?, proceedings_date = ?, proceedings_file = ? WHERE fir_id = ?`;
+//         const updateProceedingsValues = [
+//           totalCompensation || existingProceedings[0].total_compensation,
+//           proceedingsFileNo || existingProceedings[0].proceedings_file_no,
+//           proceedingsDate || existingProceedings[0].proceedings_date,
+//           proceedingsFile || existingProceedings[0].proceedings_file,
+//           firId,
+//         ];
+//         await connection.query(updateProceedingsQuery, updateProceedingsValues);
+//       } else {
+//         // Insert new record
+//         const proceedingsId = generateRandomId(6);
+//         const insertProceedingsQuery = `
+//           INSERT INTO proceedings_victim_relief (fir_id,proceedings_id, total_compensation, proceedings_file_no, proceedings_date, proceedings_file) 
+//           VALUES (?, ?, ?, ?, ?, ?)`;
+//         const insertProceedingsValues = [
+//           firId,
+//           proceedingsId,
+//           totalCompensation || null,
+//           proceedingsFileNo || null,
+//           proceedingsDate || null,
+//           proceedingsFile || null,
+//         ];
+//         await connection.query(insertProceedingsQuery, insertProceedingsValues);
+//       }
+
+//       // Existing attachments from body
+//       let filename = req.body.attachments;
+//       let attachmentFromBody = [];
+
+//       if (Array.isArray(filename)) {
+//         attachmentFromBody = filename.map(url => url.split('/').pop());
+//       } else if (typeof filename === 'string') {
+//         attachmentFromBody = [filename.split('/').pop()];
+//       }
+
+//       if (attachmentFromBody.length > 0) {
+//         for (const filePath of attachmentFromBody) {
+//           const [existingAttachment] = await connection.query(
+//             'SELECT * FROM attachment_relief WHERE fir_id = ? AND file_path = ?',
+//             [firId, filePath]
+//           );
+
+//           if (existingAttachment.length > 0) {
+//             updatedData.attachments.push(existingAttachment[0]);
+//           }
+//         }
+
+//         const placeholders = attachmentFromBody.map(() => '?').join(',');
+//         if (placeholders.length > 0) {
+//           await connection.query(
+//             `DELETE FROM attachment_relief WHERE fir_id = ? AND file_path NOT IN (${placeholders})`,
+//             [firId, ...attachmentFromBody]
+//           );
+//         }
+//       }
+
+//       // New file uploads
+//       for (const attachment of attachments) {
+//         const [existingAttachment] = await connection.query(
+//           'SELECT * FROM attachment_relief WHERE fir_id = ? AND file_path = ?',
+//           [firId, attachment.filename]
+//         );
+//         const attachmentId = existingAttachment.length > 0 ? existingAttachment[0].attachment_id : generateRandomId(8);
+
+//         if (attachment.originalname) {
+//           const insertQuery = `INSERT INTO attachment_relief (attachment_id, fir_id, file_name, file_path)
+//             VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE file_name = VALUES(file_name), file_path = VALUES(file_path)`;
+//           await connection.query(insertQuery, [attachmentId, firId, attachment.originalname, attachment.filename]);
+//         } else {
+//           const updateQuery = `UPDATE attachment_relief SET file_path = ? WHERE attachment_id = ?`;
+//           await connection.query(updateQuery, [attachment.filename, attachmentId]);
+//         }
+//       }
+
+//       await connection.commit();
+//       res.status(200).json({ message: 'Step 5 data updated successfully.', data: updatedData });
+//     } catch (error) {
+//       await connection.rollback();
+//       console.error('Transaction failed:', error);
+//       res.status(500).json({ message: 'Transaction failed', error });
+//     } finally {
+//       connection.release();
+//     }
+//   });
+// };
+
+
+
 exports.updateStepFive = (req, res) => {
   upload_step5(req, res, async (err) => {
     if (err) return res.status(500).json({ message: 'File upload error', error: err });
 
     const { firId, totalCompensation, proceedingsFileNo, proceedingsDate } = req.body;
-    const victimsRelief = req.body.victimsRelief ? JSON.parse(req.body.victimsRelief) : [];
-    const proceedingsFile = req.files['proceedingsFile'] ? req.files['proceedingsFile'][0].filename : null;
-    const attachments = req.files['attachments'] || [];
+    const victimsRelief = req.body.victimsRelief ? req.body.victimsRelief : [];
+    const proceedingsFile = req.body.proceedingsFile ? req.body.proceedingsFile : null;
+    const attachments = req.body.attachments || [];
     const reliefId = generateRandomId(6);
 
     if (!firId) {
@@ -1003,57 +1157,23 @@ exports.updateStepFive = (req, res) => {
         await connection.query(insertProceedingsQuery, insertProceedingsValues);
       }
 
-      // Existing attachments from body
-      let filename = req.body.attachments;
-      let attachmentFromBody = [];
+      if(attachments && attachments.length > 0){
+        await connection.query('DELETE FROM attachment_relief WHERE fir_id = ?', [firId]);
 
-      if (Array.isArray(filename)) {
-        attachmentFromBody = filename.map(url => url.split('/').pop());
-      } else if (typeof filename === 'string') {
-        attachmentFromBody = [filename.split('/').pop()];
+        for (const attachment of attachments) {
+        const attachmentQuery = `
+          INSERT INTO attachment_relief (fir_id, file_path) 
+          VALUES (?, ?)`;
+        const attachmentvalues = [
+          firId,
+          attachment
+        ];
+        await connection.query(attachmentQuery, attachmentvalues);
       }
-
-      if (attachmentFromBody.length > 0) {
-        for (const filePath of attachmentFromBody) {
-          const [existingAttachment] = await connection.query(
-            'SELECT * FROM attachment_relief WHERE fir_id = ? AND file_path = ?',
-            [firId, filePath]
-          );
-
-          if (existingAttachment.length > 0) {
-            updatedData.attachments.push(existingAttachment[0]);
-          }
-        }
-
-        const placeholders = attachmentFromBody.map(() => '?').join(',');
-        if (placeholders.length > 0) {
-          await connection.query(
-            `DELETE FROM attachment_relief WHERE fir_id = ? AND file_path NOT IN (${placeholders})`,
-            [firId, ...attachmentFromBody]
-          );
-        }
-      }
-
-      // New file uploads
-      for (const attachment of attachments) {
-        const [existingAttachment] = await connection.query(
-          'SELECT * FROM attachment_relief WHERE fir_id = ? AND file_path = ?',
-          [firId, attachment.filename]
-        );
-        const attachmentId = existingAttachment.length > 0 ? existingAttachment[0].attachment_id : generateRandomId(8);
-
-        if (attachment.originalname) {
-          const insertQuery = `INSERT INTO attachment_relief (attachment_id, fir_id, file_name, file_path)
-            VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE file_name = VALUES(file_name), file_path = VALUES(file_path)`;
-          await connection.query(insertQuery, [attachmentId, firId, attachment.originalname, attachment.filename]);
-        } else {
-          const updateQuery = `UPDATE attachment_relief SET file_path = ? WHERE attachment_id = ?`;
-          await connection.query(updateQuery, [attachment.filename, attachmentId]);
-        }
       }
 
       await connection.commit();
-      res.status(200).json({ message: 'Step 5 data updated successfully.', data: updatedData });
+      res.status(200).json({ message: 'Step 5 data updated successfully.'});
     } catch (error) {
       await connection.rollback();
       console.error('Transaction failed:', error);
@@ -2603,6 +2723,8 @@ const update_step6 = multer({ storage: storage_step5 }).fields([
 //   });
 // };
 
+
+// modified for attachement
 exports.Update_step6 = (req, res) => {
   update_step6(req, res, (err) => {
     if (err) return res.status(500).json({ message: 'File upload error', error: err });
@@ -2615,20 +2737,20 @@ exports.Update_step6 = (req, res) => {
 
     let parsedChargesheetDetails;
     try {
-      parsedChargesheetDetails = JSON.parse(chargesheetDetails);
+      parsedChargesheetDetails = chargesheetDetails;
     } catch (error) {
       return res.status(400).json({ message: 'Invalid chargesheetDetails format', error });
     }
 
     let parsedVictimsRelief = [];
     try {
-      parsedVictimsRelief = JSON.parse(victimsRelief);
+      parsedVictimsRelief = victimsRelief;
     } catch (error) {
       return res.status(400).json({ message: 'Invalid victimsRelief format', error });
     }
 
-    const proceedingsFile = req.files['proceedingsFile'] ? req.files['proceedingsFile'][0].path : null;
-    const attachments = req.files['attachments'] || [];
+    const proceedingsFile = req.body.uploadProceedingsPath ? req.body.uploadProceedingsPath : null;
+    const attachments = req.body.attachments || [];
 
     const generateRandomId = (length = 8) => {
       const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -2723,23 +2845,26 @@ exports.Update_step6 = (req, res) => {
             });
           }
 
-          // 4. Check and insert each attachment (based on fir_id + file_path combo — you can change as needed)
-          for (const attachment of attachments) {
-            const checkQuery = `SELECT * FROM chargesheet_attachments WHERE fir_id = ? AND file_path = ?`;
-
+          if(attachments && attachments.length > 0){
             await new Promise((resolve, reject) => {
-              connection.query(checkQuery, [firId, attachment.path], (err, results) => {
-                if (err) return reject(err);
+            const query = `DELETE FROM chargesheet_attachments WHERE fir_id = ?`;
+            connection.query(query, [firId], (err) => (err ? reject(err) : resolve()));
+          });
+            // await connection.query('DELETE FROM chargesheet_attachments WHERE fir_id = ?', [firId]);
 
-                if (results.length === 0) {
-                  const attachmentId = generateRandomId();
-                  const query = `INSERT INTO chargesheet_attachments (fir_id, attachment_id, file_path) VALUES (?, ?, ?)`;
-                  connection.query(query, [firId, attachmentId, attachment.path], (err) => (err ? reject(err) : resolve()));
-                } else {
-                  resolve(); // Skip insert if already exists
-                }
-              });
-            });
+            for (const attachment of attachments) {
+            const attachmentQuery = `
+              INSERT INTO chargesheet_attachments (fir_id, file_path) 
+              VALUES (?, ?)`;
+            const attachmentvalues = [
+              firId,
+              attachment
+            ];
+            // await connection.query(attachmentQuery, attachmentvalues);
+            await new Promise((resolve, reject) => {
+            connection.query(attachmentQuery, attachmentvalues, (err) => (err ? reject(err) : resolve()));
+          });
+          }
           }
 
           // Commit
@@ -2754,6 +2879,7 @@ exports.Update_step6 = (req, res) => {
             res.status(200).json({ message: 'Step 6 data upserted successfully, and FIR status updated.' });
           });
         } catch (err) {
+          console.log(err)
           connection.rollback(() => {
             connection.release();
             res.status(500).json({ message: 'Transaction failed', error: err });
