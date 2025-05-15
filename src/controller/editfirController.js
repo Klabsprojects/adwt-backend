@@ -3802,18 +3802,29 @@ exports.saveEditStepSevenAsDraft = async (req, res) => {
       return {};
     }
   };
-  const parsedHearingDetails = parseJSON(hearingdetail);
-  const parsedTrialDetails = parseJSON(trialDetails);
-  const parsedTrialDetailsOne = parseJSON(trialDetails_one);
-  const parsedTrialDetailsTwo = parseJSON(trialDetails_two);
-  const parsedAppealDetails = parseJSON(appealDetails);
-  const parsedAppealDetailsOne = parseJSON(appealDetailsOne);
-  const parsedCaseAppealDetailsTwo = parseJSON(caseAppealDetailsTwo);
-  const parsedCompensationDetails = parseJSON(compensationDetails);
+  // const parsedHearingDetails = parseJSON(hearingdetail);
+  // const parsedTrialDetails = parseJSON(trialDetails);
+  // const parsedTrialDetailsOne = parseJSON(trialDetails_one);
+  // const parsedTrialDetailsTwo = parseJSON(trialDetails_two);
+  // const parsedAppealDetails = parseJSON(appealDetails);
+  // const parsedAppealDetailsOne = parseJSON(appealDetailsOne);
+  // const parsedCaseAppealDetailsTwo = parseJSON(caseAppealDetailsTwo);
+  // const parsedCompensationDetails = parseJSON(compensationDetails);
+  // const parsedCompensationDetails_1 = parseJSON(compensationDetails_1);
+  // const parsedCompensationDetails_2 = parseJSON(compensationDetails_2);
+  // const parsedVictimsRelief = parseJSON(victimsRelief);
 
-  const parsedCompensationDetails_1 = parseJSON(compensationDetails_1);
-  const parsedCompensationDetails_2 = parseJSON(compensationDetails_2);
-  const parsedVictimsRelief = parseJSON(victimsRelief);
+  const parsedHearingDetails = hearingdetail;
+  const parsedTrialDetails = trialDetails;
+  const parsedTrialDetailsOne = trialDetails_one;
+  const parsedTrialDetailsTwo = trialDetails_two;
+  const parsedAppealDetails = appealDetails;
+  const parsedAppealDetailsOne = appealDetailsOne;
+  const parsedCaseAppealDetailsTwo = caseAppealDetailsTwo;
+  const parsedCompensationDetails = compensationDetails;
+  const parsedCompensationDetails_1 = compensationDetails_1;
+  const parsedCompensationDetails_2 = compensationDetails_2;
+  const parsedVictimsRelief = victimsRelief;
 
 
   const randomCaseId_1 = await generateRandomId(10);
@@ -4225,6 +4236,9 @@ exports.saveEditStepSevenAsDraft = async (req, res) => {
     }
 
     if (attachments && attachments.length > 0) {
+
+      await queryAsync(` DELETE FROM case_attachments WHERE fir_id = ? `, [ogId]);
+
       for (const attachment of attachments) {
         await queryAsync(`
             INSERT INTO case_attachments (fir_id, file_name)

@@ -2386,6 +2386,8 @@ exports.getFirDetails = async  (req, res) =>
                 const casedetail_one = await queryAsync('SELECT * FROM case_court_detail_one WHERE fir_id = ?', [fir_id]);
                 const casedetail_two = await queryAsync('SELECT * FROM case_court_details_two WHERE fir_id = ?', [fir_id]);
 
+                const trialAttachments = await queryAsync('SELECT file_name FROM case_attachments WHERE fir_id = ?', [fir_id]);
+
                 console.log(casedetail_two);
 
                 const queryAttachments = `SELECT file_path FROM attachment_relief WHERE fir_id = ?`;
@@ -2421,6 +2423,7 @@ exports.getFirDetails = async  (req, res) =>
                     compensation_details:compensation_details,
                     compensation_details_1:compensation_details_1,
                     compensation_details_2:compensation_details_2,
+                    trialAttachments:trialAttachments,
               
                   });
                 });
