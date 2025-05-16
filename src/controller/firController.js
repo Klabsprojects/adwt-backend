@@ -212,8 +212,8 @@ exports.handleStepTwo = (req, res) => {
   const values = [
     firNumber,
     firNumberSuffix,
-    dateOfOccurrence,
-    timeOfOccurrence,
+    dateOfOccurrence ? dateOfOccurrence : null,
+    timeOfOccurrence ? timeOfOccurrence : null,
     date_of_occurrence_to ? date_of_occurrence_to : null,
     time_of_occurrence_to ? time_of_occurrence_to : null,
     placeOfOccurrence,
@@ -1953,7 +1953,9 @@ exports.getAllOffences = (req, res) => {
 
 // Fetch all Offence Act Names
 exports.getAllOffenceActs = (req, res) => {
+  console.log('api calling')
   const { offence } = req.query;
+  console.log(offence)
   let query = `
     SELECT
       id,

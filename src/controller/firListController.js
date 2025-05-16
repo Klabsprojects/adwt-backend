@@ -205,6 +205,12 @@ exports.getFirListPaginated = (req, res) => {
       params.push(req.query.status);
     }
   }
+
+  if (req.query.year) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'DATE_FORMAT(date_of_registration, "%Y") = ? ';
+    params.push(req.query.year);
+  }
   
   // Add other filters as needed
   
@@ -240,7 +246,7 @@ exports.getFirListPaginated = (req, res) => {
     const validOffset = (validPage - 1) * pageSize;
     
     // Get paginated data query
-    const query = `SELECT ROW_NUMBER() OVER () AS row_num, id, fir_id, police_city, police_station, police_zone, police_range, revenue_district,  officer_name, complaintReceivedType, complaintRegisteredBy, complaintReceiverName, officer_designation, place_of_occurrence,  DATE_FORMAT(date_of_registration, '%d/%m/%Y') AS date_of_registration,  nature_of_judgement,  DATE_FORMAT(date_of_occurrence, '%d/%m/%Y') AS date_of_occurrence,  time_of_occurrence, DATE_FORMAT(date_of_occurrence_to, '%d/%m/%Y') AS date_of_occurrence_to, time_of_occurrence_to , time_of_registration, name_of_complainant, Offence_group,
+    const query = `SELECT ROW_NUMBER() OVER () AS row_num, id, fir_id, DATE_FORMAT(date_of_registration, "%Y") as year , police_city, police_station, police_zone, police_range, revenue_district,  officer_name, complaintReceivedType, complaintRegisteredBy, complaintReceiverName, officer_designation, place_of_occurrence,  DATE_FORMAT(date_of_registration, '%d/%m/%Y') AS date_of_registration,  nature_of_judgement,  DATE_FORMAT(date_of_occurrence, '%d/%m/%Y') AS date_of_occurrence,  time_of_occurrence, DATE_FORMAT(date_of_occurrence_to, '%d/%m/%Y') AS date_of_occurrence_to, time_of_occurrence_to , time_of_registration, name_of_complainant, Offence_group,
                   concat(fir_number,'/',fir_number_suffix) fir_number, 
                   created_by, created_at, status, relief_status 
                   FROM fir_add${whereClause} 
