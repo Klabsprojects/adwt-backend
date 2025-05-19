@@ -1077,6 +1077,8 @@ exports.updateStepFive = (req, res) => {
     const attachments = req.body.attachments || [];
     const reliefId = generateRandomId(6);
 
+    console.log(req.body)
+
     if (!firId) {
       return res.status(400).json({ message: 'FIR ID is missing.' });
     }
@@ -1096,6 +1098,7 @@ exports.updateStepFive = (req, res) => {
         console.log(existingData)
 
         if (existingData.length === 0) {
+          console.log('enter victim relief')
           const insertQuery = `INSERT INTO victim_relief (victim_id, fir_id, relief_id, victim_name, community_certificate, relief_amount_scst, relief_amount_exgratia, relief_amount_first_stage, additional_relief)
               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
           const insertValues = [
@@ -1112,6 +1115,7 @@ exports.updateStepFive = (req, res) => {
 
           await connection.query(insertQuery, insertValues);
         } else {
+          console.log('update victim relief')
           const updateQuery = `UPDATE victim_relief SET victim_name = ?, community_certificate = ?, relief_amount_scst = ?, relief_amount_exgratia = ?, relief_amount_first_stage = ?, additional_relief = ? WHERE id = ?`;
           const updateValues = [
             victim.victimName || existingData[0].victim_name,
@@ -1122,8 +1126,8 @@ exports.updateStepFive = (req, res) => {
             victim.additionalRelief ? JSON.stringify(victim.additionalRelief) : existingData[0].additional_relief,
             existingData[0].id,
           ];
-          console.log(updateQuery);
-          console.log(updateValues);
+          // console.log(updateQuery);
+          // console.log(updateValues);
           await connection.query(updateQuery, updateValues);
         }
       }
@@ -1131,6 +1135,7 @@ exports.updateStepFive = (req, res) => {
       // Update proceedings
       const [existingProceedings] = await connection.query('SELECT * FROM proceedings_victim_relief WHERE fir_id = ?', [firId]);
       if (existingProceedings.length > 0) {
+        console.log('enter proceedings_victim_relief')
         const updateProceedingsQuery = `UPDATE proceedings_victim_relief SET total_compensation = ?, proceedings_file_no = ?, proceedings_date = ?, proceedings_file = ? WHERE fir_id = ?`;
         const updateProceedingsValues = [
           totalCompensation || existingProceedings[0].total_compensation,
@@ -1141,6 +1146,7 @@ exports.updateStepFive = (req, res) => {
         ];
         await connection.query(updateProceedingsQuery, updateProceedingsValues);
       } else {
+        console.log('update proceedings_victim_relief')
         // Insert new record
         const proceedingsId = generateRandomId(6);
         const insertProceedingsQuery = `

@@ -10,8 +10,8 @@ const nodemailer = require('nodemailer');
 const CSTDetailsSchema = require("../schemas/cst.Schema");
 const bankDetailsSchema = require("../schemas/bankDetails.Schema");
 const bcrypt = require('bcryptjs');
-
-
+const CryptoJS = require("crypto-js");
+const secretKey = 'dfTVcIUDU7QOWRm+j0nupwjOir1nya6qh1UTr+AJ3+eZbfoy0R9+AjRZwRBsurya';
 
 
 
@@ -36,8 +36,20 @@ const handleInvalidQuery = (res, message = "") => {
     return res.status(201).send({ message: `no data found` });
 };
 
+function decryptOpenSSL(encryptedBase64, secretKey) {
+  const decrypted = CryptoJS.AES.decrypt(encryptedBase64, secretKey);
+  const plaintext = decrypted.toString(CryptoJS.enc.Utf8);
+
+  if (!plaintext) {
+    throw new Error("Decryption failed or wrong key");
+  }
+
+  return plaintext;
+}
+
 const login = async (req, res) => {
-    const { email, password } = req.body;
+    const { email } = req.body;
+    const password = decryptOpenSSL(req.body.password,secretKey);
     console.log('Login request received with email:', email); // Debug log
   
     // Query to check if the user exists

@@ -402,6 +402,9 @@ router.get('/fir-relief/second-installment/:firId', ReliefController.getSecondIn
 // Route to delete a FIR by ID
 router.delete('/fir_list/delete/:id', firListController.deleteFir);
 
+router.post('/fir/GetVictimDetail', firController.GetVictimDetail);
+router.post('/fir/Getstep5Detail', firController.Getstep5Detail);
+router.post('/fir/GetChargesheetDetail', firController.GetChargesheetDetail);
 
 
 // Route to update FIR status

@@ -141,7 +141,7 @@ exports.getDashboardData = (req, res) => {
     const currentDate = formatDate(now);
 
   const whereClause = req.whereClause;
-  console.log('whereClause => ', whereClause); 
+  // console.log('whereClause => ', whereClause); 
 
   let joinQuery = "";
   let acquitted = "";
@@ -1085,8 +1085,8 @@ exports.GetUIPendencyCasesGrouped = (req, res) => {
     ${whereClause}
 
   `;
-  console.log(query);
-  console.log(params);
+  // console.log(query);
+  // console.log(params);
 
   db.query(query, params, (err, results) => {
     if (err) {
@@ -1161,8 +1161,8 @@ exports.GetUIDistrictWiseHeatMap = (req, res) => {
     GROUP BY fa.revenue_district
 
   `;
-  console.log(query);
-  console.log(params);
+  // console.log(query);
+  // console.log(params);
 
   db.query(query, params, (err, results) => {
     if (err) {
@@ -1237,8 +1237,8 @@ exports.GetPTDistrictWiseHeatMap = (req, res) => {
     GROUP BY fa.revenue_district
 
   `;
-  console.log(query);
-  console.log(params);
+  // console.log(query);
+  // console.log(params);
 
   db.query(query, params, (err, results) => {
     if (err) {
@@ -1426,8 +1426,8 @@ exports.GetAnnualOverViewRegisterdCases = (req, res) => {
   ORDER BY y.year;
 `;
 
-console.log(query)
-console.log(params)
+// console.log(query)
+// console.log(params)
 
   db.query(query, params, (err, results) => {
     if (err) {
@@ -2179,8 +2179,8 @@ exports.ReliefDashboardDynamicValues = (req, res) => {
     
     const queryParams = [...params];
 
-    console.log(query)
-    console.log(queryParams)
+    // console.log(query)
+    // console.log(queryParams)
     
     db.query(query, queryParams, (err, results) => {
       if (err) {
@@ -2276,8 +2276,8 @@ exports.ReliefDashboarTableData = (req, res) => {
     
     const queryParams = [...params];
 
-    console.log(query)
-    console.log(queryParams)
+    // console.log(query)
+    // console.log(queryParams)
     
     db.query(query, queryParams, (err, results) => {
       if (err) {
@@ -2373,8 +2373,8 @@ exports.JobStatus = (req, res) => {
     
     const queryParams = [...params];
 
-    console.log(query)
-    console.log(queryParams)
+    // console.log(query)
+    // console.log(queryParams)
     
     db.query(query, queryParams, (err, results) => {
       if (err) {
@@ -2471,8 +2471,8 @@ exports.PensionStatus = (req, res) => {
     
     const queryParams = [...params];
 
-    console.log(query)
-    console.log(queryParams)
+    // console.log(query)
+    // console.log(queryParams)
     
     db.query(query, queryParams, (err, results) => {
       if (err) {
@@ -2568,8 +2568,8 @@ exports.PattaStatus = (req, res) => {
     
     const queryParams = [...params];
 
-    console.log(query)
-    console.log(queryParams)
+    // console.log(query)
+    // console.log(queryParams)
     
     db.query(query, queryParams, (err, results) => {
       if (err) {
@@ -2666,8 +2666,8 @@ exports.EducationConsissionStatus = (req, res) => {
     
     const queryParams = [...params];
 
-    console.log(query)
-    console.log(queryParams)
+    // console.log(query)
+    // console.log(queryParams)
     
     db.query(query, queryParams, (err, results) => {
       if (err) {
@@ -2779,8 +2779,8 @@ exports.DistrictWiseGivenStatus = (req, res) => {
     
     const queryParams = [...params];
 
-    console.log(query)
-    console.log(queryParams)
+    // console.log(query)
+    // console.log(queryParams)
     
     db.query(query, queryParams, (err, results) => {
       if (err) {
@@ -2894,8 +2894,8 @@ exports.DistrictWisePedingStatus = (req, res) => {
     
     const queryParams = [...params];
 
-    console.log(query)
-    console.log(queryParams)
+    // console.log(query)
+    // console.log(queryParams)
     
     db.query(query, queryParams, (err, results) => {
       if (err) {
@@ -2991,8 +2991,8 @@ exports.ReliefStatus_donut_chart = (req, res) => {
     
     const queryParams = [...params];
 
-    console.log(query)
-    console.log(queryParams)
+    // console.log(query)
+    // console.log(queryParams)
     
     db.query(query, queryParams, (err, results) => {
       if (err) {
