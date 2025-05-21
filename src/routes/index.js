@@ -330,25 +330,25 @@ router.post('/fir/handle-step-five', firController.handleStepFive);
 
 
 
-router.post(
-  "/fir/handle-step-four",
-  upload.single("uploadFIRCopy"), // Multer middleware
-  (req, res) => {
-    //console.log("Route hit: /fir/handle-step-four");
-    //console.log("File details:", req.file); // File details will be populated
-    //console.log("Request body:", req.body); // Non-file fields
+// router.post(
+//   "/fir/handle-step-four",
+//   upload.single("uploadFIRCopy"), // Multer middleware
+//   (req, res) => {
+//     //console.log("Route hit: /fir/handle-step-four");
+//     //console.log("File details:", req.file); // File details will be populated
+//     //console.log("Request body:", req.body); // Non-file fields
 
-    if (!req.file) {
-      console.error("File upload failed: No file received");
-      return res.status(400).json({ message: "No file uploaded" });
-    }
+//     if (!req.file) {
+//       console.error("File upload failed: No file received");
+//       return res.status(400).json({ message: "No file uploaded" });
+//     }
 
-    const uploadedFilePath = `/uploads/fir_copy/${req.file.filename}`;
-    //console.log("Uploaded file path:", uploadedFilePath);
+//     const uploadedFilePath = `/uploads/fir_copy/${req.file.filename}`;
+//     //console.log("Uploaded file path:", uploadedFilePath);
 
-    firController.handleStepFour(req, res, uploadedFilePath);
-  }
-);
+//     firController.handleStepFour(req, res, uploadedFilePath);
+//   }
+// );
 
 
 // router.post(

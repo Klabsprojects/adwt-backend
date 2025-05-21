@@ -1071,7 +1071,7 @@ exports.updateStepFive = (req, res) => {
   upload_step5(req, res, async (err) => {
     if (err) return res.status(500).json({ message: 'File upload error', error: err });
 
-    const { firId, totalCompensation, proceedingsFileNo, proceedingsDate } = req.body;
+    const { firId, totalCompensation, proceedingsFileNo, proceedingsDate , status} = req.body;
     const victimsRelief = req.body.victimsRelief ? req.body.victimsRelief : [];
     const proceedingsFile = req.body.proceedingsFile ? req.body.proceedingsFile : null;
     const attachments = req.body.attachments || [];
@@ -1176,6 +1176,17 @@ exports.updateStepFive = (req, res) => {
         ];
         await connection.query(attachmentQuery, attachmentvalues);
       }
+      } else {
+        await connection.query('DELETE FROM attachment_relief WHERE fir_id = ?', [firId]);
+      }
+
+      if(status){
+      await queryAsync(`
+      UPDATE fir_add SET
+        status = COALESCE(?, status)
+      WHERE fir_id = ?
+    `, [status , firId]);
+
       }
 
       await connection.commit();
@@ -2735,7 +2746,7 @@ exports.Update_step6 = (req, res) => {
   update_step6(req, res, (err) => {
     if (err) return res.status(500).json({ message: 'File upload error', error: err });
 
-    const { firId, chargesheetDetails, victimsRelief, status } = req.body;
+    const { firId, chargesheetDetails, victimsRelief } = req.body;
 
     if (!firId) {
       return res.status(400).json({ message: 'FIR ID is missing.' });
@@ -2774,10 +2785,10 @@ exports.Update_step6 = (req, res) => {
 
         try {
           // 1. Update FIR status
-          await new Promise((resolve, reject) => {
-            const query = `UPDATE fir_add SET status = ? WHERE fir_id = ?`;
-            connection.query(query, [status || 6, firId], (err) => (err ? reject(err) : resolve()));
-          });
+          // await new Promise((resolve, reject) => {
+          //   const query = `UPDATE fir_add SET status = ? WHERE fir_id = ?`;
+          //   connection.query(query, [status || 6, firId], (err) => (err ? reject(err) : resolve()));
+          // });
 
           // 2. Check and upsert chargesheet_details
           await new Promise((resolve, reject) => {
@@ -2851,7 +2862,7 @@ exports.Update_step6 = (req, res) => {
             });
           }
 
-          if(attachments && attachments.length > 0){
+          if(attachments && attachments.length > 0 && attachments[0] != null){
             await new Promise((resolve, reject) => {
             const query = `DELETE FROM chargesheet_attachments WHERE fir_id = ?`;
             connection.query(query, [firId], (err) => (err ? reject(err) : resolve()));
@@ -2871,6 +2882,11 @@ exports.Update_step6 = (req, res) => {
             connection.query(attachmentQuery, attachmentvalues, (err) => (err ? reject(err) : resolve()));
           });
           }
+          } else {
+            await new Promise((resolve, reject) => {
+            const query = `DELETE FROM chargesheet_attachments WHERE fir_id = ?`;
+            connection.query(query, [firId], (err) => (err ? reject(err) : resolve()));
+          });
           }
 
           // Commit
@@ -3875,56 +3891,71 @@ exports.saveEditStepSevenAsDraft = async (req, res) => {
             advocateMobNumber = ?,
             judgementAwarded1 = ?,
             judgementNature = ?,
-            Conviction_Type = ?
+            Conviction_Type = ?,
+            Judgement_Date = ?,
+            judgement_copy = ?
           WHERE fir_id = ?
         `, [
-        parsedTrialDetails.courtName,
-        parsedTrialDetails.courtDistrict,
-        parsedTrialDetails.trialCaseNumber,
-        parsedTrialDetails.publicProsecutor,
-        parsedTrialDetails.prosecutorPhone,
-        parsedTrialDetails.firstHearingDate,
+        parsedTrialDetails.courtName ? parsedTrialDetails.courtName : null,
+        parsedTrialDetails.courtDistrict ? parsedTrialDetails.courtDistrict : null,
+        parsedTrialDetails.trialCaseNumber ? parsedTrialDetails.trialCaseNumber : null,
+        parsedTrialDetails.publicProsecutor ? parsedTrialDetails.publicProsecutor : null,
+        parsedTrialDetails.prosecutorPhone ? parsedTrialDetails.prosecutorPhone : null,
+        parsedTrialDetails.firstHearingDate ?  parsedTrialDetails.firstHearingDate : null,
         parsedTrialDetails.judgementAwarded ? parsedTrialDetails.judgementAwarded : 'no',
-        parsedTrialDetails.CaseHandledBy,
-        parsedTrialDetails.NameOfAdvocate,
-        parsedTrialDetails.advocateMobNumber,
+        parsedTrialDetails.CaseHandledBy ? parsedTrialDetails.CaseHandledBy : null,
+        parsedTrialDetails.NameOfAdvocate ? parsedTrialDetails.NameOfAdvocate : null,
+        parsedTrialDetails.advocateMobNumber ? parsedTrialDetails.advocateMobNumber : null,
         parsedTrialDetails.judgementAwarded1 ? parsedTrialDetails.judgementAwarded1 : 'no',
-        parsedTrialDetails.judgementNature,
+        parsedTrialDetails.judgementNature ? parsedTrialDetails.judgementNature : null,
         parsedTrialDetails.Conviction_Type ? parsedTrialDetails.Conviction_Type : null,
+        parsedTrialDetails.Judgement_Date ? parsedTrialDetails.Judgement_Date : null,
+        parsedTrialDetails.uploadJudgement ? parsedTrialDetails.uploadJudgement : null,
         ogId,
       ]);
     } else {
       await queryAsync(`
-          INSERT INTO case_details (fir_id, case_id, court_name, court_district, trial_case_number, public_prosecutor, prosecutor_phone, first_hearing_date, judgement_awarded, CaseHandledBy, NameOfAdvocate, advocateMobNumber, judgementAwarded1, judgementNature, Conviction_Type)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO case_details (fir_id, case_id, court_name, court_district, trial_case_number, public_prosecutor, prosecutor_phone, first_hearing_date, judgement_awarded, CaseHandledBy, NameOfAdvocate, advocateMobNumber, judgementAwarded1, judgementNature, Conviction_Type, Judgement_Date, judgement_copy)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
         ogId,
         randomCaseId_1,
-        parsedTrialDetails.courtName,
-        parsedTrialDetails.courtDistrict,
-        parsedTrialDetails.trialCaseNumber,
-        parsedTrialDetails.publicProsecutor,
-        parsedTrialDetails.prosecutorPhone,
-        parsedTrialDetails.firstHearingDate,
+        parsedTrialDetails.courtName ? parsedTrialDetails.courtName : null,
+        parsedTrialDetails.courtDistrict ? parsedTrialDetails.courtDistrict : null,
+        parsedTrialDetails.trialCaseNumber ? parsedTrialDetails.trialCaseNumber : null,
+        parsedTrialDetails.publicProsecutor ? parsedTrialDetails.publicProsecutor : null,
+        parsedTrialDetails.prosecutorPhone ? parsedTrialDetails.prosecutorPhone : null,
+        parsedTrialDetails.firstHearingDate ?  parsedTrialDetails.firstHearingDate : null,
         parsedTrialDetails.judgementAwarded ? parsedTrialDetails.judgementAwarded : 'no',
-        parsedTrialDetails.CaseHandledBy,
-        parsedTrialDetails.NameOfAdvocate,
-        parsedTrialDetails.advocateMobNumber,
+        parsedTrialDetails.CaseHandledBy ? parsedTrialDetails.CaseHandledBy : null,
+        parsedTrialDetails.NameOfAdvocate ? parsedTrialDetails.NameOfAdvocate : null,
+        parsedTrialDetails.advocateMobNumber ? parsedTrialDetails.advocateMobNumber : null,
         parsedTrialDetails.judgementAwarded1 ? parsedTrialDetails.judgementAwarded1 : 'no',
-        parsedTrialDetails.judgementNature,
+        parsedTrialDetails.judgementNature ? parsedTrialDetails.judgementNature : null,
         parsedTrialDetails.Conviction_Type ? parsedTrialDetails.Conviction_Type : null,
+        parsedTrialDetails.Judgement_Date ? parsedTrialDetails.Judgement_Date : null,
+        parsedTrialDetails.uploadJudgement ? parsedTrialDetails.uploadJudgement : null
       ]);
     }
 
-    await queryAsync(`
-      UPDATE fir_add SET
-        nature_of_judgement = COALESCE(?, nature_of_judgement),
-        judgement_copy = COALESCE(?, judgement_copy),
-        status = COALESCE(?, status),
-        Conviction_Type = COALESCE(?, Conviction_Type)
-      WHERE fir_id = ?
-    `, [parsedTrialDetails.judgementNature, parsedTrialDetails.uploadJudgement, 7 ,parsedTrialDetails.Conviction_Type, ogId]);
-
+    // if(parsedTrialDetails.judgementNature){
+    //       await queryAsync(`
+    //   UPDATE fir_add SET
+    //     nature_of_judgement = COALESCE(?, nature_of_judgement),
+    //     judgement_copy = COALESCE(?, judgement_copy),
+    //     status = COALESCE(?, status),
+    //     Conviction_Type = COALESCE(?, Conviction_Type)
+    //   WHERE fir_id = ?
+    // `, [parsedTrialDetails.judgementNature, parsedTrialDetails.uploadJudgement, 7 ,parsedTrialDetails.Conviction_Type, ogId]);
+    // } else {
+    //       await queryAsync(`
+    //   UPDATE fir_add SET
+    //     nature_of_judgement = COALESCE(?, nature_of_judgement),
+    //     judgement_copy = COALESCE(?, judgement_copy),
+    //     Conviction_Type = COALESCE(?, Conviction_Type)
+    //   WHERE fir_id = ?
+    // `, [parsedTrialDetails.judgementNature, parsedTrialDetails.uploadJudgement ,parsedTrialDetails.Conviction_Type, ogId]);
+    // }
 
 
 
@@ -3942,40 +3973,45 @@ exports.saveEditStepSevenAsDraft = async (req, res) => {
       second_hearing_date = ?,
       judgement_awarded = ?,
       judgementNature = ?,
-      Conviction_Type = ?
+      Conviction_Type = ?,
+      Judgement_Date = ?,
+      judgement_copy = ?
   
     WHERE fir_id = ?
   `, [
         ogId,
-        parsedTrialDetailsOne.courtName,
-        parsedTrialDetailsOne.courtDistrict,
-        parsedTrialDetailsOne.trialCaseNumber,
-        parsedTrialDetailsOne.publicProsecutor,
-        parsedTrialDetailsOne.prosecutorPhone,
+        parsedTrialDetailsOne.courtName ? parsedTrialDetailsOne.courtName : null ,
+        parsedTrialDetailsOne.courtDistrict ? parsedTrialDetailsOne.courtDistrict : null ,
+        parsedTrialDetailsOne.trialCaseNumber ? parsedTrialDetailsOne.trialCaseNumber : null ,
+        parsedTrialDetailsOne.publicProsecutor ? parsedTrialDetailsOne.publicProsecutor : null ,
+        parsedTrialDetailsOne.prosecutorPhone ? parsedTrialDetailsOne.prosecutorPhone : null ,
         parsedTrialDetailsOne.firstHearingDate ? parsedTrialDetailsOne.firstHearingDate : null,
         parsedTrialDetailsOne.judgementAwarded ? parsedTrialDetailsOne.judgementAwarded : 'no',
-        parsedTrialDetailsOne.judgementNature,
+        parsedTrialDetailsOne.judgementNature ? parsedTrialDetailsOne.judgementNature : null ,
         parsedTrialDetailsOne.Conviction_Type ? parsedTrialDetailsOne.Conviction_Type : null,
-
+        parsedTrialDetailsOne.Judgement_Date ? parsedTrialDetailsOne.Judgement_Date : null,
+        parsedTrialDetails.uploadJudgement ? parsedTrialDetails.uploadJudgement : null,
         ogId
       ]);
     } else {
       await queryAsync(`
     INSERT INTO case_court_detail_one (
-      fir_id, case_id , court_name, court_district, case_number, public_prosecutor, prosecutor_phone, second_hearing_date, judgement_awarded, judgementNature, Conviction_Type
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      fir_id, case_id , court_name, court_district, case_number, public_prosecutor, prosecutor_phone, second_hearing_date, judgement_awarded, judgementNature, Conviction_Type, Judgement_Date, judgement_copy
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `, [
         ogId,
         randomCaseId_1,
-        parsedTrialDetailsOne.courtName,
-        parsedTrialDetailsOne.courtDistrict,
-        parsedTrialDetailsOne.trialCaseNumber,
-        parsedTrialDetailsOne.publicProsecutor,
-        parsedTrialDetailsOne.prosecutorPhone,
+        parsedTrialDetailsOne.courtName ? parsedTrialDetailsOne.courtName : null,
+        parsedTrialDetailsOne.courtDistrict ? parsedTrialDetailsOne.courtDistrict : null,
+        parsedTrialDetailsOne.trialCaseNumber ? parsedTrialDetailsOne.trialCaseNumber : null,
+        parsedTrialDetailsOne.publicProsecutor ? parsedTrialDetailsOne.publicProsecutor : null,
+        parsedTrialDetailsOne.prosecutorPhone ? parsedTrialDetailsOne.prosecutorPhone : null,
         parsedTrialDetailsOne.firstHearingDate ? parsedTrialDetailsOne.firstHearingDate : null,
         parsedTrialDetailsOne.judgementAwarded ? parsedTrialDetailsOne.judgementAwarded : 'no',
-        parsedTrialDetailsOne.judgementNature,
+        parsedTrialDetailsOne.judgementNature ? parsedTrialDetailsOne.judgementNature : null,
         parsedTrialDetailsOne.Conviction_Type ? parsedTrialDetailsOne.Conviction_Type : null,
+        parsedTrialDetailsOne.Judgement_Date ? parsedTrialDetailsOne.Judgement_Date : null,
+        parsedTrialDetails.uploadJudgement ? parsedTrialDetails.uploadJudgement : null,
 
       ]);
     }
@@ -4026,40 +4062,45 @@ exports.saveEditStepSevenAsDraft = async (req, res) => {
       second_hearing_date = ?,
       judgement_awarded = ?,
       judgementNature = ?,
-      Conviction_Type = ?
+      Conviction_Type = ?,
+      Judgement_Date = ?,
+      judgement_copy = ?
 
     WHERE fir_id = ?
   `, [
         ogId,
-        parsedTrialDetailsTwo.courtName,
-        parsedTrialDetailsTwo.courtDistrict,
-        parsedTrialDetailsTwo.trialCaseNumber,
-        parsedTrialDetailsTwo.publicProsecutor,
-        parsedTrialDetailsTwo.prosecutorPhone,
+        parsedTrialDetailsTwo.courtName ? parsedTrialDetailsTwo.courtName : null,
+        parsedTrialDetailsTwo.courtDistrict ? parsedTrialDetailsTwo.courtDistrict : null,
+        parsedTrialDetailsTwo.trialCaseNumber ? parsedTrialDetailsTwo.trialCaseNumber : null,
+        parsedTrialDetailsTwo.publicProsecutor ? parsedTrialDetailsTwo.publicProsecutor : null,
+        parsedTrialDetailsTwo.prosecutorPhone ? parsedTrialDetailsTwo.prosecutorPhone : null,
         parsedTrialDetailsTwo.firstHearingDate ? parsedTrialDetailsTwo.firstHearingDate : null,
         parsedTrialDetailsTwo.judgementAwarded ? parsedTrialDetailsTwo.judgementAwarded : 'no',
-        parsedTrialDetailsTwo.judgementNature,
+        parsedTrialDetailsTwo.judgementNature ? parsedTrialDetailsTwo.judgementNature : null,
         parsedTrialDetailsTwo.Conviction_Type ? parsedTrialDetailsTwo.Conviction_Type : null,
-
+        parsedTrialDetailsTwo.Judgement_Date ? parsedTrialDetailsTwo.Judgement_Date : null,
+        parsedTrialDetails.uploadJudgement ? parsedTrialDetails.uploadJudgement : null,
         ogId
       ]);
     } else {
       await queryAsync(`
     INSERT INTO case_court_details_two (
-      fir_id, case_id, court_name, court_district, case_number, public_prosecutor, prosecutor_phone, second_hearing_date, judgement_awarded, judgementNature, Conviction_Type
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      fir_id, case_id, court_name, court_district, case_number, public_prosecutor, prosecutor_phone, second_hearing_date, judgement_awarded, judgementNature, Conviction_Type, Judgement_Date, judgement_copy
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? , ?, ?)
   `, [
         ogId,
         randomCaseId_1,
-        parsedTrialDetailsTwo.courtName,
-        parsedTrialDetailsTwo.courtDistrict,
-        parsedTrialDetailsTwo.trialCaseNumber,
-        parsedTrialDetailsTwo.publicProsecutor,
-        parsedTrialDetailsTwo.prosecutorPhone,
+        parsedTrialDetailsTwo.courtName ? parsedTrialDetailsTwo.courtName : null,
+        parsedTrialDetailsTwo.courtDistrict ? parsedTrialDetailsTwo.courtDistrict : null,
+        parsedTrialDetailsTwo.trialCaseNumber ? parsedTrialDetailsTwo.trialCaseNumber : null,
+        parsedTrialDetailsTwo.publicProsecutor ? parsedTrialDetailsTwo.publicProsecutor : null,
+        parsedTrialDetailsTwo.prosecutorPhone ? parsedTrialDetailsTwo.prosecutorPhone : null,
         parsedTrialDetailsTwo.firstHearingDate ? parsedTrialDetailsTwo.firstHearingDate : null,
         parsedTrialDetailsTwo.judgementAwarded ? parsedTrialDetailsTwo.judgementAwarded : 'no',
-        parsedTrialDetailsTwo.judgementNature,
+        parsedTrialDetailsTwo.judgementNature ? parsedTrialDetailsTwo.judgementNature : null,
         parsedTrialDetailsTwo.Conviction_Type ? parsedTrialDetailsTwo.Conviction_Type : null,
+        parsedTrialDetailsTwo.Judgement_Date ? parsedTrialDetailsTwo.Judgement_Date : null,
+        parsedTrialDetails.uploadJudgement ? parsedTrialDetails.uploadJudgement : null,
 
       ]);
     }
@@ -4241,7 +4282,7 @@ exports.saveEditStepSevenAsDraft = async (req, res) => {
       }
     }
 
-    if (attachments && attachments.length > 0) {
+    if (attachments && attachments.length > 0 && attachments[0] != null) {
 
       await queryAsync(` DELETE FROM case_attachments WHERE fir_id = ? `, [ogId]);
 
@@ -4251,6 +4292,8 @@ exports.saveEditStepSevenAsDraft = async (req, res) => {
             VALUES (?, ?)
           `, [ogId, attachment]);
       }
+    } else {
+      await queryAsync(` DELETE FROM case_attachments WHERE fir_id = ? `, [ogId]);
     }
 
     connection.commit((err) => {
