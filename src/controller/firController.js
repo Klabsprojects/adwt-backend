@@ -1642,9 +1642,10 @@ const upload = multer({ storage: storage, fileFilter: fileFilter });
 exports.handleStepFour = (req, res) => {
 
   console.log(req.body)
-    const { firId, numberOfAccused } = req.body;
-    const files = req.files; 
+    const { firId, numberOfAccused, gistOfCurrentCase, uploadFIRCopy, accused_remarks } = req.body;
     const accusedsRaw = req.body.accuseds;
+
+    console.log(firId, numberOfAccused, gistOfCurrentCase, uploadFIRCopy)
 
     let accuseds = [];
     try {
@@ -1663,13 +1664,16 @@ exports.handleStepFour = (req, res) => {
     const updateFirQuery = `
       UPDATE fir_add
       SET
-        number_of_accused = ?
+        number_of_accused = ?,
+        upload_fir_copy = ?,
+        gist_of_current_case = ?,
+        accused_remarks = ?
       WHERE fir_id = ?;
     `;
 
     
  
-    const updateFirValues = [numberOfAccused, firId];
+    const updateFirValues = [numberOfAccused, uploadFIRCopy, gistOfCurrentCase, accused_remarks, firId];
 
   db.query(updateFirQuery, updateFirValues, (err) => {
     if (err) {
@@ -1686,8 +1690,7 @@ exports.handleStepFour = (req, res) => {
                 age = ?, name = ?, gender = ?, custom_gender = ?, address = ?, pincode = ?,
                 community = ?, caste = ?, guardian_name = ?, previous_incident = ?,
                 previous_fir_number = ?, previous_fir_number_suffix = ?, scst_offence = ?,
-                scst_fir_number = ?, scst_fir_number_suffix = ?, antecedentsOption = ?, antecedents = ?, landOIssueOption = ?, land_o_issues = ?,
-                gist_of_current_case = ?, upload_fir_copy = ?
+                scst_fir_number = ?, scst_fir_number_suffix = ?, antecedentsOption = ?, antecedents = ?, landOIssueOption = ?, land_o_issues = ?, previous_incident_remarks = ?, previous_offence_remarks = ?
               WHERE accused_id = ?;
             `;
             const accusedValues = [
@@ -1710,8 +1713,8 @@ exports.handleStepFour = (req, res) => {
               accused.antecedents,
               accused.landOIssueOption,
               accused.landOIssues,
-              accused.gistOfCurrentCase,
-              accused.uploadFIRCopy,
+              accused.previous_incident_remarks,
+              accused.previous_offence_remarks,
               accused.accusedId,
             ];
 
@@ -1725,7 +1728,7 @@ exports.handleStepFour = (req, res) => {
               INSERT INTO accuseds (
               fir_id, age, name, gender, custom_gender, address, pincode, community, caste,
                 guardian_name, previous_incident, previous_fir_number, previous_fir_number_suffix, scst_offence,
-                scst_fir_number, scst_fir_number_suffix, antecedentsOption, antecedents, landOIssueOption, land_o_issues, gist_of_current_case, upload_fir_copy
+                scst_fir_number, scst_fir_number_suffix, antecedentsOption, antecedents, landOIssueOption, land_o_issues, previous_incident_remarks, previous_offence_remarks
               ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
             `;
             const accusedValues = [
@@ -1748,9 +1751,9 @@ exports.handleStepFour = (req, res) => {
               accused.antecedentsOption,
               accused.antecedents,
               accused.landOIssueOption,
-              accused.landOIssues,
-              accused.gistOfCurrentCase,
-              accused.uploadFIRCopy,
+              accused.previous_incident_remarks,
+              accused.previous_offence_remarks,
+              accused.landOIssues
             ];
 
           db.query(insertAccusedQuery, accusedValues, (err,result) => {
@@ -1772,7 +1775,6 @@ exports.handleStepFour = (req, res) => {
             message: "Step 4 data saved successfully",
             fir_id: firId,
             accuseds: updatedAccuseds,
-            file: files ? files.path : null, 
           });
         })
         .catch((err) => {
