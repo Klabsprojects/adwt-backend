@@ -414,357 +414,357 @@ exports.handleStepTwo = (req, res) => {
 
 
 
-exports.handleStepThree = (req, res) => {
-  const { firId, complainantDetails, victims, isDeceased, deceasedPersonNames } = req.body;
+// exports.handleStepThree = (req, res) => {
+//   const { firId, complainantDetails, victims, isDeceased, deceasedPersonNames } = req.body;
 
-  // Get a connection from the pool
-  db.getConnection((err, connection) => {
-    if (err) {
-      return res.status(500).json({ message: 'Failed to get database connection', error: err.message });
-    }
+//   // Get a connection from the pool
+//   db.getConnection((err, connection) => {
+//     if (err) {
+//       return res.status(500).json({ message: 'Failed to get database connection', error: err.message });
+//     }
     
-    // Start a transaction on the specific connection
-    connection.beginTransaction(async (transactionErr) => {
-      if (transactionErr) {
-        connection.release(); // Release the connection on error
-        return res.status(500).json({ message: 'Failed to start transaction', error: transactionErr });
-      }
+//     // Start a transaction on the specific connection
+//     connection.beginTransaction(async (transactionErr) => {
+//       if (transactionErr) {
+//         connection.release(); // Release the connection on error
+//         return res.status(500).json({ message: 'Failed to start transaction', error: transactionErr });
+//       }
 
-      try {
-        // Using Promise and async/await for better flow control and error handling
-        // Update FIR details first
-        const updateFirQuery = `
-          UPDATE fir_add
-          SET
-            name_of_complainant = ?,
-            mobile_number_of_complainant = ?,
-            is_victim_same_as_complainant = ?,
-            number_of_victim = ?,
-            is_deceased = ?,
-            deceased_person_names = ?
-          WHERE fir_id = ?;
-        `;
-        const updateFirValues = [
-          complainantDetails.nameOfComplainant,
-          complainantDetails.mobileNumberOfComplainant,
-          complainantDetails.isVictimSameAsComplainant,
-          victims.length,
-          isDeceased === 'yes' ? 1 : 0,
-          JSON.stringify(deceasedPersonNames || []),
-          firId,
-        ];
+//       try {
+//         // Using Promise and async/await for better flow control and error handling
+//         // Update FIR details first
+//         const updateFirQuery = `
+//           UPDATE fir_add
+//           SET
+//             name_of_complainant = ?,
+//             mobile_number_of_complainant = ?,
+//             is_victim_same_as_complainant = ?,
+//             number_of_victim = ?,
+//             is_deceased = ?,
+//             deceased_person_names = ?
+//           WHERE fir_id = ?;
+//         `;
+//         const updateFirValues = [
+//           complainantDetails.nameOfComplainant,
+//           complainantDetails.mobileNumberOfComplainant,
+//           complainantDetails.isVictimSameAsComplainant,
+//           victims.length,
+//           isDeceased === 'yes' ? 1 : 0,
+//           JSON.stringify(deceasedPersonNames || []),
+//           firId,
+//         ];
 
-        // Execute FIR update with Promise
-        await new Promise((resolve, reject) => {
-          connection.query(updateFirQuery, updateFirValues, (err, result) => {
-            if (err) reject(err);
-            else resolve(result);
-          });
-        });
+//         // Execute FIR update with Promise
+//         await new Promise((resolve, reject) => {
+//           connection.query(updateFirQuery, updateFirValues, (err, result) => {
+//             if (err) reject(err);
+//             else resolve(result);
+//           });
+//         });
 
-        // Process victims sequentially to avoid race conditions
-        const updatedVictims = [];
+//         // Process victims sequentially to avoid race conditions
+//         const updatedVictims = [];
 
-        for (const victim of victims) {
-          // If victim_id is provided, we just update that record
-          if (victim.victim_id) {
-            const updateQuery = `
-              UPDATE victims
-              SET
-                victim_name = ?,
-                victim_age = ?,
-                victim_gender = ?,
-                custom_gender = ?,
-                mobile_number = ?,
-                address = ?,
-                victim_pincode = ?,
-                community = ?,
-                caste = ?,
-                guardian_name = ?,
-                is_native_district_same = ?,
-                native_district = ?,
-                offence_committed = ?,
-                scst_sections = ?,
-                sectionsIPC_JSON = ?,
-                fir_stage_as_per_act = ?,
-                fir_stage_ex_gratia = ?,
-                chargesheet_stage_as_per_act = ?,
-                chargesheet_stage_ex_gratia = ?,
-                final_stage_as_per_act = ?,
-                final_stage_ex_gratia = ?
-              WHERE victim_id = ?`
+//         for (const victim of victims) {
+//           // If victim_id is provided, we just update that record
+//           if (victim.victim_id) {
+//             const updateQuery = `
+//               UPDATE victims
+//               SET
+//                 victim_name = ?,
+//                 victim_age = ?,
+//                 victim_gender = ?,
+//                 custom_gender = ?,
+//                 mobile_number = ?,
+//                 address = ?,
+//                 victim_pincode = ?,
+//                 community = ?,
+//                 caste = ?,
+//                 guardian_name = ?,
+//                 is_native_district_same = ?,
+//                 native_district = ?,
+//                 offence_committed = ?,
+//                 scst_sections = ?,
+//                 sectionsIPC_JSON = ?,
+//                 fir_stage_as_per_act = ?,
+//                 fir_stage_ex_gratia = ?,
+//                 chargesheet_stage_as_per_act = ?,
+//                 chargesheet_stage_ex_gratia = ?,
+//                 final_stage_as_per_act = ?,
+//                 final_stage_ex_gratia = ?
+//               WHERE victim_id = ?`
             
             
-            const updateValues = [
-              victim.name,
-              victim.age,
-              victim.gender,
-              victim.gender === 'Other' ? victim.customGender || null : null,
-              victim.mobileNumber || null,
-              victim.address || null,
-              victim.victimPincode || null,
-              victim.community || '',
-              victim.caste || '',
-              victim.guardianName || '',
-              victim.isNativeDistrictSame || '',
-              victim.nativeDistrict || null,
-              JSON.stringify(victim.offenceCommitted || []),
-              JSON.stringify(victim.scstSections || []),
-              JSON.stringify(victim.sectionDetails || []),
-              victim.fir_stage_as_per_act || null,
-              victim.fir_stage_ex_gratia || null,
-              victim.chargesheet_stage_as_per_act || null,
-              victim.chargesheet_stage_ex_gratia || null,
-              victim.final_stage_as_per_act || null,
-              victim.final_stage_ex_gratia || null,
-              victim.victim_id
-            ];
+//             const updateValues = [
+//               victim.name,
+//               victim.age,
+//               victim.gender,
+//               victim.gender === 'Other' ? victim.customGender || null : null,
+//               victim.mobileNumber || null,
+//               victim.address || null,
+//               victim.victimPincode || null,
+//               victim.community || '',
+//               victim.caste || '',
+//               victim.guardianName || '',
+//               victim.isNativeDistrictSame || '',
+//               victim.nativeDistrict || null,
+//               JSON.stringify(victim.offenceCommitted || []),
+//               JSON.stringify(victim.scstSections || []),
+//               JSON.stringify(victim.sectionDetails || []),
+//               victim.fir_stage_as_per_act || null,
+//               victim.fir_stage_ex_gratia || null,
+//               victim.chargesheet_stage_as_per_act || null,
+//               victim.chargesheet_stage_ex_gratia || null,
+//               victim.final_stage_as_per_act || null,
+//               victim.final_stage_ex_gratia || null,
+//               victim.victim_id
+//             ];
 
-            // Execute update with Promise
-            await new Promise((resolve, reject) => {
-              connection.query(updateQuery, updateValues, (err, result) => {
-                if (err) reject(err);
-                else resolve(result);
-              });
-            });
+//             // Execute update with Promise
+//             await new Promise((resolve, reject) => {
+//               connection.query(updateQuery, updateValues, (err, result) => {
+//                 if (err) reject(err);
+//                 else resolve(result);
+//               });
+//             });
             
-            updatedVictims.push({
-              ...victim,
-              victim_id: victim.victim_id
-            });
-          } else {
-            // Without a victim_id, we need to implement a complex matching strategy
-            // to determine if this is an update to an existing record or a new record
+//             updatedVictims.push({
+//               ...victim,
+//               victim_id: victim.victim_id
+//             });
+//           } else {
+//             // Without a victim_id, we need to implement a complex matching strategy
+//             // to determine if this is an update to an existing record or a new record
             
-            // 1. First, build a comprehensive search query that will help us identify
-            // potential duplicates based on all available identifying information
-            let searchConditions = ['fir_id = ?'];
-            let searchParams = [firId];
+//             // 1. First, build a comprehensive search query that will help us identify
+//             // potential duplicates based on all available identifying information
+//             let searchConditions = ['fir_id = ?'];
+//             let searchParams = [firId];
             
-            // Add each available field to the search conditions
-            // Name is mandatory but could change for minors, so include it carefully
-            if (victim.name) {
-              searchConditions.push('(victim_name = ? OR victim_name IS NULL)');
-              searchParams.push(victim.name);
-            }
+//             // Add each available field to the search conditions
+//             // Name is mandatory but could change for minors, so include it carefully
+//             if (victim.name) {
+//               searchConditions.push('(victim_name = ? OR victim_name IS NULL)');
+//               searchParams.push(victim.name);
+//             }
             
-            // Age is important but could change slightly
-            if (victim.age) {
-              searchConditions.push('(victim_age = ? OR victim_age IS NULL)');
-              searchParams.push(victim.age);
-            }
+//             // Age is important but could change slightly
+//             if (victim.age) {
+//               searchConditions.push('(victim_age = ? OR victim_age IS NULL)');
+//               searchParams.push(victim.age);
+//             }
             
-            // Gender should be consistent
-            if (victim.gender) {
-              searchConditions.push('(victim_gender = ? OR victim_gender IS NULL)');
-              searchParams.push(victim.gender);
-            }
+//             // Gender should be consistent
+//             if (victim.gender) {
+//               searchConditions.push('(victim_gender = ? OR victim_gender IS NULL)');
+//               searchParams.push(victim.gender);
+//             }
             
-            // Mobile number is a strong identifier if available
-            if (victim.mobileNumber) {
-              searchConditions.push('(mobile_number = ? OR mobile_number IS NULL)');
-              searchParams.push(victim.mobileNumber);
-            }
+//             // Mobile number is a strong identifier if available
+//             if (victim.mobileNumber) {
+//               searchConditions.push('(mobile_number = ? OR mobile_number IS NULL)');
+//               searchParams.push(victim.mobileNumber);
+//             }
             
-            // Community and caste may be important identifiers in your context
-            if (victim.community) {
-              searchConditions.push('(community = ? OR community IS NULL)');
-              searchParams.push(victim.community);
-            }
+//             // Community and caste may be important identifiers in your context
+//             if (victim.community) {
+//               searchConditions.push('(community = ? OR community IS NULL)');
+//               searchParams.push(victim.community);
+//             }
             
-            if (victim.caste) {
-              searchConditions.push('(caste = ? OR caste IS NULL)');
-              searchParams.push(victim.caste);
-            }
+//             if (victim.caste) {
+//               searchConditions.push('(caste = ? OR caste IS NULL)');
+//               searchParams.push(victim.caste);
+//             }
             
-            // Guardian name can be a strong identifier
-            if (victim.guardianName) {
-              searchConditions.push('(guardian_name = ? OR guardian_name IS NULL)');
-              searchParams.push(victim.guardianName);
-            }
+//             // Guardian name can be a strong identifier
+//             if (victim.guardianName) {
+//               searchConditions.push('(guardian_name = ? OR guardian_name IS NULL)');
+//               searchParams.push(victim.guardianName);
+//             }
             
-            // Native district might help identify the victim
-            if (victim.nativeDistrict) {
-              searchConditions.push('(native_district = ? OR native_district IS NULL)');
-              searchParams.push(victim.nativeDistrict);
-            }
+//             // Native district might help identify the victim
+//             if (victim.nativeDistrict) {
+//               searchConditions.push('(native_district = ? OR native_district IS NULL)');
+//               searchParams.push(victim.nativeDistrict);
+//             }
             
-            // Build the search query - require at least 3 matching fields besides FIR ID
-            // to consider it a potential match (you can adjust this threshold)
-            const matchingFieldsThreshold = 3;
-            const searchQuery = `
-              SELECT victim_id, 
-                     COUNT(*) AS matching_fields
-              FROM victims
-              WHERE ${searchConditions.join(' AND ')}
-              GROUP BY victim_id
-              HAVING matching_fields >= ${matchingFieldsThreshold}
-              ORDER BY matching_fields DESC
-              LIMIT 1
-            `;
+//             // Build the search query - require at least 3 matching fields besides FIR ID
+//             // to consider it a potential match (you can adjust this threshold)
+//             const matchingFieldsThreshold = 3;
+//             const searchQuery = `
+//               SELECT victim_id, 
+//                      COUNT(*) AS matching_fields
+//               FROM victims
+//               WHERE ${searchConditions.join(' AND ')}
+//               GROUP BY victim_id
+//               HAVING matching_fields >= ${matchingFieldsThreshold}
+//               ORDER BY matching_fields DESC
+//               LIMIT 1
+//             `;
             
-            // Execute search with Promise
-            const potentialMatches = await new Promise((resolve, reject) => {
-              connection.query(searchQuery, searchParams, (err, results) => {
-                if (err) reject(err);
-                else resolve(results);
-              });
-            });
+//             // Execute search with Promise
+//             const potentialMatches = await new Promise((resolve, reject) => {
+//               connection.query(searchQuery, searchParams, (err, results) => {
+//                 if (err) reject(err);
+//                 else resolve(results);
+//               });
+//             });
             
-            let victimId = null;
+//             let victimId = null;
             
-            // If we found a potential match with sufficient matching fields, use that ID
-            if (potentialMatches && potentialMatches.length > 0) {
-              victimId = potentialMatches[0].victim_id;
+//             // If we found a potential match with sufficient matching fields, use that ID
+//             if (potentialMatches && potentialMatches.length > 0) {
+//               victimId = potentialMatches[0].victim_id;
               
-              // Update the existing record
-              const updateQuery = `
-                UPDATE victims
-                SET
-                  victim_name = ?,
-                  victim_age = ?,
-                  victim_gender = ?,
-                  custom_gender = ?,
-                  mobile_number = ?,
-                  address = ?,
-                  victim_pincode = ?,
-                  community = ?,
-                  caste = ?,
-                  guardian_name = ?,
-                  is_native_district_same = ?,
-                  native_district = ?,
-                  offence_committed = ?,
-                  scst_sections = ?,
-                  sectionsIPC_JSON = ?,
-                  fir_stage_as_per_act = ?,
-                  fir_stage_ex_gratia = ?,
-                  chargesheet_stage_as_per_act = ?,
-                  chargesheet_stage_ex_gratia = ?,
-                  final_stage_as_per_act = ?,
-                  final_stage_ex_gratia = ?
-                WHERE victim_id = ?
-              `;
+//               // Update the existing record
+//               const updateQuery = `
+//                 UPDATE victims
+//                 SET
+//                   victim_name = ?,
+//                   victim_age = ?,
+//                   victim_gender = ?,
+//                   custom_gender = ?,
+//                   mobile_number = ?,
+//                   address = ?,
+//                   victim_pincode = ?,
+//                   community = ?,
+//                   caste = ?,
+//                   guardian_name = ?,
+//                   is_native_district_same = ?,
+//                   native_district = ?,
+//                   offence_committed = ?,
+//                   scst_sections = ?,
+//                   sectionsIPC_JSON = ?,
+//                   fir_stage_as_per_act = ?,
+//                   fir_stage_ex_gratia = ?,
+//                   chargesheet_stage_as_per_act = ?,
+//                   chargesheet_stage_ex_gratia = ?,
+//                   final_stage_as_per_act = ?,
+//                   final_stage_ex_gratia = ?
+//                 WHERE victim_id = ?
+//               `;
               
-              const updateValues = [
-                victim.name,
-                victim.age,
-                victim.gender,
-                victim.gender === 'Other' ? victim.customGender || null : null,
-                victim.mobileNumber || null,
-                victim.address || null,
-                victim.victimPincode || null,
-                victim.community || '',
-                victim.caste || '',
-                victim.guardianName || '',
-                victim.isNativeDistrictSame || '',
-                victim.nativeDistrict || null,
-                JSON.stringify(victim.offenceCommitted || []),
-                JSON.stringify(victim.scstSections || []),
-                JSON.stringify(victim.sectionDetails || []),
-                victim.fir_stage_as_per_act || null,
-                victim.fir_stage_ex_gratia || null,
-                victim.chargesheet_stage_as_per_act || null,
-                victim.chargesheet_stage_ex_gratia || null,
-                victim.final_stage_as_per_act || null,
-                victim.final_stage_ex_gratia || null,
-                victimId
-              ];
+//               const updateValues = [
+//                 victim.name,
+//                 victim.age,
+//                 victim.gender,
+//                 victim.gender === 'Other' ? victim.customGender || null : null,
+//                 victim.mobileNumber || null,
+//                 victim.address || null,
+//                 victim.victimPincode || null,
+//                 victim.community || '',
+//                 victim.caste || '',
+//                 victim.guardianName || '',
+//                 victim.isNativeDistrictSame || '',
+//                 victim.nativeDistrict || null,
+//                 JSON.stringify(victim.offenceCommitted || []),
+//                 JSON.stringify(victim.scstSections || []),
+//                 JSON.stringify(victim.sectionDetails || []),
+//                 victim.fir_stage_as_per_act || null,
+//                 victim.fir_stage_ex_gratia || null,
+//                 victim.chargesheet_stage_as_per_act || null,
+//                 victim.chargesheet_stage_ex_gratia || null,
+//                 victim.final_stage_as_per_act || null,
+//                 victim.final_stage_ex_gratia || null,
+//                 victimId
+//               ];
               
-              // Execute update with Promise
-              await new Promise((resolve, reject) => {
-                connection.query(updateQuery, updateValues, (err, result) => {
-                  if (err) reject(err);
-                  else resolve(result);
-                });
-              });
-            } else {
+//               // Execute update with Promise
+//               await new Promise((resolve, reject) => {
+//                 connection.query(updateQuery, updateValues, (err, result) => {
+//                   if (err) reject(err);
+//                   else resolve(result);
+//                 });
+//               });
+//             } else {
              
-                // No match at all, insert new record
-                const insertQuery = `
-                  INSERT INTO victims (
-                    fir_id, victim_name, victim_age, victim_gender, custom_gender,
-                    mobile_number, address, victim_pincode, community, caste,
-                    guardian_name, is_native_district_same, native_district,
-                    offence_committed, scst_sections, sectionsIPC_JSON, fir_stage_as_per_act,
-                    fir_stage_ex_gratia, chargesheet_stage_as_per_act,
-                    chargesheet_stage_ex_gratia, final_stage_as_per_act,
-                    final_stage_ex_gratia
-                  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                `;
+//                 // No match at all, insert new record
+//                 const insertQuery = `
+//                   INSERT INTO victims (
+//                     fir_id, victim_name, victim_age, victim_gender, custom_gender,
+//                     mobile_number, address, victim_pincode, community, caste,
+//                     guardian_name, is_native_district_same, native_district,
+//                     offence_committed, scst_sections, sectionsIPC_JSON, fir_stage_as_per_act,
+//                     fir_stage_ex_gratia, chargesheet_stage_as_per_act,
+//                     chargesheet_stage_ex_gratia, final_stage_as_per_act,
+//                     final_stage_ex_gratia
+//                   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+//                 `;
                 
-                const insertValues = [
-                  firId,
-                  victim.name || '',
-                  victim.age || '',
-                  victim.gender || '', 
-                  victim.gender === 'Other' ? victim.customGender || null : null,
-                  victim.mobileNumber || null,
-                  victim.address || null, 
-                  victim.victimPincode || null,
-                  victim.community || '',
-                  victim.caste || '',
-                  victim.guardianName || '',
-                  victim.isNativeDistrictSame || '',
-                  victim.nativeDistrict || null,
-                  JSON.stringify(victim.offenceCommitted || []),
-                  JSON.stringify(victim.scstSections || []),
-                  JSON.stringify(victim.sectionDetails || []),
-                  victim.fir_stage_as_per_act || null,
-                  victim.fir_stage_ex_gratia || null,
-                  victim.chargesheet_stage_as_per_act || null,
-                  victim.chargesheet_stage_ex_gratia || null,
-                  victim.final_stage_as_per_act || null,
-                  victim.final_stage_ex_gratia || null,
-                ];
+//                 const insertValues = [
+//                   firId,
+//                   victim.name || '',
+//                   victim.age || '',
+//                   victim.gender || '', 
+//                   victim.gender === 'Other' ? victim.customGender || null : null,
+//                   victim.mobileNumber || null,
+//                   victim.address || null, 
+//                   victim.victimPincode || null,
+//                   victim.community || '',
+//                   victim.caste || '',
+//                   victim.guardianName || '',
+//                   victim.isNativeDistrictSame || '',
+//                   victim.nativeDistrict || null,
+//                   JSON.stringify(victim.offenceCommitted || []),
+//                   JSON.stringify(victim.scstSections || []),
+//                   JSON.stringify(victim.sectionDetails || []),
+//                   victim.fir_stage_as_per_act || null,
+//                   victim.fir_stage_ex_gratia || null,
+//                   victim.chargesheet_stage_as_per_act || null,
+//                   victim.chargesheet_stage_ex_gratia || null,
+//                   victim.final_stage_as_per_act || null,
+//                   victim.final_stage_ex_gratia || null,
+//                 ];
                 
-                // Execute insert with Promise and get the new ID
-                const insertResult = await new Promise((resolve, reject) => {
-                  connection.query(insertQuery, insertValues, (err, result) => {
-                    if (err) reject(err);
-                    else resolve(result);
-                  });
-                });
+//                 // Execute insert with Promise and get the new ID
+//                 const insertResult = await new Promise((resolve, reject) => {
+//                   connection.query(insertQuery, insertValues, (err, result) => {
+//                     if (err) reject(err);
+//                     else resolve(result);
+//                   });
+//                 });
                 
-                victimId = insertResult.insertId;
-            }
+//                 victimId = insertResult.insertId;
+//             }
             
-            updatedVictims.push({
-              ...victim,
-              victim_id: victimId
-            });
-          }
-        }
+//             updatedVictims.push({
+//               ...victim,
+//               victim_id: victimId
+//             });
+//           }
+//         }
 
-        // Commit the transaction
-        connection.commit((commitErr) => {
-          if (commitErr) {
-            return connection.rollback(() => {
-              connection.release(); // Release connection on rollback
-              res.status(500).json({ message: 'Failed to commit transaction', error: commitErr });
-            });
-          }
+//         // Commit the transaction
+//         connection.commit((commitErr) => {
+//           if (commitErr) {
+//             return connection.rollback(() => {
+//               connection.release(); // Release connection on rollback
+//               res.status(500).json({ message: 'Failed to commit transaction', error: commitErr });
+//             });
+//           }
           
-          connection.release(); // Release connection on successful commit
+//           connection.release(); // Release connection on successful commit
           
-          // Send success response
-          res.status(200).json({
-            message: 'Step 3 data saved successfully',
-            fir_id: firId,
-            victims: updatedVictims,
-          });
-        });
+//           // Send success response
+//           res.status(200).json({
+//             message: 'Step 3 data saved successfully',
+//             fir_id: firId,
+//             victims: updatedVictims,
+//           });
+//         });
         
-      } catch (error) {
-        // Roll back transaction on error
-        connection.rollback(() => {
-          connection.release(); // Release connection on rollback
-          console.error('Transaction error:', error);
-          res.status(500).json({ message: 'Failed to process victim data', error: error.message });
-        });
-      }
-    });
-  });
-};
+//       } catch (error) {
+//         // Roll back transaction on error
+//         connection.rollback(() => {
+//           connection.release(); // Release connection on rollback
+//           console.error('Transaction error:', error);
+//           res.status(500).json({ message: 'Failed to process victim data', error: error.message });
+//         });
+//       }
+//     });
+//   });
+// };
 
 
 
@@ -1200,7 +1200,8 @@ exports.handleStepThree = (req, res) => {
                 chargesheet_stage_as_per_act = ?,
                 chargesheet_stage_ex_gratia = ?,
                 final_stage_as_per_act = ?,
-                final_stage_ex_gratia = ?
+                final_stage_ex_gratia = ?,
+                relief_applicable = ?
               WHERE victim_id = ?`
             
             
@@ -1226,6 +1227,7 @@ exports.handleStepThree = (req, res) => {
               victim.chargesheet_stage_ex_gratia || null,
               victim.final_stage_as_per_act || null,
               victim.final_stage_ex_gratia || null,
+              victim.relief_applicable || 0,
               victim.victim_id
             ];
 
@@ -1252,8 +1254,8 @@ exports.handleStepThree = (req, res) => {
                     offence_committed, scst_sections, sectionsIPC_JSON, fir_stage_as_per_act,
                     fir_stage_ex_gratia, chargesheet_stage_as_per_act,
                     chargesheet_stage_ex_gratia, final_stage_as_per_act,
-                    final_stage_ex_gratia
-                  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    final_stage_ex_gratia, relief_applicable
+                  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `;
                 
                 const insertValues = [
@@ -1279,6 +1281,7 @@ exports.handleStepThree = (req, res) => {
                   victim.chargesheet_stage_ex_gratia || null,
                   victim.final_stage_as_per_act || null,
                   victim.final_stage_ex_gratia || null,
+                  victim.relief_applicable || 0
                 ];
                 
                 // Execute insert with Promise and get the new ID
@@ -3305,7 +3308,9 @@ exports.getVictimsReliefDetails = (req, res) => {
       chargesheet_stage_as_per_act,
       chargesheet_stage_ex_gratia,
       final_stage_as_per_act,
-      final_stage_ex_gratia
+      final_stage_ex_gratia,
+      relief_applicable,
+      offence_committed
     FROM victims
     WHERE fir_id = ?
   `;

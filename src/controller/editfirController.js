@@ -3882,6 +3882,7 @@ exports.saveEditStepSevenAsDraft = async (req, res) => {
             court_name = ?,
             court_district = ?,
             trial_case_number = ?,
+            CRL_number = ?,
             public_prosecutor = ?,
             prosecutor_phone = ?,
             first_hearing_date = ?,
@@ -3893,12 +3894,14 @@ exports.saveEditStepSevenAsDraft = async (req, res) => {
             judgementNature = ?,
             Conviction_Type = ?,
             Judgement_Date = ?,
-            judgement_copy = ?
+            judgement_copy = ?,
+            judgement_nature_remarks = ?
           WHERE fir_id = ?
         `, [
         parsedTrialDetails.courtName ? parsedTrialDetails.courtName : null,
         parsedTrialDetails.courtDistrict ? parsedTrialDetails.courtDistrict : null,
         parsedTrialDetails.trialCaseNumber ? parsedTrialDetails.trialCaseNumber : null,
+        parsedTrialDetails.CRL_number ? parsedTrialDetails.CRL_number : null,
         parsedTrialDetails.publicProsecutor ? parsedTrialDetails.publicProsecutor : null,
         parsedTrialDetails.prosecutorPhone ? parsedTrialDetails.prosecutorPhone : null,
         parsedTrialDetails.firstHearingDate ?  parsedTrialDetails.firstHearingDate : null,
@@ -3911,18 +3914,20 @@ exports.saveEditStepSevenAsDraft = async (req, res) => {
         parsedTrialDetails.Conviction_Type ? parsedTrialDetails.Conviction_Type : null,
         parsedTrialDetails.Judgement_Date ? parsedTrialDetails.Judgement_Date : null,
         parsedTrialDetails.uploadJudgement ? parsedTrialDetails.uploadJudgement : null,
+        parsedTrialDetails.judgement_nature_remarks ? parsedTrialDetails.judgement_nature_remarks : null,
         ogId,
       ]);
     } else {
       await queryAsync(`
-          INSERT INTO case_details (fir_id, case_id, court_name, court_district, trial_case_number, public_prosecutor, prosecutor_phone, first_hearing_date, judgement_awarded, CaseHandledBy, NameOfAdvocate, advocateMobNumber, judgementAwarded1, judgementNature, Conviction_Type, Judgement_Date, judgement_copy)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO case_details (fir_id, case_id, court_name, court_district, trial_case_number, CRL_number, public_prosecutor, prosecutor_phone, first_hearing_date, judgement_awarded, CaseHandledBy, NameOfAdvocate, advocateMobNumber, judgementAwarded1, judgementNature, Conviction_Type, Judgement_Date, judgement_copy, judgement_nature_remarks)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
         ogId,
         randomCaseId_1,
         parsedTrialDetails.courtName ? parsedTrialDetails.courtName : null,
         parsedTrialDetails.courtDistrict ? parsedTrialDetails.courtDistrict : null,
         parsedTrialDetails.trialCaseNumber ? parsedTrialDetails.trialCaseNumber : null,
+        parsedTrialDetails.CRL_number ? parsedTrialDetails.CRL_number : null,
         parsedTrialDetails.publicProsecutor ? parsedTrialDetails.publicProsecutor : null,
         parsedTrialDetails.prosecutorPhone ? parsedTrialDetails.prosecutorPhone : null,
         parsedTrialDetails.firstHearingDate ?  parsedTrialDetails.firstHearingDate : null,
@@ -3934,7 +3939,8 @@ exports.saveEditStepSevenAsDraft = async (req, res) => {
         parsedTrialDetails.judgementNature ? parsedTrialDetails.judgementNature : null,
         parsedTrialDetails.Conviction_Type ? parsedTrialDetails.Conviction_Type : null,
         parsedTrialDetails.Judgement_Date ? parsedTrialDetails.Judgement_Date : null,
-        parsedTrialDetails.uploadJudgement ? parsedTrialDetails.uploadJudgement : null
+        parsedTrialDetails.uploadJudgement ? parsedTrialDetails.uploadJudgement : null,
+        parsedTrialDetails.judgement_nature_remarks ? parsedTrialDetails.judgement_nature_remarks : null
       ]);
     }
 
@@ -3968,6 +3974,7 @@ exports.saveEditStepSevenAsDraft = async (req, res) => {
       court_name = ?,
       court_district = ?,
       case_number = ?,
+      CRL_number = ?,
       public_prosecutor = ?,
       prosecutor_phone = ?,
       second_hearing_date = ?,
@@ -3975,7 +3982,8 @@ exports.saveEditStepSevenAsDraft = async (req, res) => {
       judgementNature = ?,
       Conviction_Type = ?,
       Judgement_Date = ?,
-      judgement_copy = ?
+      judgement_copy = ?,
+      judgement_nature_remarks = ?
   
     WHERE fir_id = ?
   `, [
@@ -3983,6 +3991,7 @@ exports.saveEditStepSevenAsDraft = async (req, res) => {
         parsedTrialDetailsOne.courtName ? parsedTrialDetailsOne.courtName : null ,
         parsedTrialDetailsOne.courtDistrict ? parsedTrialDetailsOne.courtDistrict : null ,
         parsedTrialDetailsOne.trialCaseNumber ? parsedTrialDetailsOne.trialCaseNumber : null ,
+        parsedTrialDetailsOne.CRL_number ? parsedTrialDetailsOne.CRL_number : null ,
         parsedTrialDetailsOne.publicProsecutor ? parsedTrialDetailsOne.publicProsecutor : null ,
         parsedTrialDetailsOne.prosecutorPhone ? parsedTrialDetailsOne.prosecutorPhone : null ,
         parsedTrialDetailsOne.firstHearingDate ? parsedTrialDetailsOne.firstHearingDate : null,
@@ -3990,20 +3999,22 @@ exports.saveEditStepSevenAsDraft = async (req, res) => {
         parsedTrialDetailsOne.judgementNature ? parsedTrialDetailsOne.judgementNature : null ,
         parsedTrialDetailsOne.Conviction_Type ? parsedTrialDetailsOne.Conviction_Type : null,
         parsedTrialDetailsOne.Judgement_Date ? parsedTrialDetailsOne.Judgement_Date : null,
-        parsedTrialDetails.uploadJudgement ? parsedTrialDetails.uploadJudgement : null,
+        parsedTrialDetailsOne.uploadJudgement ? parsedTrialDetailsOne.uploadJudgement : null,
+        parsedTrialDetailsOne.judgement_nature_remarks ? parsedTrialDetailsOne.judgement_nature_remarks : null,
         ogId
       ]);
     } else {
       await queryAsync(`
     INSERT INTO case_court_detail_one (
-      fir_id, case_id , court_name, court_district, case_number, public_prosecutor, prosecutor_phone, second_hearing_date, judgement_awarded, judgementNature, Conviction_Type, Judgement_Date, judgement_copy
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      fir_id, case_id , court_name, court_district, case_number, CRL_number, public_prosecutor, prosecutor_phone, second_hearing_date, judgement_awarded, judgementNature, Conviction_Type, Judgement_Date, judgement_copy, judgement_nature_remarks
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `, [
         ogId,
         randomCaseId_1,
         parsedTrialDetailsOne.courtName ? parsedTrialDetailsOne.courtName : null,
         parsedTrialDetailsOne.courtDistrict ? parsedTrialDetailsOne.courtDistrict : null,
         parsedTrialDetailsOne.trialCaseNumber ? parsedTrialDetailsOne.trialCaseNumber : null,
+        parsedTrialDetailsOne.CRL_number ? parsedTrialDetailsOne.CRL_number : null,
         parsedTrialDetailsOne.publicProsecutor ? parsedTrialDetailsOne.publicProsecutor : null,
         parsedTrialDetailsOne.prosecutorPhone ? parsedTrialDetailsOne.prosecutorPhone : null,
         parsedTrialDetailsOne.firstHearingDate ? parsedTrialDetailsOne.firstHearingDate : null,
@@ -4011,7 +4022,8 @@ exports.saveEditStepSevenAsDraft = async (req, res) => {
         parsedTrialDetailsOne.judgementNature ? parsedTrialDetailsOne.judgementNature : null,
         parsedTrialDetailsOne.Conviction_Type ? parsedTrialDetailsOne.Conviction_Type : null,
         parsedTrialDetailsOne.Judgement_Date ? parsedTrialDetailsOne.Judgement_Date : null,
-        parsedTrialDetails.uploadJudgement ? parsedTrialDetails.uploadJudgement : null,
+        parsedTrialDetailsOne.uploadJudgement ? parsedTrialDetailsOne.uploadJudgement : null,
+        parsedTrialDetailsOne.judgement_nature_remarks ? parsedTrialDetailsOne.judgement_nature_remarks : null,
 
       ]);
     }
@@ -4057,6 +4069,7 @@ exports.saveEditStepSevenAsDraft = async (req, res) => {
       court_name = ?,
       court_district = ?,
       case_number = ?,
+      CRL_number = ?,
       public_prosecutor = ?,
       prosecutor_phone = ?,
       second_hearing_date = ?,
@@ -4064,7 +4077,8 @@ exports.saveEditStepSevenAsDraft = async (req, res) => {
       judgementNature = ?,
       Conviction_Type = ?,
       Judgement_Date = ?,
-      judgement_copy = ?
+      judgement_copy = ?,
+      judgement_nature_remarks = ?
 
     WHERE fir_id = ?
   `, [
@@ -4072,6 +4086,7 @@ exports.saveEditStepSevenAsDraft = async (req, res) => {
         parsedTrialDetailsTwo.courtName ? parsedTrialDetailsTwo.courtName : null,
         parsedTrialDetailsTwo.courtDistrict ? parsedTrialDetailsTwo.courtDistrict : null,
         parsedTrialDetailsTwo.trialCaseNumber ? parsedTrialDetailsTwo.trialCaseNumber : null,
+        parsedTrialDetailsTwo.CRL_number ? parsedTrialDetailsTwo.CRL_number : null,
         parsedTrialDetailsTwo.publicProsecutor ? parsedTrialDetailsTwo.publicProsecutor : null,
         parsedTrialDetailsTwo.prosecutorPhone ? parsedTrialDetailsTwo.prosecutorPhone : null,
         parsedTrialDetailsTwo.firstHearingDate ? parsedTrialDetailsTwo.firstHearingDate : null,
@@ -4079,20 +4094,22 @@ exports.saveEditStepSevenAsDraft = async (req, res) => {
         parsedTrialDetailsTwo.judgementNature ? parsedTrialDetailsTwo.judgementNature : null,
         parsedTrialDetailsTwo.Conviction_Type ? parsedTrialDetailsTwo.Conviction_Type : null,
         parsedTrialDetailsTwo.Judgement_Date ? parsedTrialDetailsTwo.Judgement_Date : null,
-        parsedTrialDetails.uploadJudgement ? parsedTrialDetails.uploadJudgement : null,
+        parsedTrialDetailsTwo.uploadJudgement ? parsedTrialDetailsTwo.uploadJudgement : null,
+        parsedTrialDetailsTwo.judgement_nature_remarks ? parsedTrialDetailsTwo.judgement_nature_remarks : null,
         ogId
       ]);
     } else {
       await queryAsync(`
     INSERT INTO case_court_details_two (
-      fir_id, case_id, court_name, court_district, case_number, public_prosecutor, prosecutor_phone, second_hearing_date, judgement_awarded, judgementNature, Conviction_Type, Judgement_Date, judgement_copy
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? , ?, ?)
+      fir_id, case_id, court_name, court_district, case_number, CRL_number, public_prosecutor, prosecutor_phone, second_hearing_date, judgement_awarded, judgementNature, Conviction_Type, Judgement_Date, judgement_copy, judgement_nature_remarks
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? , ?, ? ,? ,?)
   `, [
         ogId,
         randomCaseId_1,
         parsedTrialDetailsTwo.courtName ? parsedTrialDetailsTwo.courtName : null,
         parsedTrialDetailsTwo.courtDistrict ? parsedTrialDetailsTwo.courtDistrict : null,
         parsedTrialDetailsTwo.trialCaseNumber ? parsedTrialDetailsTwo.trialCaseNumber : null,
+        parsedTrialDetailsTwo.CRL_number ? parsedTrialDetailsTwo.CRL_number : null,
         parsedTrialDetailsTwo.publicProsecutor ? parsedTrialDetailsTwo.publicProsecutor : null,
         parsedTrialDetailsTwo.prosecutorPhone ? parsedTrialDetailsTwo.prosecutorPhone : null,
         parsedTrialDetailsTwo.firstHearingDate ? parsedTrialDetailsTwo.firstHearingDate : null,
@@ -4100,7 +4117,8 @@ exports.saveEditStepSevenAsDraft = async (req, res) => {
         parsedTrialDetailsTwo.judgementNature ? parsedTrialDetailsTwo.judgementNature : null,
         parsedTrialDetailsTwo.Conviction_Type ? parsedTrialDetailsTwo.Conviction_Type : null,
         parsedTrialDetailsTwo.Judgement_Date ? parsedTrialDetailsTwo.Judgement_Date : null,
-        parsedTrialDetails.uploadJudgement ? parsedTrialDetails.uploadJudgement : null,
+        parsedTrialDetailsTwo.uploadJudgement ? parsedTrialDetailsTwo.uploadJudgement : null,
+        parsedTrialDetailsTwo.judgement_nature_remarks ? parsedTrialDetailsTwo.judgement_nature_remarks : null,
 
       ]);
     }
