@@ -484,6 +484,8 @@ router.get('/vmcmeeting/districts', vmcMeetingController.getDistricts);
 router.get('/vmcmeeting/getUserBasedDistrict', vmcMeetingController.getUserBasedDistrict);
 router.get('/vmcmeeting/attendees/', vmcMeetingController.getAttendeesByLocation);
 
+router.delete('/vmcmeeting/Delete_Meeting:id', vmcMeetingController.DeleteMeeting);
+
 router.get('/dadtwo-dashboard-data', dadtwodashboardController.getDashboardData);
 
 router.post('/applybarchartgivenDataFilters',dadtwodashboardController.applybarchartgivenDataFilters);

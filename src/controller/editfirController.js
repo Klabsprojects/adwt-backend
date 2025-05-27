@@ -2810,6 +2810,10 @@ exports.Update_step6 = (req, res) => {
                 parsedChargesheetDetails.proceedingsFileNo || null,
                 parsedChargesheetDetails.proceedingsDate || null,
                 proceedingsFile || null,
+                parsedChargesheetDetails.ChargeSheet_CRL_number || null,
+                parsedChargesheetDetails.quash_petition_no || null,
+                parsedChargesheetDetails.petition_date || null,
+                parsedChargesheetDetails.upload_court_order_path || null,
                 firId,
               ];
 
@@ -2818,13 +2822,12 @@ exports.Update_step6 = (req, res) => {
                       charge_sheet_filed = ?, court_district = ?, court_name = ?, case_type = ?,
                       case_number = ?, chargesheetDate = ?, rcs_file_number = ?, rcs_filing_date = ?,
                       mf_copy_path = ?, total_compensation_1 = ?, proceedings_file_no = ?,
-                      proceedings_date = ?, upload_proceedings_path = ?
-                     WHERE fir_id = ?`
+                      proceedings_date = ?, upload_proceedings_path = ?, ChargeSheet_CRL_number = ?, quash_petition_no = ?, petition_date = ?, upload_court_order_path = ? WHERE fir_id = ?`
                 : `INSERT INTO chargesheet_details (
                       charge_sheet_filed, court_district, court_name, case_type, case_number,
                       chargesheetDate, rcs_file_number, rcs_filing_date, mf_copy_path,
-                      total_compensation_1, proceedings_file_no, proceedings_date, upload_proceedings_path, fir_id
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+                      total_compensation_1, proceedings_file_no, proceedings_date, upload_proceedings_path, ChargeSheet_CRL_number, quash_petition_no ,petition_date ,upload_court_order_path, fir_id
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
               connection.query(query, values, (err) => (err ? reject(err) : resolve()));
             });

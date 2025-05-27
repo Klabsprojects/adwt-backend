@@ -3321,9 +3321,37 @@ exports.getVictimsReliefDetails = (req, res) => {
     }
 
     const victimPromises = results.map((victim) => {
-      const queryRelief = `SELECT * FROM victim_relief WHERE victim_id = ?`;
-      const queryChargesheetVictims = `SELECT * FROM chargesheet_victims WHERE victim_id = ?`;
-      const queryTrialRelief = `SELECT * FROM trial_relief WHERE victim_id = ?`;
+      // const queryRelief = `SELECT * FROM victim_relief WHERE victim_id = ?`;
+      // const queryChargesheetVictims = `SELECT * FROM chargesheet_victims WHERE victim_id = ?`;
+      // const queryTrialRelief = `SELECT * FROM trial_relief WHERE victim_id = ?`;
+
+      const queryRelief = `
+      SELECT
+         vr.* , vm.victim_name
+      FROM 
+        victim_relief vr
+      LEFT JOIN 
+        victims vm on vm.victim_id = vr.victim_id
+
+      WHERE vr.victim_id = ?`;
+
+      const queryChargesheetVictims = `
+        SELECT 
+          cv.*, vm.victim_name
+        FROM 
+          chargesheet_victims cv
+        LEFT JOIN 
+          victims vm ON vm.victim_id = cv.victim_id
+        WHERE cv.victim_id = ?`;
+      
+      const queryTrialRelief = `
+        SELECT 
+          tr.*, vm.victim_name
+        FROM 
+          trial_relief tr
+        LEFT JOIN 
+          victims vm ON vm.victim_id = tr.victim_id
+        WHERE tr.victim_id = ?`;
 
       return new Promise((resolve, reject) => {
         const reliefPromise = new Promise((res, rej) => {
@@ -3416,6 +3444,10 @@ exports.getFirDetails = async  (req, res) =>
               chargesheetData = {
                 fir_id: result4[0].fir_id,
                 chargesheet_id: result4[0].chargesheet_id,
+                ChargeSheet_CRL_number: result4[0].ChargeSheet_CRL_number,
+                quash_petition_no: result4[0].quash_petition_no,
+                petition_date: result4[0].petition_date,
+                upload_court_order_path: result4[0].upload_court_order_path,
                 chargesheetDate : result4[0].chargesheetDate,
                 charge_sheet_filed: result4[0].charge_sheet_filed,
                 court_district: result4[0].court_district,

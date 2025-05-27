@@ -375,6 +375,31 @@ exports.updateMeeting = async (req, res) => {
   }
 };
 
+// Delete a meeting
+ exports.DeleteMeeting = async (req, res) => {
+  const MeetingId = req.params.id; // Assuming `id` is `vmc_id` from the frontend
+
+  if (!MeetingId) {
+    return res.status(400).send({ error: 'Meeting ID is required.' });
+  }
+
+  const query = `DELETE FROM vmc_meeting WHERE id = ?`;
+
+  db.query(query, [MeetingId], (err, result) => {
+    if (err) {
+      console.error('Database error on Meeting deletion:', err);
+      return res.status(500).send({ error: 'Database error' });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).send({ error: 'Meeting not found.' });
+    }
+
+    res.send({ message: 'Meeting deleted successfully.' });
+  });
+};
+
+
 
 exports.getAttendeesByDistrictbysk = async (req, res) => {
   // console.log('testbysk');
