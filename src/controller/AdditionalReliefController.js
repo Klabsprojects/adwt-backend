@@ -64,11 +64,13 @@ exports.getFIRAdditionalReliefListByVictim = (req, res) => {
   const query = `
     SELECT 
       f.fir_id, 
+      CONCAT(f.fir_number,'/', f.fir_number_suffix) fir_number ,
       v.victim_id, 
       v.victim_name 
     FROM fir_add f
     LEFT JOIN victim_relief v ON f.fir_id = v.fir_id
-    WHERE JSON_LENGTH(v.additional_relief) > 0
+    LEFT JOIN victims vm ON vm.victim_id = v.victim_id
+    WHERE JSON_LENGTH(v.additional_relief) > 0 and vm.delete_status = 0
     GROUP BY f.fir_id, v.victim_id, v.victim_name
   `;
 

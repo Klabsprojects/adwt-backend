@@ -395,6 +395,8 @@ router.get('/fir/victims-details/:firId', firController.getVictimsReliefDetails)
 // Add this route for updating FIR status
 // routes.js or similar route file
 router.put('/fir/update-status', firController.updateFirStatus);
+router.post('/fir/deleteAccused', editfircontroller.deleteAccused);
+router.post('/fir/deleteVictim', editfircontroller.deleteVictim);
 router.get('/fir-relief/victims-details_1/:firId', ReliefController.getVictimsReliefDetails_1);
 
 router.get('/fir-relief/second-installment/:firId', ReliefController.getSecondInstallmentDetails);

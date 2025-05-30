@@ -1141,7 +1141,7 @@ exports.updateStepFive = (req, res) => {
           totalCompensation || existingProceedings[0].total_compensation,
           proceedingsFileNo || existingProceedings[0].proceedings_file_no,
           proceedingsDate || existingProceedings[0].proceedings_date,
-          proceedingsFile || existingProceedings[0].proceedings_file,
+          proceedingsFile || null,
           firId,
         ];
         await connection.query(updateProceedingsQuery, updateProceedingsValues);
@@ -4342,6 +4342,349 @@ const queryAsync = (query, params) => {
 
 
 
+// exports.deleteAccused = (req, res) => {
+//   const { accusedId , UserId , number_of_accused, fir_id} = req.body;
+
+//   // Check if FIR ID and status are provided
+//   if (!accusedId) {
+//     return res.status(400).json({ message: 'Accused ID is required' });
+//   }
+
+//   // Update the status in the database
+//   const query = `
+//     UPDATE accuseds
+//     SET delete_status = 1
+//     WHERE accused_id = ?
+//   `;
+//   const values = [accusedId];
+
+//   db.query(query, values, (err, result) => {
+//     if (err) {
+//       return res.status(500).json({ message: 'Failed to delete accused detail', error: err });
+//     }
+
+//     if (result.affectedRows > 0) {
+//       return res.status(200).json({ message: 'accused detail deleted successfully' });
+//     } else {
+//       return res.status(404).json({ message: 'accused not found' });
+//     }
+//   });
+// };
 
 
 
+exports.deleteAccused = (req, res) => {
+  const { accusedId, UserId, number_of_accused, fir_id } = req.body;
+
+  // Validation
+  if (!accusedId || !UserId || !number_of_accused || !fir_id) {
+    return res.status(400).json({ 
+      message: 'Accused ID, User ID, number of accused, and FIR ID are required' 
+    });
+  }
+
+  // Get connection from pool
+  db.getConnection((err, connection) => {
+    if (err) {
+      return res.status(500).json({ message: 'Failed to get database connection', error: err });
+    }
+
+    // Start transaction on the specific connection
+    connection.beginTransaction((err) => {
+      if (err) {
+        connection.release();
+        return res.status(500).json({ message: 'Failed to start transaction', error: err });
+      }
+
+      // Step 1: Get accused details before deletion for logging
+      const getAccusedQuery = `
+        SELECT * FROM accuseds WHERE accused_id = ?
+      `;
+
+      connection.query(getAccusedQuery, [accusedId], (err, accusedResult) => {
+        if (err) {
+          return connection.rollback(() => {
+            connection.release();
+            res.status(500).json({ message: 'Failed to fetch accused details', error: err });
+          });
+        }
+
+        if (accusedResult.length === 0) {
+          return connection.rollback(() => {
+            connection.release();
+            res.status(404).json({ message: 'Accused not found' });
+          });
+        }
+
+        const accusedData = accusedResult[0];
+
+        // Step 2: Update accused table - set delete_status = 1
+        const deleteAccusedQuery = `
+          UPDATE accuseds
+          SET delete_status = 1
+          WHERE accused_id = ?
+        `;
+
+        connection.query(deleteAccusedQuery, [accusedId], (err, deleteResult) => {
+          if (err) {
+            return connection.rollback(() => {
+              connection.release();
+              res.status(500).json({ message: 'Failed to delete accused detail', error: err });
+            });
+          }
+
+          // Step 3: Update fir_add table with new number_of_accused
+          const updateFirQuery = `
+            UPDATE fir_add
+            SET number_of_accused = ?
+            WHERE fir_id = ?
+          `;
+
+          connection.query(updateFirQuery, [number_of_accused, fir_id], (err, updateResult) => {
+            if (err) {
+              return connection.rollback(() => {
+                connection.release();
+                res.status(500).json({ message: 'Failed to update FIR accused count', error: err });
+              });
+            }
+
+            // Step 4: Insert into log table with all accused table fields
+            const logQuery = `
+              INSERT INTO accused_delete_log (
+                user_id, fir_id, accused_id, age, name, gender, custom_gender, 
+                address, pincode, community, caste, guardian_name, previous_incident, 
+                previous_fir_number, previous_fir_number_suffix, scst_offence, 
+                scst_fir_number, scst_fir_number_suffix, antecedentsOption, 
+                antecedents, landOIssueOption, land_o_issues, gist_of_current_case, 
+                upload_fir_copy, previous_incident_remarks, previous_offence_remarks, 
+                delete_status, deleted_at
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+            `;
+
+            const logValues = [
+              UserId,
+              fir_id,
+              accusedData.accused_id,
+              accusedData.age,
+              accusedData.name,
+              accusedData.gender,
+              accusedData.custom_gender,
+              accusedData.address,
+              accusedData.pincode,
+              accusedData.community,
+              accusedData.caste,
+              accusedData.guardian_name,
+              accusedData.previous_incident,
+              accusedData.previous_fir_number,
+              accusedData.previous_fir_number_suffix,
+              accusedData.scst_offence,
+              accusedData.scst_fir_number,
+              accusedData.scst_fir_number_suffix,
+              accusedData.antecedentsOption,
+              accusedData.antecedents,
+              accusedData.landOIssueOption,
+              accusedData.land_o_issues,
+              accusedData.gist_of_current_case,
+              accusedData.upload_fir_copy,
+              accusedData.previous_incident_remarks,
+              accusedData.previous_offence_remarks,
+              accusedData.delete_status
+            ];
+
+            connection.query(logQuery, logValues, (err, logResult) => {
+              if (err) {
+                return connection.rollback(() => {
+                  connection.release();
+                  res.status(500).json({ message: 'Failed to log deletion activity', error: err });
+                });
+              }
+
+              // Commit the transaction
+              connection.commit((err) => {
+                if (err) {
+                  return connection.rollback(() => {
+                    connection.release();
+                    res.status(500).json({ message: 'Failed to commit transaction', error: err });
+                  });
+                }
+
+                // Release connection back to pool
+                connection.release();
+
+                // Success response
+                res.status(200).json({
+                  message: 'Accused deleted successfully',
+                  data: {
+                    accused_id: accusedId,
+                    fir_id: fir_id,
+                    new_accused_count: number_of_accused
+                  }
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+  });
+};
+
+
+
+
+
+exports.deleteVictim = (req, res) => {
+  const { victim_id, UserId, number_of_victim, fir_id } = req.body;
+
+  // Validation
+  if (!victim_id || !UserId || !number_of_victim || !fir_id) {
+    return res.status(400).json({ 
+      message: 'Victim ID, User ID, number of victims, and FIR ID are required' 
+    });
+  }
+
+  // Get connection from pool
+  db.getConnection((err, connection) => {
+    if (err) {
+      return res.status(500).json({ message: 'Failed to get database connection', error: err });
+    }
+
+    // Start transaction on the specific connection
+    connection.beginTransaction((err) => {
+      if (err) {
+        connection.release();
+        return res.status(500).json({ message: 'Failed to start transaction', error: err });
+      }
+
+      // Step 1: Get victim details before deletion for logging
+      const getVictimQuery = `
+        SELECT * FROM victims WHERE victim_id = ?
+      `;
+
+      connection.query(getVictimQuery, [victim_id], (err, victimResult) => {
+        if (err) {
+          return connection.rollback(() => {
+            connection.release();
+            res.status(500).json({ message: 'Failed to fetch victim details', error: err });
+          });
+        }
+
+        if (victimResult.length === 0) {
+          return connection.rollback(() => {
+            connection.release();
+            res.status(404).json({ message: 'Victim not found' });
+          });
+        }
+
+        const victimData = victimResult[0];
+
+        // Step 2: Update victims table - set delete_status = 1
+        const deleteVictimQuery = `
+          UPDATE victims
+          SET delete_status = 1
+          WHERE victim_id = ?
+        `;
+
+        connection.query(deleteVictimQuery, [victim_id], (err, deleteResult) => {
+          if (err) {
+            return connection.rollback(() => {
+              connection.release();
+              res.status(500).json({ message: 'Failed to delete victim detail', error: err });
+            });
+          }
+
+          // Step 3: Update fir_add table with new number_of_victim
+          const updateFirQuery = `
+            UPDATE fir_add
+            SET number_of_victim = ?
+            WHERE fir_id = ?
+          `;
+
+          connection.query(updateFirQuery, [number_of_victim, fir_id], (err, updateResult) => {
+            if (err) {
+              return connection.rollback(() => {
+                connection.release();
+                res.status(500).json({ message: 'Failed to update FIR victim count', error: err });
+              });
+            }
+
+            // Step 4: Insert into victim_delete_log table with all victim table fields
+            const logQuery = `
+              INSERT INTO victim_delete_log (
+                user_id, fir_id, victim_id, victim_name, victim_age, victim_gender, 
+                custom_gender, mobile_number, address, victim_pincode, community, 
+                caste, guardian_name, is_native_district_same, native_district, 
+                offence_committed, sectionsIPC, sectionsIPC_JSON, scst_sections, 
+                fir_stage_as_per_act, fir_stage_ex_gratia, chargesheet_stage_as_per_act, 
+                chargesheet_stage_ex_gratia, final_stage_as_per_act, final_stage_ex_gratia, 
+                relief_applicable, delete_status, deleted_at
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+            `;
+
+            const logValues = [
+              UserId,
+              fir_id,
+              victimData.victim_id,
+              victimData.victim_name,
+              victimData.victim_age,
+              victimData.victim_gender,
+              victimData.custom_gender,
+              victimData.mobile_number,
+              victimData.address,
+              victimData.victim_pincode,
+              victimData.community,
+              victimData.caste,
+              victimData.guardian_name,
+              victimData.is_native_district_same,
+              victimData.native_district,
+              victimData.offence_committed,
+              victimData.sectionsIPC,
+              victimData.sectionsIPC_JSON,
+              victimData.scst_sections,
+              victimData.fir_stage_as_per_act,
+              victimData.fir_stage_ex_gratia,
+              victimData.chargesheet_stage_as_per_act,
+              victimData.chargesheet_stage_ex_gratia,
+              victimData.final_stage_as_per_act,
+              victimData.final_stage_ex_gratia,
+              victimData.relief_applicable,
+              1 // delete_status
+            ];
+
+            connection.query(logQuery, logValues, (err, logResult) => {
+              if (err) {
+                return connection.rollback(() => {
+                  connection.release();
+                  res.status(500).json({ message: 'Failed to log deletion activity', error: err });
+                });
+              }
+
+              // Commit the transaction
+              connection.commit((err) => {
+                if (err) {
+                  return connection.rollback(() => {
+                    connection.release();
+                    res.status(500).json({ message: 'Failed to commit transaction', error: err });
+                  });
+                }
+
+                // Release connection back to pool
+                connection.release();
+
+                // Success response
+                res.status(200).json({
+                  message: 'Victim deleted successfully',
+                  data: {
+                    victim_id: victim_id,
+                    fir_id: fir_id,
+                    new_victim_count: number_of_victim
+                  }
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+  });
+};

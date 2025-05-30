@@ -3312,7 +3312,7 @@ exports.getVictimsReliefDetails = (req, res) => {
       relief_applicable,
       offence_committed
     FROM victims
-    WHERE fir_id = ?
+    WHERE fir_id = ? and delete_status = 0
   `;
 
   db.query(queryVictims, [firId], (err, results) => {
@@ -3333,7 +3333,7 @@ exports.getVictimsReliefDetails = (req, res) => {
       LEFT JOIN 
         victims vm on vm.victim_id = vr.victim_id
 
-      WHERE vr.victim_id = ?`;
+      WHERE vr.victim_id = ? and vm.delete_status = 0`;
 
       const queryChargesheetVictims = `
         SELECT 
@@ -3342,7 +3342,7 @@ exports.getVictimsReliefDetails = (req, res) => {
           chargesheet_victims cv
         LEFT JOIN 
           victims vm ON vm.victim_id = cv.victim_id
-        WHERE cv.victim_id = ?`;
+        WHERE cv.victim_id = ? and vm.delete_status = 0`;
       
       const queryTrialRelief = `
         SELECT 
@@ -3351,7 +3351,7 @@ exports.getVictimsReliefDetails = (req, res) => {
           trial_relief tr
         LEFT JOIN 
           victims vm ON vm.victim_id = tr.victim_id
-        WHERE tr.victim_id = ?`;
+        WHERE tr.victim_id = ? and vm.delete_status = 0`;
 
       return new Promise((resolve, reject) => {
         const reliefPromise = new Promise((res, rej) => {
@@ -3409,14 +3409,14 @@ exports.getFirDetails = async  (req, res) =>
       return res.status(500).json({ message: 'Error fetching FIR details.', error: err });
     }
 
-    const query1 = `SELECT * FROM victims WHERE fir_id = ?`;
+    const query1 = `SELECT * FROM victims WHERE fir_id = ? and delete_status = 0`;
     db.query(query1, [fir_id], async (err, result1) => {
       if (err) {
         console.error(err);
         return res.status(500).json({ message: 'Error fetching victims.', error: err });
       }
 
-      const query2 = `SELECT * FROM accuseds WHERE fir_id = ?`;
+      const query2 = `SELECT * FROM accuseds WHERE fir_id = ? and delete_status = 0`;
       db.query(query2, [fir_id], async (err, result2) => {
         if (err) {
           console.error(err);
