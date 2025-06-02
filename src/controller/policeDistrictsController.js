@@ -12,6 +12,17 @@ const getAllPoliceDivisions = (req, res) => {
   });
 };
 
+const getpoliceCity = (req, res) => {
+  const query = "SELECT distinct district_division_name FROM police_division where status = '1'";
+  db.query(query, (err, result) => {
+    if (err) {
+      console.error('Database error:', err);
+      return res.status(500).send({ error: 'Database error' });
+    }
+    res.send(result);
+  });
+};
+
 // Add a new police division
 const addPoliceDivision = (req, res) => {
   const { district_division_name, police_range_name, police_zone_name, status } = req.body;
@@ -106,6 +117,7 @@ const getAllDistricts = (req, res) => {
 
 module.exports = {
   getAllPoliceDivisions,
+  getpoliceCity,
   addPoliceDivision,
   updatePoliceDivision,
   deletePoliceDivision,

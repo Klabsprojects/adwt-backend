@@ -173,6 +173,8 @@ router.put('/cities/:id/status', cityController.toggleCityStatus);
 // // Get all police districts
 router.get('/police-division', policeDistrictsController.getAllPoliceDivisions);
 
+router.get('/getpoliceCity', policeDistrictsController.getpoliceCity);
+
 // Get all districts for dropdown selection
 router.get('/police-division/districts', policeDistrictsController.getAllDistricts);
 

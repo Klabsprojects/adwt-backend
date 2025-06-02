@@ -1,32 +1,171 @@
 const db = require('../db'); // Update with actual DB connection
 
-exports.getFIRReliefList = (req, res) => {
-  const query = `
-    SELECT 
-    CONCAT(fir_add.fir_number,'/',fir_add.fir_number_suffix) as fir_number,
-      fir_add.fir_id,
-      fir_add.police_city,
-      fir_add.police_station,
-      fir_add.number_of_victim,
-      users.name as created_by,
-      fir_add.created_at,
-      fir_add.status,
-      fir_add.relief_status as relief_status,
-     nature_of_judgement as nature_of_judgement
-    FROM 
-      fir_add
-    LEFT JOIN users ON users.id = fir_add.created_by
-    ORDER BY 
-      fir_id DESC
-  `;
 
-  db.query(query, (error, results) => {
-    if (error) {
-      return res.status(500).json({ error: error.message });
+
+
+exports.getFIRReliefList = (req, res) => {
+
+  
+  // Build WHERE clause based on provided filters
+  let whereClause = '';
+  const params = [];
+  
+  // Add filters to where clause
+  if (req.query.search) {
+    const searchValue = `%${req.query.search}%`;
+    const searchValue2 = `${req.query.search}`;
+    whereClause += ` WHERE (fir_add.fir_id LIKE ? OR CONCAT(fir_add.fir_number, '/', fir_add.fir_number_suffix) = ? OR fir_add.revenue_district LIKE ? OR fir_add.police_city LIKE ? OR fir_add.police_station LIKE ?)`;
+    
+    params.push(searchValue, searchValue2, searchValue, searchValue, searchValue);
+  }
+  
+  if (req.query.district) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'fir_add.police_city = ?';
+    params.push(req.query.district);
+  }
+
+  if (req.query.policeStationName) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'fir_add.police_station = ?';
+    params.push(req.query.policeStationName);
+  }
+
+  if (req.query.police_zone) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'fir_add.police_zone = ?';
+    params.push(req.query.police_zone);
+  }
+
+  if (req.query.police_range) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'fir_add.police_range = ?';
+    params.push(req.query.police_range);
+  }
+
+  if (req.query.revenue_district) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'fir_add.revenue_district = ?';
+    params.push(req.query.revenue_district);
+  }
+
+  if (req.query.Offence_group) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'fir_add.Offence_group = ?';
+    params.push(req.query.Offence_group);
+  }
+
+  if (req.query.complaintReceivedType) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'fir_add.complaintReceivedType = ?';
+    params.push(req.query.complaintReceivedType);
+  }
+  
+  if (req.query.start_date) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'DATE(fir_add.date_of_registration) >= ?';
+    params.push(req.query.start_date);
+  }
+  
+  if (req.query.end_date) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'DATE(fir_add.date_of_registration) <= ?';
+    params.push(req.query.end_date);
+  }
+
+  if (req.query.UIPT) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    if (req.query.UIPT == 'UI') {
+      whereClause += 'fir_add.status <= 5';
+    } else {
+      whereClause += 'fir_add.status >= 6';
     }
-    res.status(200).json(results);
-  });
+  }
+
+  if (req.query.status) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    if (req.query.status == 0) {
+      whereClause += 'fir_add.status >= 0 AND fir_add.status <= 5';
+    } else {
+      whereClause += 'fir_add.status = ?';
+      params.push(req.query.status);
+    }
+  }
+
+  if (req.query.year) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'DATE_FORMAT(fir_add.date_of_registration, "%Y") = ? ';
+    params.push(req.query.year);
+  }
+
+          const query = `
+            SELECT 
+                  CONCAT(fir_add.fir_number,'/',fir_add.fir_number_suffix) as fir_number,
+                  fir_add.fir_id,
+                  fir_add.police_city,
+                  fir_add.police_station,
+                  fir_add.number_of_victim,
+                  users.name as created_by,
+                  fir_add.created_at,
+                  fir_add.status,
+                  fir_add.relief_status as relief_status,
+                  nature_of_judgement as nature_of_judgement
+                FROM fir_add
+                LEFT JOIN users ON users.id = fir_add.created_by
+                ${whereClause} 
+                ORDER BY fir_add.created_at DESC 
+          `;
+    
+    const queryParams = [...params];
+
+    console.log(query)
+    console.log(queryParams)
+    
+    db.query(query, queryParams, (err, results) => {
+      if (err) {
+        return res.status(500).json({ 
+          message: 'Failed to retrieve FIR list', 
+          error: err 
+        });
+      }
+      
+      // Return paginated data with metadata
+      // res.status(200).json({
+      //   data: results
+      // });
+      res.status(200).json(results);
+    });
 };
+
+
+
+// exports.getFIRReliefList = (req, res) => {
+//   const query = `
+//     SELECT 
+//     CONCAT(fir_add.fir_number,'/',fir_add.fir_number_suffix) as fir_number,
+//       fir_add.fir_id,
+//       fir_add.police_city,
+//       fir_add.police_station,
+//       fir_add.number_of_victim,
+//       users.name as created_by,
+//       fir_add.created_at,
+//       fir_add.status,
+//       fir_add.relief_status as relief_status,
+//      nature_of_judgement as nature_of_judgement
+//     FROM 
+//       fir_add
+//     LEFT JOIN users ON users.id = fir_add.created_by
+//     ORDER BY 
+//       fir_id DESC
+//   `;
+
+//   db.query(query, (error, results) => {
+//     if (error) {
+//       return res.status(500).json({ error: error.message });
+//     }
+//     res.status(200).json(results);
+//   });
+// };
 
 function generateRandomId(length = 36) {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';

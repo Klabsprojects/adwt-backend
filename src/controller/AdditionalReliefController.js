@@ -60,31 +60,186 @@ exports.getFIRAdditionalReliefList = (req, res) => {
 //   });
 // };
 
+// exports.getFIRAdditionalReliefListByVictim = (req, res) => {
+//   const query = `
+//     SELECT 
+//       f.fir_id, 
+//       CONCAT(f.fir_number,'/', f.fir_number_suffix) fir_number ,
+//       v.victim_id, 
+//       v.victim_name 
+//     FROM fir_add f
+//     LEFT JOIN victim_relief v ON f.fir_id = v.fir_id
+//     LEFT JOIN victims vm ON vm.victim_id = v.victim_id
+//     WHERE JSON_LENGTH(v.additional_relief) > 0 and vm.delete_status = 0
+//     GROUP BY f.fir_id, v.victim_id, v.victim_name
+//   `;
+
+//   db.query(query, (error, results) => {
+//     if (error) {
+//       return res.status(500).json({ error: error.message });
+//     }
+//     res.status(200).json(results);
+//   });
+// };
+
+
+
+// exports.getFIRAdditionalReliefListByVictim = (req, res) => {
+
+  
+//   // Build WHERE clause based on provided filters
+//   let whereClause = '  WHERE JSON_LENGTH(v.additional_relief) > 0 and vm.delete_status = 0 ';
+//   const params = [];
+  
+//   // Add filters to where clause
+//   if (req.query.search) {
+//     const searchValue = `%${req.query.search}%`;
+//     const searchValue2 = `${req.query.search}`;
+//     whereClause += ` WHERE (f.fir_id LIKE ? OR CONCAT(f.fir_number, '/', f.fir_number_suffix) = ? OR f.revenue_district LIKE ? OR f.police_city LIKE ? OR f.police_station LIKE ?)`;
+    
+//     params.push(searchValue, searchValue2, searchValue, searchValue, searchValue);
+//   }
+  
+//   if (req.query.district) {
+//     whereClause += whereClause ? ' AND ' : ' WHERE ';
+//     whereClause += 'f.police_city = ?';
+//     params.push(req.query.district);
+//   }
+
+//   if (req.query.policeStationName) {
+//     whereClause += whereClause ? ' AND ' : ' WHERE ';
+//     whereClause += 'f.police_station = ?';
+//     params.push(req.query.policeStationName);
+//   }
+
+//   if (req.query.revenue_district) {
+//     whereClause += whereClause ? ' AND ' : ' WHERE ';
+//     whereClause += 'f.revenue_district = ?';
+//     params.push(req.query.revenue_district);
+//   }
+
+//   if (req.query.status) {
+//     whereClause += whereClause ? ' AND ' : ' WHERE ';
+//     if (req.query.status == 0) {
+//       whereClause += 'f.status >= 0 AND f.status <= 5';
+//     } else {
+//       whereClause += 'f.status = ?';
+//       params.push(req.query.status);
+//     }
+//   }
+
+//           const query = `
+//                 SELECT 
+//                       f.fir_id, 
+//                       CONCAT(f.fir_number,'/', f.fir_number_suffix) fir_number ,
+//                       v.victim_id, 
+//                       v.victim_name ,
+//                       f.revenue_district,
+//                       f.police_station,
+//                       f.police_city,
+//                       f.status
+//                     FROM fir_add f
+//                     LEFT JOIN victim_relief v ON f.fir_id = v.fir_id
+//                     LEFT JOIN victims vm ON vm.victim_id = v.victim_id
+//                    ${whereClause}
+//                     GROUP BY f.fir_id, v.victim_id, v.victim_name  ORDER BY v.created_at DESC 
+//           `;
+    
+//     const queryParams = [...params];
+
+//     console.log(query)
+//     console.log(queryParams)
+    
+//     db.query(query, queryParams, (err, results) => {
+//       if (err) {
+//         return res.status(500).json({ 
+//           message: 'Failed to retrieve FIR list', 
+//           error: err 
+//         });
+//       }
+      
+//       // Return paginated data with metadata
+//       // res.status(200).json({
+//       //   data: results
+//       // });
+//       res.status(200).json(results);
+//     });
+// };
+
+
 exports.getFIRAdditionalReliefListByVictim = (req, res) => {
+  // Build WHERE clause based on provided filters
+  let whereClause = 'WHERE JSON_LENGTH(v.additional_relief) > 0 AND vm.delete_status = 0';
+  const params = [];
+  
+  // Add filters to where clause
+  if (req.query.search) {
+    const searchValue = `%${req.query.search}%`;
+    const searchValue2 = `${req.query.search}`;
+    whereClause += ` AND (f.fir_id LIKE ? OR CONCAT(f.fir_number, '/', f.fir_number_suffix) = ? OR f.revenue_district LIKE ? OR f.police_city LIKE ? OR f.police_station LIKE ?)`;
+    
+    params.push(searchValue, searchValue2, searchValue, searchValue, searchValue);
+  }
+  
+  if (req.query.district) {
+    whereClause += ' AND f.police_city = ?';
+    params.push(req.query.district);
+  }
+
+  if (req.query.policeStationName) {
+    whereClause += ' AND f.police_station = ?';
+    params.push(req.query.policeStationName);
+  }
+
+  if (req.query.revenue_district) {
+    whereClause += ' AND f.revenue_district = ?';
+    params.push(req.query.revenue_district);
+  }
+
+  if (req.query.status) {
+    if (req.query.status == 0) {
+      whereClause += ' AND f.status >= 0 AND f.status <= 5';
+    } else {
+      whereClause += ' AND f.status = ?';
+      params.push(req.query.status);
+    }
+  }
+
   const query = `
     SELECT 
       f.fir_id, 
-      CONCAT(f.fir_number,'/', f.fir_number_suffix) fir_number ,
+      CONCAT(f.fir_number,'/', f.fir_number_suffix) AS fir_number,
       v.victim_id, 
-      v.victim_name 
+      v.victim_name,
+      f.revenue_district,
+      f.police_station,
+      f.police_city,
+      f.status
     FROM fir_add f
     LEFT JOIN victim_relief v ON f.fir_id = v.fir_id
     LEFT JOIN victims vm ON vm.victim_id = v.victim_id
-    WHERE JSON_LENGTH(v.additional_relief) > 0 and vm.delete_status = 0
-    GROUP BY f.fir_id, v.victim_id, v.victim_name
+    ${whereClause}
+    GROUP BY f.fir_id, v.victim_id, v.victim_name  
+    ORDER BY v.created_at DESC 
   `;
 
-  db.query(query, (error, results) => {
-    if (error) {
-      return res.status(500).json({ error: error.message });
+  const queryParams = [...params];
+
+  console.log(query);
+  console.log(queryParams);
+  
+  db.query(query, queryParams, (err, results) => {
+    if (err) {
+      console.error('Database query error:', err);
+      return res.status(500).json({ 
+        message: 'Failed to retrieve FIR list', 
+        error: err.message // Don't expose full error object in production
+      });
     }
+    
     res.status(200).json(results);
   });
 };
-
-
-
-
 
 exports.getVictimDetailsByFirId = (req, res) => {
   const { fir_id } = req.query;  // Get fir_id from query parameters
