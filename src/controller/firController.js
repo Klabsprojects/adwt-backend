@@ -2992,6 +2992,20 @@ exports.getPoliceStations = (req, res) => {
   });
 };
 
+exports.getalteredcasebasedID = (req, res) => {
+  console.log('hi')
+  const { id } = req.query;
+  const query = `SELECT al.*, vm.victim_name FROM victim_altered_child_table al
+                left join victims vm on vm.victim_id = al.victim_id
+                WHERE al.parent_id = ?`;
+console.log(query,id)
+  db.query(query, [id], (err, results) => {
+    if (err) {
+      return res.status(500).json({ message: 'Failed to fetch data', error: err });
+    }
+    res.json(results);
+  });
+};
 
 
 // Fetch all Offence Names
@@ -4613,3 +4627,286 @@ const queryAsync = (query, params) => {
 
 
 
+
+
+// exports.AlterSave = (req, res) => {
+//   const { firId, victims } = req.body;
+
+//   // Get a connection from the pool
+//   db.getConnection((err, connection) => {
+//     if (err) {
+//       return res.status(500).json({ message: 'Failed to get database connection', error: err.message });
+//     }
+    
+//     // Start a transaction on the specific connection
+//     connection.beginTransaction(async (transactionErr) => {
+//       if (transactionErr) {
+//         connection.release(); // Release the connection on error
+//         return res.status(500).json({ message: 'Failed to start transaction', error: transactionErr });
+//       }
+
+//       try {
+        
+
+//         // Process victims sequentially to avoid race conditions
+//         const updatedVictims = [];
+
+//         for (const victim of victims) {
+//           // If victim_id is provided, we just update that record
+//           if (victim.victim_id) {
+//             const updateQuery = `
+//               UPDATE victims
+//               SET
+//                 offence_committed = ?,
+//                 scst_sections = ?,
+//                 sectionsIPC_JSON = ?,
+//                 relief_applicable = ?
+//               WHERE victim_id = ?`
+            
+            
+//             const updateValues = [
+//               JSON.stringify(victim.offenceCommitted || []),
+//               JSON.stringify(victim.scstSections || []),
+//               JSON.stringify(victim.sectionDetails || []),
+//               victim.relief_applicable || 0,
+//               victim.victim_id
+//             ];
+
+//             // Execute update with Promise
+//             await new Promise((resolve, reject) => {
+//               connection.query(updateQuery, updateValues, (err, result) => {
+//                 if (err) reject(err);
+//                 else resolve(result);
+//               });
+//             });
+            
+//             updatedVictims.push({
+//               ...victim,
+//               victim_id: victim.victim_id
+//             });
+//           } 
+//         }
+
+//         // Commit the transaction
+//         connection.commit((commitErr) => {
+//           if (commitErr) {
+//             return connection.rollback(() => {
+//               connection.release(); // Release connection on rollback
+//               res.status(500).json({ message: 'Failed to commit transaction', error: commitErr });
+//             });
+//           }
+          
+//           connection.release(); // Release connection on successful commit
+          
+//           // Send success response
+//           res.status(200).json({
+//             message: 'Step 3 data saved successfully',
+//             fir_id: firId
+//           });
+//         });
+        
+//       } catch (error) {
+//         // Roll back transaction on error
+//         connection.rollback(() => {
+//           connection.release(); // Release connection on rollback
+//           console.error('Transaction error:', error);
+//           res.status(500).json({ message: 'Failed to process victim data', error: error.message });
+//         });
+//       }
+//     });
+//   });
+// };
+
+
+
+
+
+
+
+
+exports.AlterSave = (req, res) => {
+  const { firId, victims, user_id } = req.body;
+
+  // Get a connection from the pool
+  db.getConnection((err, connection) => {
+    if (err) {
+      return res.status(500).json({ message: 'Failed to get database connection', error: err.message });
+    }
+    
+    // Start a transaction on the specific connection
+    connection.beginTransaction(async (transactionErr) => {
+      if (transactionErr) {
+        connection.release(); // Release the connection on error
+        return res.status(500).json({ message: 'Failed to start transaction', error: transactionErr });
+      }
+
+      try {
+        
+        // Insert into case_altered_log (parent table)
+        const insertLogQuery = `
+          INSERT INTO case_altered_log (
+            fir_id, 
+            created_by, 
+            created_at, 
+            section_changes_status, 
+            victim_changes_status, 
+            accused_changes_status
+          ) VALUES (?, ?, NOW(), ?, ?, ?)`;
+
+        const logValues = [
+          firId,
+          user_id, // Assuming user_id is available
+          1, // section_changes_status (assuming changed)
+          0, // victim_changes_status
+          0, // accused_changes_status (not handling accused in this API)
+        ];
+
+        const logResult = await new Promise((resolve, reject) => {
+          connection.query(insertLogQuery, logValues, (err, result) => {
+            if (err) reject(err);
+            else resolve(result);
+          });
+        });
+
+        const caseAlteredLogId = logResult.insertId;
+
+        // Process victims sequentially to avoid race conditions
+        const updatedVictims = [];
+
+        for (const victim of victims) {
+          // If victim_id is provided, we update that record
+          if (victim.victim_id) {
+            // First, get the current values from the victims table (for prev_ fields)
+            const getCurrentDataQuery = `
+              SELECT 
+                offence_committed,
+                scst_sections,
+                sectionsIPC_JSON,
+                relief_applicable
+              FROM victims 
+              WHERE victim_id = ?`;
+
+            const currentData = await new Promise((resolve, reject) => {
+              connection.query(getCurrentDataQuery, [victim.victim_id], (err, result) => {
+                if (err) reject(err);
+                else resolve(result[0] || {});
+              });
+            });
+
+            // Insert into victim_altered_child_table (child table)
+            const insertChildQuery = `
+              INSERT INTO victim_altered_child_table (
+                parent_id,
+                victim_id,
+                fir_id,
+                prev_offence_committed,
+                prev_sectionsIPC_JSON,
+                prev_scst_sections,
+                cur_offence_committed,
+                cur_sectionsIPC_JSON,
+                cur_scst_sections,
+                created_at
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`;
+
+            const childValues = [
+              caseAlteredLogId, // parent_id from case_altered_log
+              victim.victim_id,
+              firId,
+              currentData.offence_committed || null, // prev_ values from current DB
+              currentData.sectionsIPC_JSON || null,
+              currentData.scst_sections || null,
+              JSON.stringify(victim.offenceCommitted || []), // cur_ values from request body
+              JSON.stringify(victim.sectionDetails || []),
+              JSON.stringify(victim.scstSections || [])
+            ];
+
+            await new Promise((resolve, reject) => {
+              connection.query(insertChildQuery, childValues, (err, result) => {
+                if (err) reject(err);
+                else resolve(result);
+              });
+            });
+
+            // Now update the victims table with new values
+            const updateQuery = `
+              UPDATE victims
+              SET
+                offence_committed = ?,
+                scst_sections = ?,
+                sectionsIPC_JSON = ?,
+                relief_applicable = ?
+              WHERE victim_id = ?`;
+            
+            const updateValues = [
+              JSON.stringify(victim.offenceCommitted || []),
+              JSON.stringify(victim.scstSections || []),
+              JSON.stringify(victim.sectionDetails || []),
+              victim.relief_applicable || 0,
+              victim.victim_id
+            ];
+
+            await new Promise((resolve, reject) => {
+              connection.query(updateQuery, updateValues, (err, result) => {
+                if (err) reject(err);
+                else resolve(result);
+              });
+            });
+            
+            updatedVictims.push({
+              ...victim,
+              victim_id: victim.victim_id
+            });
+          } 
+        }
+
+        const updateFirQuery = `
+          UPDATE fir_add
+          SET
+            case_altered_status = 1,
+            case_altered_date = NOW()
+           
+          WHERE fir_id = ?;
+        `;
+        const updateFirValues = [
+          firId,
+        ];
+
+        // Execute FIR update with Promise
+        await new Promise((resolve, reject) => {
+          connection.query(updateFirQuery, updateFirValues, (err, result) => {
+            if (err) reject(err);
+            else resolve(result);
+          });
+        });
+
+        // Commit the transaction
+        connection.commit((commitErr) => {
+          if (commitErr) {
+            return connection.rollback(() => {
+              connection.release(); // Release connection on rollback
+              res.status(500).json({ message: 'Failed to commit transaction', error: commitErr });
+            });
+          }
+          
+          connection.release(); // Release connection on successful commit
+          
+          // Send success response
+          res.status(200).json({
+            message: 'Step 3 data saved successfully with audit log',
+            fir_id: firId,
+            case_altered_log_id: caseAlteredLogId,
+            updated_victims: updatedVictims.length
+          });
+        });
+        
+      } catch (error) {
+        // Roll back transaction on error
+        connection.rollback(() => {
+          connection.release(); // Release connection on rollback
+          console.error('Transaction error:', error);
+          res.status(500).json({ message: 'Failed to process victim data', error: error.message });
+        });
+      }
+    });
+  });
+};

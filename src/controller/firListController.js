@@ -284,7 +284,8 @@ exports.getFirListPaginated = (req, res) => {
                       users.name AS created_by, 
                       fir_add.created_at, 
                       fir_add.status, 
-                      fir_add.relief_status 
+                      fir_add.relief_status ,
+                      fir_add.case_altered_status
                 FROM fir_add
                 LEFT JOIN users ON users.id = fir_add.created_by
                 ${whereClause} 

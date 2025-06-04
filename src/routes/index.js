@@ -275,6 +275,7 @@ router.get('/fir/details', firController.getFirDetails);
 router.get('/fir/firEditdetails', editfircontroller.getFirDetailsFirEdit);
 
 router.get('/fir/police-stations', firController.getPoliceStations);
+router.get('/fir/alterd-case-detail', firController.getalteredcasebasedID);
 
 // Route to get police division details
 router.get('/fir/police-division', firController.getPoliceDivisionDetails);
@@ -327,6 +328,10 @@ router.post('/fir/handle-Step-Two', firController.handleStepTwo);
 router.post('/fir/handle-step-three', firController.handleStepThree);
 router.post('/fir/handle-step-four', firController.handleStepFour);
 router.post('/fir/handle-step-five', firController.handleStepFive);
+
+
+
+router.post('/fir/AlterSave', firController.AlterSave);
 
 // router.post('/fir/save-step-six', firController.handleStepSix);
 
@@ -415,6 +420,7 @@ router.post('/fir/GetChargesheetDetail', firController.GetChargesheetDetail);
 router.put('/fir_list/update-status/:id', firListController.updateFirStatus);
 
 router.get('/fir-relief', ReliefController.getFIRReliefList);
+router.get('/getAlteredList', ReliefController.getAlteredList);
 //router.get('/fir-additinal-relief', AdditinalReliefController.getFIRAdditionalReliefList);
 
 
