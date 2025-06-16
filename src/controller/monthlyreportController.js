@@ -13,6 +13,12 @@ exports.getmonthlyreportdetail = async (req, res) => {
       fa.number_of_victim, 
       fa.status, 
       fa.relief_status,
+      v.community,
+      v.caste,
+      fa.police_zone,
+      fa.revenue_district,
+      us.name AS created_by, 
+      DATE_FORMAT(fa.created_at, '%Y-%m-%d') AS created_at,
       DATE_FORMAT(fa.date_of_registration, '%Y-%m-%d') AS date_of_registration,
       DATE_FORMAT(rr.report_month, '%Y-%m-%d') AS report_month,
 
@@ -61,6 +67,7 @@ exports.getmonthlyreportdetail = async (req, res) => {
     LEFT JOIN victims v ON fa.fir_id = v.fir_id
     LEFT JOIN chargesheet_details cd ON fa.fir_id = cd.fir_id
     LEFT JOIN report_reasons rr ON fa.fir_id = rr.fir_id
+    LEFT JOIN users us ON us.id = fa.created_by
     GROUP BY fa.fir_id
     ORDER BY fa.created_at DESC;
   `;
@@ -89,24 +96,133 @@ exports.getmonthlyreportdetail = async (req, res) => {
   }
 };
 
-exports.GetDistrictWisePendingUI = async (req, res) => {
-  let query = `
-  SELECT 
-    revenue_district,
-    COUNT(CASE WHEN status <= 5 THEN 1 END) AS ui_total_cases,
-    COUNT(CASE WHEN status <= 5 AND DATEDIFF(NOW(), date_of_registration) < 60 THEN 1 END) AS less_than_60_days,
-    COUNT(CASE WHEN status <= 5 AND DATEDIFF(NOW(), date_of_registration) >= 60 AND YEAR(date_of_registration) = YEAR(NOW()) THEN 1 END) AS more_than_60_current_year,
-    COUNT(CASE WHEN status <= 5 AND DATEDIFF(NOW(), date_of_registration) >= 60 AND YEAR(date_of_registration) = YEAR(NOW()) - 1 THEN 1 END) AS more_than_60_last_year,
-    COUNT(CASE WHEN status <= 5 AND DATEDIFF(NOW(), date_of_registration) >= 60 AND YEAR(date_of_registration) = YEAR(NOW()) - 2 THEN 1 END) AS more_than_60_two_years_ago
-  FROM 
-    fir_add
-  GROUP BY 
-    revenue_district 
-  order by 
-    revenue_district
-  `;
+// exports.GetDistrictWisePendingUI = async (req, res) => {
+//   let query = `
+//   SELECT 
+//     revenue_district,
+//     COUNT(CASE WHEN status <= 5 THEN 1 END) AS ui_total_cases,
+//     COUNT(CASE WHEN status <= 5 AND DATEDIFF(NOW(), date_of_registration) < 60 THEN 1 END) AS less_than_60_days,
+//     COUNT(CASE WHEN status <= 5 AND DATEDIFF(NOW(), date_of_registration) >= 60 AND YEAR(date_of_registration) = YEAR(NOW()) THEN 1 END) AS more_than_60_current_year,
+//     COUNT(CASE WHEN status <= 5 AND DATEDIFF(NOW(), date_of_registration) >= 60 AND YEAR(date_of_registration) = YEAR(NOW()) - 1 THEN 1 END) AS more_than_60_last_year,
+//     COUNT(CASE WHEN status <= 5 AND DATEDIFF(NOW(), date_of_registration) >= 60 AND YEAR(date_of_registration) = YEAR(NOW()) - 2 THEN 1 END) AS more_than_60_two_years_ago
+//   FROM 
+//     fir_add
+//   GROUP BY 
+//     revenue_district 
+//   order by 
+//     revenue_district
+//   `;
 
+//   const params = [];
+
+//   try {
+//     db.query(query, params, (err, results) => {
+//       if (err) {
+//         console.error("Database error:", err);
+//         return res.status(500).json({
+//           message: "Failed to retrieve data",
+//           error: err,
+//         });
+//       }
+
+//       if (results.length === 0) {
+//         return res.status(200).json({ message: "No records found" });
+//       }
+
+//       // Calculate totals
+//       const totals = {
+//         revenue_district: 'Grand Total',
+//         ui_total_cases: 0,
+//         less_than_60_days: 0,
+//         more_than_60_current_year: 0,
+//         more_than_60_last_year: 0,
+//         more_than_60_two_years_ago: 0
+//       };
+
+//       // Sum all values for each column
+//       results.forEach(row => {
+//         totals.ui_total_cases += row.ui_total_cases || 0;
+//         totals.less_than_60_days += row.less_than_60_days || 0;
+//         totals.more_than_60_current_year += row.more_than_60_current_year || 0;
+//         totals.more_than_60_last_year += row.more_than_60_last_year || 0;
+//         totals.more_than_60_two_years_ago += row.more_than_60_two_years_ago || 0;
+//       });
+
+//       // Add the totals row to the results
+//       results.push(totals);
+
+//       res.status(200).json({ data: results });
+//     });
+//   } catch (error) {
+//     console.error("Error in getmonthlyreportdetail:", error);
+//     res.status(500).json({ error: "Failed to get report data." });
+//   }
+// };
+
+
+
+exports.GetDistrictWisePendingUI = async (req, res) => {
+  const conditions = [];
   const params = [];
+  
+  // Handle multiple districts as array
+  if (req.query.districts) {
+    const districts = Array.isArray(req.query.districts) ? req.query.districts : [req.query.districts];
+    const placeholders = districts.map(() => '?').join(',');
+    conditions.push(`fa.revenue_district IN (${placeholders})`);
+    params.push(...districts);
+  }
+  
+  if (req.query.police_zone) {
+    conditions.push('fa.police_zone = ?');
+    params.push(req.query.police_zone);
+  }
+  
+  if (req.query.Police_City) {
+    conditions.push('fa.police_city = ?');
+    params.push(req.query.Police_City);
+  }
+
+  if (req.query.Community) {
+    conditions.push('vm.community = ?');
+    params.push(req.query.Community);
+  }
+
+  if (req.query.Caste) {
+    conditions.push('vm.caste = ?');
+    params.push(req.query.Caste);
+  }
+  
+  if (req.query.start_date) {
+    conditions.push('fa.date_of_registration >= ?');
+    params.push(req.query.start_date);
+  }
+  
+  if (req.query.end_date) {
+    conditions.push('fa.date_of_registration <= ?');
+    params.push(req.query.end_date);
+  }
+  
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+  
+  let query = `
+    SELECT 
+      fa.revenue_district,
+      COUNT(CASE WHEN fa.status <= 5 THEN 1 END) AS ui_total_cases,
+      COUNT(CASE WHEN fa.status <= 5 AND DATEDIFF(NOW(), fa.date_of_registration) < 60 THEN 1 END) AS less_than_60_days,
+      COUNT(CASE WHEN fa.status <= 5 AND DATEDIFF(NOW(), fa.date_of_registration) >= 60 AND YEAR(fa.date_of_registration) = YEAR(NOW()) THEN 1 END) AS more_than_60_current_year,
+      COUNT(CASE WHEN fa.status <= 5 AND DATEDIFF(NOW(), fa.date_of_registration) >= 60 AND YEAR(fa.date_of_registration) = YEAR(NOW()) - 1 THEN 1 END) AS more_than_60_last_year,
+      COUNT(CASE WHEN fa.status <= 5 AND DATEDIFF(NOW(), fa.date_of_registration) >= 60 AND YEAR(fa.date_of_registration) = YEAR(NOW()) - 2 THEN 1 END) AS more_than_60_two_years_ago
+    FROM 
+      fir_add fa
+    LEFT JOIN 
+      victims vm on vm.fir_id = fa.fir_id
+    ${whereClause}
+    GROUP BY 
+      fa.revenue_district 
+    ORDER BY 
+      fa.revenue_district
+  `;
 
   try {
     db.query(query, params, (err, results) => {
@@ -152,25 +268,134 @@ exports.GetDistrictWisePendingUI = async (req, res) => {
   }
 };
 
+// exports.GetReasonWisePendingUI = async (req, res) => {
+//   let query = `
+//   SELECT 
+//     rr.reason_for_status,
+//     COUNT(CASE WHEN status <= 5 THEN 1 END) AS ui_total_cases,
+//     COUNT(CASE WHEN status <= 5 AND DATEDIFF(NOW(), date_of_registration) < 60 THEN 1 END) AS less_than_60_days,
+//     COUNT(CASE WHEN status <= 5 AND DATEDIFF(NOW(), date_of_registration) >= 60 AND YEAR(date_of_registration) = YEAR(NOW()) THEN 1 END) AS more_than_60_current_year,
+//     COUNT(CASE WHEN status <= 5 AND DATEDIFF(NOW(), date_of_registration) >= 60 AND YEAR(date_of_registration) = YEAR(NOW()) - 1 THEN 1 END) AS more_than_60_last_year,
+//     COUNT(CASE WHEN status <= 5 AND DATEDIFF(NOW(), date_of_registration) >= 60 AND YEAR(date_of_registration) = YEAR(NOW()) - 2 THEN 1 END) AS more_than_60_two_years_ago
+//   FROM 
+//     fir_add fa
+//   LEFT JOIN report_reasons rr ON rr.fir_id = fa.fir_id
+//   GROUP BY 
+//     rr.reason_for_status 
+//   order by 
+//     rr.reason_for_status
+//   `;
+
+//   const params = [];
+
+//   try {
+//     db.query(query, params, (err, results) => {
+//       if (err) {
+//         console.error("Database error:", err);
+//         return res.status(500).json({
+//           message: "Failed to retrieve data",
+//           error: err,
+//         });
+//       }
+
+//       if (results.length === 0) {
+//         return res.status(200).json({ message: "No records found" });
+//       }
+
+//       // Calculate totals
+//       const totals = {
+//         reason_for_status: 'Grand Total',
+//         ui_total_cases: 0,
+//         less_than_60_days: 0,
+//         more_than_60_current_year: 0,
+//         more_than_60_last_year: 0,
+//         more_than_60_two_years_ago: 0
+
+//       };
+
+//       // Sum all values for each column
+//       results.forEach(row => {
+//         totals.ui_total_cases += row.ui_total_cases || 0;
+//         totals.less_than_60_days += row.less_than_60_days || 0;
+//         totals.more_than_60_current_year += row.more_than_60_current_year || 0;
+//         totals.more_than_60_last_year += row.more_than_60_last_year || 0;
+//         totals.more_than_60_two_years_ago += row.more_than_60_two_years_ago || 0;
+//       });
+
+//       // Add the totals row to the results
+//       results.push(totals);
+
+
+//       res.status(200).json({ data: results });
+//     });
+//   } catch (error) {
+//     console.error("Error in getmonthlyreportdetail:", error);
+//     res.status(500).json({ error: "Failed to get report data." });
+//   }
+// };
+
 exports.GetReasonWisePendingUI = async (req, res) => {
+  const conditions = [];
+  const params = [];
+  // Handle multiple districts as array
+  if (req.query.districts) {
+    const districts = Array.isArray(req.query.districts) ? req.query.districts : [req.query.districts];
+    const placeholders = districts.map(() => '?').join(',');
+    conditions.push(`fa.revenue_district IN (${placeholders})`);
+    params.push(...districts);
+  }
+  
+  if (req.query.police_zone) {
+    conditions.push('fa.police_zone = ?');
+    params.push(req.query.police_zone);
+  }
+  
+  if (req.query.Police_City) {
+    conditions.push('fa.police_city = ?');
+    params.push(req.query.Police_City);
+  }
+
+  if (req.query.Community) {
+    conditions.push('vm.community = ?');
+    params.push(req.query.Community);
+  }
+
+  if (req.query.Caste) {
+    conditions.push('vm.caste = ?');
+    params.push(req.query.Caste);
+  }
+  
+  if (req.query.start_date) {
+    conditions.push('fa.date_of_registration >= ?');
+    params.push(req.query.start_date);
+  }
+  
+  if (req.query.end_date) {
+    conditions.push('fa.date_of_registration <= ?');
+    params.push(req.query.end_date);
+  }
+  
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
   let query = `
   SELECT 
     rr.reason_for_status,
-    COUNT(CASE WHEN status <= 5 THEN 1 END) AS ui_total_cases,
-    COUNT(CASE WHEN status <= 5 AND DATEDIFF(NOW(), date_of_registration) < 60 THEN 1 END) AS less_than_60_days,
-    COUNT(CASE WHEN status <= 5 AND DATEDIFF(NOW(), date_of_registration) >= 60 AND YEAR(date_of_registration) = YEAR(NOW()) THEN 1 END) AS more_than_60_current_year,
-    COUNT(CASE WHEN status <= 5 AND DATEDIFF(NOW(), date_of_registration) >= 60 AND YEAR(date_of_registration) = YEAR(NOW()) - 1 THEN 1 END) AS more_than_60_last_year,
-    COUNT(CASE WHEN status <= 5 AND DATEDIFF(NOW(), date_of_registration) >= 60 AND YEAR(date_of_registration) = YEAR(NOW()) - 2 THEN 1 END) AS more_than_60_two_years_ago
+    COUNT(CASE WHEN fa.status <= 5 THEN 1 END) AS ui_total_cases,
+    COUNT(CASE WHEN fa.status <= 5 AND DATEDIFF(NOW(), fa.date_of_registration) < 60 THEN 1 END) AS less_than_60_days,
+    COUNT(CASE WHEN fa.status <= 5 AND DATEDIFF(NOW(), fa.date_of_registration) >= 60 AND YEAR(fa.date_of_registration) = YEAR(NOW()) THEN 1 END) AS more_than_60_current_year,
+    COUNT(CASE WHEN fa.status <= 5 AND DATEDIFF(NOW(), fa.date_of_registration) >= 60 AND YEAR(fa.date_of_registration) = YEAR(NOW()) - 1 THEN 1 END) AS more_than_60_last_year,
+    COUNT(CASE WHEN fa.status <= 5 AND DATEDIFF(NOW(), fa.date_of_registration) >= 60 AND YEAR(fa.date_of_registration) = YEAR(NOW()) - 2 THEN 1 END) AS more_than_60_two_years_ago
   FROM 
     fir_add fa
-  LEFT JOIN report_reasons rr ON rr.fir_id = fa.fir_id
+  LEFT JOIN 
+    report_reasons rr ON rr.fir_id = fa.fir_id
+  LEFT JOIN 
+    victims vm on vm.fir_id = fa.fir_id
+    ${whereClause}
   GROUP BY 
     rr.reason_for_status 
   order by 
     rr.reason_for_status
   `;
-
-  const params = [];
 
   try {
     db.query(query, params, (err, results) => {
@@ -218,28 +443,136 @@ exports.GetReasonWisePendingUI = async (req, res) => {
   }
 };
 
+// exports.GetCommunity_Certificate_Report = async (req, res) => {
+//   let query = `
+//   SELECT 
+//     fa.revenue_district,
+//     COUNT(CASE WHEN status <= 5 THEN 1 END) AS ui_total_cases,
+//     COUNT(CASE WHEN status <= 5 AND DATEDIFF(NOW(), date_of_registration) < 60 THEN 1 END) AS less_than_60_days,
+//     COUNT(CASE WHEN status <= 5 AND DATEDIFF(NOW(), date_of_registration) >= 60 AND YEAR(date_of_registration) = YEAR(NOW()) THEN 1 END) AS more_than_60_current_year,
+//     COUNT(CASE WHEN status <= 5 AND DATEDIFF(NOW(), date_of_registration) >= 60 AND YEAR(date_of_registration) = YEAR(NOW()) - 1 THEN 1 END) AS more_than_60_last_year,
+//     COUNT(CASE WHEN status <= 5 AND DATEDIFF(NOW(), date_of_registration) >= 60 AND YEAR(date_of_registration) = YEAR(NOW()) - 2 THEN 1 END) AS more_than_60_two_years_ago
+//   FROM 
+//     fir_add fa
+//   LEFT JOIN 
+//     report_reasons rr ON rr.fir_id = fa.fir_id
+//   WHERE 
+//     rr.reason_for_status LIKE '%Community Certificate%'
+//   GROUP BY 
+//     fa.revenue_district 
+//   order by 
+//     fa.revenue_district
+//   `;
+
+//   const params = [];
+
+//   try {
+//     db.query(query, params, (err, results) => {
+//       if (err) {
+//         console.error("Database error:", err);
+//         return res.status(500).json({
+//           message: "Failed to retrieve data",
+//           error: err,
+//         });
+//       }
+
+//       if (results.length === 0) {
+//         return res.status(200).json({ message: "No records found" });
+//       }
+//       // Calculate totals
+//       const totals = {
+//         revenue_district: 'Grand Total',
+//         ui_total_cases: 0,
+//         less_than_60_days: 0,
+//         more_than_60_current_year: 0,
+//         more_than_60_last_year: 0,
+//         more_than_60_two_years_ago: 0
+
+//       };
+
+//       // Sum all values for each column
+//       results.forEach(row => {
+//         totals.ui_total_cases += row.ui_total_cases || 0;
+//         totals.less_than_60_days += row.less_than_60_days || 0;
+//         totals.more_than_60_current_year += row.more_than_60_current_year || 0;
+//         totals.more_than_60_last_year += row.more_than_60_last_year || 0;
+//         totals.more_than_60_two_years_ago += row.more_than_60_two_years_ago || 0;
+//       });
+
+//       // Add the totals row to the results
+//       results.push(totals);
+
+//       res.status(200).json({ data: results });
+//     });
+//   } catch (error) {
+//     console.error("Error in getmonthlyreportdetail:", error);
+//     res.status(500).json({ error: "Failed to get report data." });
+//   }
+// };
+
 exports.GetCommunity_Certificate_Report = async (req, res) => {
+  const conditions = [];
+  const params = [];
+  conditions.push('rr.reason_for_status LIKE "%Community Certificate%"');
+  // Handle multiple districts as array
+  if (req.query.districts) {
+    const districts = Array.isArray(req.query.districts) ? req.query.districts : [req.query.districts];
+    const placeholders = districts.map(() => '?').join(',');
+    conditions.push(`fa.revenue_district IN (${placeholders})`);
+    params.push(...districts);
+  }
+  
+  if (req.query.police_zone) {
+    conditions.push('fa.police_zone = ?');
+    params.push(req.query.police_zone);
+  }
+  
+  if (req.query.Police_City) {
+    conditions.push('fa.police_city = ?');
+    params.push(req.query.Police_City);
+  }
+
+  if (req.query.Community) {
+    conditions.push('vm.community = ?');
+    params.push(req.query.Community);
+  }
+
+  if (req.query.Caste) {
+    conditions.push('vm.caste = ?');
+    params.push(req.query.Caste);
+  }
+  
+  if (req.query.start_date) {
+    conditions.push('fa.date_of_registration >= ?');
+    params.push(req.query.start_date);
+  }
+  
+  if (req.query.end_date) {
+    conditions.push('fa.date_of_registration <= ?');
+    params.push(req.query.end_date);
+  }
+  
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
   let query = `
   SELECT 
     fa.revenue_district,
-    COUNT(CASE WHEN status <= 5 THEN 1 END) AS ui_total_cases,
-    COUNT(CASE WHEN status <= 5 AND DATEDIFF(NOW(), date_of_registration) < 60 THEN 1 END) AS less_than_60_days,
-    COUNT(CASE WHEN status <= 5 AND DATEDIFF(NOW(), date_of_registration) >= 60 AND YEAR(date_of_registration) = YEAR(NOW()) THEN 1 END) AS more_than_60_current_year,
-    COUNT(CASE WHEN status <= 5 AND DATEDIFF(NOW(), date_of_registration) >= 60 AND YEAR(date_of_registration) = YEAR(NOW()) - 1 THEN 1 END) AS more_than_60_last_year,
-    COUNT(CASE WHEN status <= 5 AND DATEDIFF(NOW(), date_of_registration) >= 60 AND YEAR(date_of_registration) = YEAR(NOW()) - 2 THEN 1 END) AS more_than_60_two_years_ago
+    COUNT(CASE WHEN fa.status <= 5 THEN 1 END) AS ui_total_cases,
+    COUNT(CASE WHEN fa.status <= 5 AND DATEDIFF(NOW(), fa.date_of_registration) < 60 THEN 1 END) AS less_than_60_days,
+    COUNT(CASE WHEN fa.status <= 5 AND DATEDIFF(NOW(), fa.date_of_registration) >= 60 AND YEAR(fa.date_of_registration) = YEAR(NOW()) THEN 1 END) AS more_than_60_current_year,
+    COUNT(CASE WHEN fa.status <= 5 AND DATEDIFF(NOW(), fa.date_of_registration) >= 60 AND YEAR(fa.date_of_registration) = YEAR(NOW()) - 1 THEN 1 END) AS more_than_60_last_year,
+    COUNT(CASE WHEN fa.status <= 5 AND DATEDIFF(NOW(), fa.date_of_registration) >= 60 AND YEAR(fa.date_of_registration) = YEAR(NOW()) - 2 THEN 1 END) AS more_than_60_two_years_ago
   FROM 
     fir_add fa
   LEFT JOIN 
     report_reasons rr ON rr.fir_id = fa.fir_id
-  WHERE 
-    rr.reason_for_status LIKE '%Community Certificate%'
+  LEFT JOIN 
+    victims vm on vm.fir_id = fa.fir_id
+    ${whereClause}
   GROUP BY 
     fa.revenue_district 
   order by 
     fa.revenue_district
   `;
-
-  const params = [];
 
   try {
     db.query(query, params, (err, results) => {
@@ -285,28 +618,144 @@ exports.GetCommunity_Certificate_Report = async (req, res) => {
   }
 };
 
+// exports.GetDistrictWisePendingPT = async (req, res) => {
+//   let query = `
+//   SELECT 
+//     revenue_district,
+//     COUNT(id) AS total,
+//     COUNT(CASE WHEN DATEDIFF(NOW(), date_of_registration) < 365 THEN 1 END) AS less_than_one_year,
+//     COUNT(CASE WHEN DATEDIFF(NOW(), date_of_registration) BETWEEN 365 AND 1824 THEN 1 END) AS between_1_and_5_years,
+//     COUNT(CASE WHEN DATEDIFF(NOW(), date_of_registration) BETWEEN 1825 AND 3650 THEN 1 END) AS between_6_and_10_years,
+//     COUNT(CASE WHEN DATEDIFF(NOW(), date_of_registration) BETWEEN 3651 AND 5475 THEN 1 END) AS between_11_and_15_years,
+//     COUNT(CASE WHEN DATEDIFF(NOW(), date_of_registration) BETWEEN 5476 AND 7300 THEN 1 END) AS between_16_and_20_years,
+//     COUNT(CASE WHEN DATEDIFF(NOW(), date_of_registration) > 7300 THEN 1 END) AS above_20_years
+//   FROM 
+//     fir_add
+//   WHERE 
+//     status >= 6 
+//   GROUP BY 
+//     revenue_district
+//   ORDER BY
+//     revenue_district;
+//   `;
+
+//   const params = [];
+
+//   try {
+//     db.query(query, params, (err, results) => {
+//       if (err) {
+//         console.error("Database error:", err);
+//         return res.status(500).json({
+//           message: "Failed to retrieve data",
+//           error: err,
+//         });
+//       }
+
+//       if (results.length === 0) {
+//         return res.status(200).json({ message: "No records found" });
+//       }
+
+//       // Calculate totals
+//       const totals = {
+//         revenue_district: 'Grand Total',
+//         total: 0,
+//         less_than_one_year: 0,
+//         between_1_and_5_years: 0,
+//         between_6_and_10_years: 0,
+//         between_11_and_15_years: 0,
+//         between_16_and_20_years: 0,
+//         above_20_years: 0,
+ 
+
+//       };
+
+//       // Sum all values for each column
+//       results.forEach(row => {
+//         totals.total += row.total || 0;
+//         totals.less_than_one_year += row.less_than_one_year || 0;
+//         totals.between_1_and_5_years += row.between_1_and_5_years || 0;
+//         totals.between_6_and_10_years += row.between_6_and_10_years || 0;
+//         totals.between_11_and_15_years += row.between_11_and_15_years || 0;
+//         totals.between_16_and_20_years += row.between_16_and_20_years || 0;
+//         totals.above_20_years += row.above_20_years || 0;
+
+//       });
+
+//       // Add the totals row to the results
+//       results.push(totals);
+
+//       res.status(200).json({ data: results });
+//     });
+//   } catch (error) {
+//     console.error("Error in getmonthlyreportdetail:", error);
+//     res.status(500).json({ error: "Failed to get report data." });
+//   }
+// };
+
+
 exports.GetDistrictWisePendingPT = async (req, res) => {
+  const conditions = [];
+  const params = [];
+  conditions.push('fa.status >= 6');
+  // Handle multiple districts as array
+  if (req.query.districts) {
+    const districts = Array.isArray(req.query.districts) ? req.query.districts : [req.query.districts];
+    const placeholders = districts.map(() => '?').join(',');
+    conditions.push(`fa.revenue_district IN (${placeholders})`);
+    params.push(...districts);
+  }
+  
+  if (req.query.police_zone) {
+    conditions.push('fa.police_zone = ?');
+    params.push(req.query.police_zone);
+  }
+  
+  if (req.query.Police_City) {
+    conditions.push('fa.police_city = ?');
+    params.push(req.query.Police_City);
+  }
+
+  if (req.query.Community) {
+    conditions.push('vm.community = ?');
+    params.push(req.query.Community);
+  }
+
+  if (req.query.Caste) {
+    conditions.push('vm.caste = ?');
+    params.push(req.query.Caste);
+  }
+  
+  if (req.query.start_date) {
+    conditions.push('fa.date_of_registration >= ?');
+    params.push(req.query.start_date);
+  }
+  
+  if (req.query.end_date) {
+    conditions.push('fa.date_of_registration <= ?');
+    params.push(req.query.end_date);
+  }
+  
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
   let query = `
   SELECT 
-    revenue_district,
-    COUNT(id) AS total,
-    COUNT(CASE WHEN DATEDIFF(NOW(), date_of_registration) < 365 THEN 1 END) AS less_than_one_year,
-    COUNT(CASE WHEN DATEDIFF(NOW(), date_of_registration) BETWEEN 365 AND 1824 THEN 1 END) AS between_1_and_5_years,
-    COUNT(CASE WHEN DATEDIFF(NOW(), date_of_registration) BETWEEN 1825 AND 3650 THEN 1 END) AS between_6_and_10_years,
-    COUNT(CASE WHEN DATEDIFF(NOW(), date_of_registration) BETWEEN 3651 AND 5475 THEN 1 END) AS between_11_and_15_years,
-    COUNT(CASE WHEN DATEDIFF(NOW(), date_of_registration) BETWEEN 5476 AND 7300 THEN 1 END) AS between_16_and_20_years,
-    COUNT(CASE WHEN DATEDIFF(NOW(), date_of_registration) > 7300 THEN 1 END) AS above_20_years
+    fa.revenue_district,
+    COUNT(fa.id) AS total,
+    COUNT(CASE WHEN DATEDIFF(NOW(), fa.date_of_registration) < 365 THEN 1 END) AS less_than_one_year,
+    COUNT(CASE WHEN DATEDIFF(NOW(), fa.date_of_registration) BETWEEN 365 AND 1824 THEN 1 END) AS between_1_and_5_years,
+    COUNT(CASE WHEN DATEDIFF(NOW(), fa.date_of_registration) BETWEEN 1825 AND 3650 THEN 1 END) AS between_6_and_10_years,
+    COUNT(CASE WHEN DATEDIFF(NOW(), fa.date_of_registration) BETWEEN 3651 AND 5475 THEN 1 END) AS between_11_and_15_years,
+    COUNT(CASE WHEN DATEDIFF(NOW(), fa.date_of_registration) BETWEEN 5476 AND 7300 THEN 1 END) AS between_16_and_20_years,
+    COUNT(CASE WHEN DATEDIFF(NOW(), fa.date_of_registration) > 7300 THEN 1 END) AS above_20_years
   FROM 
-    fir_add
-  WHERE 
-    status >= 6 
+    fir_add fa
+  LEFT JOIN 
+    victims vm on vm.fir_id = fa.fir_id
+    ${whereClause}
   GROUP BY 
-    revenue_district
+    fa.revenue_district
   ORDER BY
-    revenue_district;
+    fa.revenue_district;
   `;
-
-  const params = [];
 
   try {
     db.query(query, params, (err, results) => {
@@ -359,21 +808,116 @@ exports.GetDistrictWisePendingPT = async (req, res) => {
   }
 };
 
+// exports.GetConvictionTypeRepot = async (req, res) => {
+//   let query = `
+//     SELECT 
+//       Conviction_Type, count(id) as case_count
+//     FROM 
+//         fir_add
+//     WHERE
+//       Conviction_Type is not null and Conviction_Type != '' AND YEAR(date_of_registration) = YEAR(CURDATE())
+//     GROUP BY 
+//       Conviction_Type
+//     ORDER BY
+//       Conviction_Type
+//   `;
+
+//   const params = [];
+
+//   try {
+//     db.query(query, params, (err, results) => {
+//       if (err) {
+//         console.error("Database error:", err);
+//         return res.status(500).json({
+//           message: "Failed to retrieve data",
+//           error: err,
+//         });
+//       }
+
+//       if (results.length === 0) {
+//         return res.status(200).json({ message: "No records found" });
+//       }
+
+//       // Calculate totals
+//       const totals = {
+//         Conviction_Type: 'Grand Total',
+//         case_count: 0
+
+//       };
+
+//       // Sum all values for each column
+//       results.forEach(row => {
+//         totals.case_count += row.case_count || 0;
+//       });
+
+//       // Add the totals row to the results
+//       results.push(totals);
+
+//       res.status(200).json({ data: results });
+//     });
+//   } catch (error) {
+//     console.error("Error in getmonthlyreportdetail:", error);
+//     res.status(500).json({ error: "Failed to get report data." });
+//   }
+// };
+
+
 exports.GetConvictionTypeRepot = async (req, res) => {
+  const conditions = [];
+  const params = [];
+  conditions.push('Conviction_Type is not null and Conviction_Type != "" AND YEAR(date_of_registration) = YEAR(CURDATE())');
+  // Handle multiple districts as array
+  if (req.query.districts) {
+    const districts = Array.isArray(req.query.districts) ? req.query.districts : [req.query.districts];
+    const placeholders = districts.map(() => '?').join(',');
+    conditions.push(`fa.revenue_district IN (${placeholders})`);
+    params.push(...districts);
+  }
+  
+  if (req.query.police_zone) {
+    conditions.push('fa.police_zone = ?');
+    params.push(req.query.police_zone);
+  }
+  
+  if (req.query.Police_City) {
+    conditions.push('fa.police_city = ?');
+    params.push(req.query.Police_City);
+  }
+
+  if (req.query.Community) {
+    conditions.push('vm.community = ?');
+    params.push(req.query.Community);
+  }
+
+  if (req.query.Caste) {
+    conditions.push('vm.caste = ?');
+    params.push(req.query.Caste);
+  }
+  
+  if (req.query.start_date) {
+    conditions.push('fa.date_of_registration >= ?');
+    params.push(req.query.start_date);
+  }
+  
+  if (req.query.end_date) {
+    conditions.push('fa.date_of_registration <= ?');
+    params.push(req.query.end_date);
+  }
+  
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
   let query = `
     SELECT 
-      Conviction_Type, count(id) as case_count
+      fa.Conviction_Type, count(fa.id) as case_count
     FROM 
-        fir_add
-    WHERE
-      Conviction_Type is not null and Conviction_Type != '' AND YEAR(date_of_registration) = YEAR(CURDATE())
+        fir_add fa
+    LEFT JOIN 
+      victims vm on vm.fir_id = fa.fir_id
+    ${whereClause}
     GROUP BY 
-      Conviction_Type
+      fa.Conviction_Type
     ORDER BY
-      Conviction_Type
+      fa.Conviction_Type
   `;
-
-  const params = [];
 
   try {
     db.query(query, params, (err, results) => {

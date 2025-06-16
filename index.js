@@ -5,9 +5,11 @@ const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
 const routes = require("./src/routes");
+const jwt = require('jsonwebtoken');
+const authController = require("./src/controller/authController");
 
 const app = express();
-
+const JWT_SECRET='0c60f8a33b9ccb3b8a0a8a5f9b4e34c1e2dd536f2174c9a9d12e34529c313e82053b1fe7'
 // Middleware
 app.use(express.json());
 app.use(bodyParser.json());
@@ -41,8 +43,33 @@ app.use("/uploadedfile/uploads", express.static(path.join(__dirname, "uploads"))
 app.use("/CommonFileUpload/uploads", express.static(path.join(__dirname, "src/uploads")));
 
 
+function JWTauthorization(req, res, next) { 
+  // console.log('in check authentication function');
+
+  var token = req.body.token || req.query.token || req.headers['authorization'];
+
+  if (token && token.startsWith("Bearer ")) {
+    token = token.slice(7, token.length); // Remove "Bearer " from token
+  }
+         
+  if (token) {
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+      if (err) return res.status(403).json({ message: 'Invalid token' });
+  
+      req.user = user;
+      next();
+    });
+  } else {
+    return res.status(403).send({ 
+      success: false, 
+      message: 'No token provided.'
+    });
+  }
+}
+
+app.use("/auth/login",authController.login);
 // Use routes
-app.use("/", routes);
+app.use("/",JWTauthorization, routes);
 
 app.get("/", (req, res) => {
   res.send("<h1>Welcome to the server</h1>");

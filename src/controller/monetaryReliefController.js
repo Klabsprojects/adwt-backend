@@ -10,6 +10,11 @@ exports.getmonetaryReliefDetails = async (req, res) => {
     CONCAT(fa.fir_number, '/', fa.fir_number_suffix) AS fir_number,
     fa.status, 
     fa.relief_status,
+    v.community,
+    v.caste,
+    fa.police_zone,
+    fa.revenue_district,
+    DATE_FORMAT(fa.date_of_registration, '%Y-%m-%d') AS date_of_registration,
     GROUP_CONCAT(DISTINCT v.victim_name ORDER BY v.victim_id DESC SEPARATOR ', ') AS victim_name,
     DATE_FORMAT(rr.report_month, '%Y-%m-%d') AS report_month, -- Include report_month
 

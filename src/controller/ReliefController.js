@@ -370,16 +370,14 @@ exports.getAlteredList = (req, res) => {
       fir_add.police_station,
       fir_add.number_of_victim,
       users.name AS created_by,
-      fir_add.created_at,
+      cal.created_at,
       fir_add.status,
-      fir_add.relief_status,
-      fir_add.nature_of_judgement,
       cal.id
     FROM fir_add
-    LEFT JOIN users ON users.id = fir_add.created_by
     INNER JOIN case_altered_log cal ON cal.fir_id = fir_add.fir_id
+    LEFT JOIN users ON users.id = cal.created_by
     ${whereClause}
-    ORDER BY fir_add.created_at DESC
+    ORDER BY cal.created_at DESC
   `;
 
   db.query(query, params, (err, results) => {

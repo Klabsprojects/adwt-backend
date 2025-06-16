@@ -3,8 +3,13 @@ const db = require("../db"); // DB connection
 exports.getadditionalreportdetail = async (req, res) => {
   let query = `SELECT 
     fa.fir_id, 
-    fa.police_city AS revenue_district,
+    fa.police_city,
     fa.police_station,
+    v.community,
+    v.caste,
+    fa.police_zone,
+    fa.revenue_district,
+    DATE_FORMAT(fa.date_of_registration, '%Y-%m-%d') AS date_of_registration,
     CONCAT(fa.fir_number, '/', fa.fir_number_suffix) AS fir_number,
     fa.status,
     GROUP_CONCAT(DISTINCT v.victim_name ORDER BY v.victim_id DESC SEPARATOR ', ') AS victim_name,

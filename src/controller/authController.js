@@ -12,7 +12,8 @@ const bankDetailsSchema = require("../schemas/bankDetails.Schema");
 const bcrypt = require('bcryptjs');
 const CryptoJS = require("crypto-js");
 const secretKey = 'dfTVcIUDU7QOWRm+j0nupwjOir1nya6qh1UTr+AJ3+eZbfoy0R9+AjRZwRBsurya';
-
+const JWT_SECRET='0c60f8a33b9ccb3b8a0a8a5f9b4e34c1e2dd536f2174c9a9d12e34529c313e82053b1fe7'
+const jwt = require('jsonwebtoken');
 
 
 
@@ -84,6 +85,12 @@ const login = async (req, res) => {
           }
   
           if (isMatch) {
+               const token = jwt.sign(
+                { user_id: user.id, username: user.email },
+                JWT_SECRET,
+                { expiresIn: '8h' }
+                // { expiresIn: '1m' }
+            );
             // Passwords match, proceed to login
             const user_data = {
               id: user.id,
@@ -94,6 +101,7 @@ const login = async (req, res) => {
               police_city : user.police_city,
               access_type : user.access_type,
               profileImagePath: user.profile_image_path, // Assuming there's a column 'profile_image_path'
+              token : token
             };
   
             console.log('Login successful for userId:', user.id);

@@ -3027,7 +3027,8 @@ exports.getAllOffences = (req, res) => {
                   FROM 
                     offence_relief_details 
                   WHERE 
-                    status = 1`;
+                    status = 1
+                  ORDER BY order_visible`;
 
   db.query(query, (err, results) => {
     if (err) {
@@ -3041,7 +3042,7 @@ exports.getAllOffences = (req, res) => {
 
 // Fetch all Offence Act Names
 exports.getAllOffenceActs = (req, res) => {
-  console.log('api calling')
+  // console.log('api calling')
   const { offence } = req.query;
   console.log(offence)
   let query = `
