@@ -2,6 +2,8 @@ const db = require('../db'); // Make sure the path to the database file is corre
 const { v4: uuidv4 } = require('uuid');
 const multer = require('multer');
 const path = require('path');
+const util = require('util');
+const queryAsyncenhanced = util.promisify(db.query).bind(db);
 // Get User Details
 exports.getUserDetails = (req, res) => {
   const userId = req.body.userId;
@@ -12,7 +14,7 @@ exports.getUserDetails = (req, res) => {
   const query = 'SELECT * FROM users WHERE id = ?';
   db.query(query, [userId], (err, results) => {
     if (err) {
-      return res.status(500).json({ message: 'Failed to fetch user data', error: err });
+      return res.status(500).json({ message: 'Failed to fetch user data' });
     }
     if (results.length === 0) {
       return res.status(404).json({ message: 'User not found' });
@@ -31,7 +33,7 @@ exports.getPoliceDivisionDetails = (req, res) => {
   const query = 'SELECT * FROM police_division WHERE district_division_name = ?';
   db.query(query, [district], (err, results) => {
     if (err) {
-      return res.status(500).json({ message: 'Failed to fetch police division data', error: err });
+      return res.status(500).json({ message: 'Failed to fetch police division data' });
     }
     res.json(results);
   });
@@ -42,7 +44,7 @@ exports.getPoliceDivisionDetails = (req, res) => {
 //   const query = 'SELECT * FROM police_division';
 //   db.query(query, (err, results) => {
 //     if (err) {
-//       return res.status(500).json({ message: 'Failed to fetch police division data', error: err });
+//       return res.status(500).json({ message: 'Failed to fetch police division data' });
 //     }
 //     res.json(results);
 //   });
@@ -58,19 +60,19 @@ exports.getPoliceDivisionDetailsedit = (req, res) => {
   // Execute the queries one by one
   db.query(queryCities, (err, district_division_name) => {
     if (err) {
-      return res.status(500).json({ message: 'Failed to fetch city data', error: err });
+      return res.status(500).json({ message: 'Failed to fetch city data' });
     }
     db.query(queryZones, (err, police_zone_name) => {
       if (err) {
-        return res.status(500).json({ message: 'Failed to fetch zone data', error: err });
+        return res.status(500).json({ message: 'Failed to fetch zone data' });
       }
       db.query(queryRanges, (err, police_range_name) => {
         if (err) {
-          return res.status(500).json({ message: 'Failed to fetch range data', error: err });
+          return res.status(500).json({ message: 'Failed to fetch range data' });
         }
         db.query(queryDistricts, (err, revenue_district_name) => {
           if (err) {
-            return res.status(500).json({ message: 'Failed to fetch district data', error: err });
+            return res.status(500).json({ message: 'Failed to fetch district data' });
           }
           res.json({
             district_division_name: district_division_name.map(item => item.district_division_name),
@@ -166,7 +168,7 @@ exports.handleStepOne = (req, res) => {
   db.query(query, values, (err) => {
     if (err) {
       console.error('Error saving FIR:', err);
-      return res.status(500).json({ message: 'Failed to save FIR', error: err });
+      return res.status(500).json({ message: 'Failed to save FIR' });
     }
     res.status(200).json({ message: 'FIR saved successfully', fir_id: newFirId });
   });
@@ -228,7 +230,7 @@ exports.handleStepTwo = (req, res) => {
   db.query(query, values, (err, result) => {
     if (err) {
       console.error('Error updating FIR for step 2:', err);
-      return res.status(500).json({ message: 'Failed to update FIR for step 2', error: err });
+      return res.status(500).json({ message: 'Failed to update FIR for step 2' });
     }
     if (result.affectedRows > 0) {
       return res.status(200).json({ message: 'FIR updated successfully for step 2', fir_id: firId });
@@ -266,7 +268,7 @@ exports.handleStepTwo = (req, res) => {
 
 //   db.query(updateFirQuery, updateFirValues, (err) => {
 //     if (err) {
-//       return res.status(500).json({ message: 'Failed to update FIR data', error: err });
+//       return res.status(500).json({ message: 'Failed to update FIR data' });
 //     }
 
 //     const victimPromises = victims.map((victim) => {
@@ -402,7 +404,7 @@ exports.handleStepTwo = (req, res) => {
 //         });
 //       })
 //       .catch((err) => {
-//         res.status(500).json({ message: 'Failed to process victim data', error: err });
+//         res.status(500).json({ message: 'Failed to process victim data' });
 //       });
 //   });
 // };
@@ -420,7 +422,7 @@ exports.handleStepTwo = (req, res) => {
 //   // Get a connection from the pool
 //   db.getConnection((err, connection) => {
 //     if (err) {
-//       return res.status(500).json({ message: 'Failed to get database connection', error: err.message });
+//       return res.status(500).json({ message: 'Failed to get database connection'.message });
 //     }
     
 //     // Start a transaction on the specific connection
@@ -774,7 +776,7 @@ exports.handleStepTwo = (req, res) => {
 //   // Get a connection from the pool
 //   db.getConnection((err, connection) => {
 //     if (err) {
-//       return res.status(500).json({ message: 'Failed to get database connection', error: err.message });
+//       return res.status(500).json({ message: 'Failed to get database connection'.message });
 //     }
     
 //     // Start a transaction on the specific connection
@@ -1129,14 +1131,14 @@ exports.handleStepThree = (req, res) => {
   // Get a connection from the pool
   db.getConnection((err, connection) => {
     if (err) {
-      return res.status(500).json({ message: 'Failed to get database connection', error: err.message });
+      return res.status(500).json({ message: 'Failed to get database connection'.message });
     }
     
     // Start a transaction on the specific connection
     connection.beginTransaction(async (transactionErr) => {
       if (transactionErr) {
         connection.release(); // Release the connection on error
-        return res.status(500).json({ message: 'Failed to start transaction', error: transactionErr });
+        return res.status(500).json({ message: 'Failed to start transaction' });
       }
 
       try {
@@ -1299,7 +1301,7 @@ exports.handleStepThree = (req, res) => {
           if (commitErr) {
             return connection.rollback(() => {
               connection.release(); // Release connection on rollback
-              res.status(500).json({ message: 'Failed to commit transaction', error: commitErr });
+              res.status(500).json({ message: 'Failed to commit transaction' });
             });
           }
           
@@ -1317,7 +1319,7 @@ exports.handleStepThree = (req, res) => {
         connection.rollback(() => {
           connection.release(); // Release connection on rollback
           console.error('Transaction error:', error);
-          res.status(500).json({ message: 'Failed to process victim data', error: error.message });
+          res.status(500).json({ message: 'Failed to process victim data' });
         });
       }
     });
@@ -1357,7 +1359,7 @@ exports.handleStepThree = (req, res) => {
 //   db.query(updateFirQuery, updateFirValues, (err) => {
 //     if (err) {
 //       console.error("Failed to update FIR data:", err);
-//       return res.status(500).json({ message: "Failed to update FIR data", error: err.message });
+//       return res.status(500).json({ message: "Failed to update FIR data".message });
 //     }
 
 //     const accusedPromises = accuseds.map((accused) => {
@@ -1455,7 +1457,7 @@ exports.handleStepThree = (req, res) => {
 //       })
 //       .catch((err) => {
 //         console.error("Failed to process accused data:", err);
-//         res.status(500).json({ message: "Failed to process accused data", error: err.message });
+//         res.status(500).json({ message: "Failed to process accused data".message });
 //       });
 //   });
 // };
@@ -1531,7 +1533,7 @@ const upload = multer({ storage: storage, fileFilter: fileFilter });
 //   db.query(updateFirQuery, updateFirValues, (err) => {
 //     if (err) {
 //       console.error("Failed to update FIR data:", err);
-//       return res.status(500).json({ message: "Failed to update FIR data", error: err.message });
+//       return res.status(500).json({ message: "Failed to update FIR data".message });
 //     }
 
 //       const accusedPromises = accuseds.map((accused) => {
@@ -1634,7 +1636,7 @@ const upload = multer({ storage: storage, fileFilter: fileFilter });
 //         })
 //         .catch((err) => {
 //           console.error("Failed to process accused data:", err);
-//           res.status(500).json({ message: "Failed to process accused data", error: err.message });
+//           res.status(500).json({ message: "Failed to process accused data".message });
 //         });
 //     });
 //   });
@@ -1644,11 +1646,11 @@ const upload = multer({ storage: storage, fileFilter: fileFilter });
 
 exports.handleStepFour = (req, res) => {
 
-  console.log(req.body)
+  // console.log(req.body)
     const { firId, numberOfAccused, gistOfCurrentCase, uploadFIRCopy, accused_remarks } = req.body;
     const accusedsRaw = req.body.accuseds;
 
-    console.log(firId, numberOfAccused, gistOfCurrentCase, uploadFIRCopy)
+    // console.log(firId, numberOfAccused, gistOfCurrentCase, uploadFIRCopy)
 
     let accuseds = [];
     try {
@@ -1681,7 +1683,7 @@ exports.handleStepFour = (req, res) => {
   db.query(updateFirQuery, updateFirValues, (err) => {
     if (err) {
       console.error("Failed to update FIR data:", err);
-      return res.status(500).json({ message: "Failed to update FIR data", error: err.message });
+      return res.status(500).json({ message: "Failed to update FIR data".message });
     }
 
       const accusedPromises = accuseds.map((accused) => {
@@ -1782,7 +1784,7 @@ exports.handleStepFour = (req, res) => {
         })
         .catch((err) => {
           console.error("Failed to process accused data:", err);
-          res.status(500).json({ message: "Failed to process accused data", error: err.message });
+          res.status(500).json({ message: "Failed to process accused data".message });
         });
     });
 };
@@ -1812,14 +1814,14 @@ exports.getVictimsDetailsByFirId = (req, res) => {
   // Execute both queries using a transaction
   db.beginTransaction((err) => {
     if (err) {
-      return res.status(500).json({ message: 'Transaction error', error: err });
+      return res.status(500).json({ message: 'Transaction error' });
     }
 
     // Execute the first query
     db.query(getNumberOfVictimsQuery, [firId], (err, numberOfVictimsResult) => {
       if (err) {
         db.rollback(() => {
-          return res.status(500).json({ message: 'Failed to retrieve number of victims', error: err });
+          return res.status(500).json({ message: 'Failed to retrieve number of victims' });
         });
       }
 
@@ -1837,7 +1839,7 @@ exports.getVictimsDetailsByFirId = (req, res) => {
       db.query(getVictimNamesQuery, [firId], (err, victimNamesResult) => {
         if (err) {
           db.rollback(() => {
-            return res.status(500).json({ message: 'Failed to retrieve victim names', error: err });
+            return res.status(500).json({ message: 'Failed to retrieve victim names' });
           });
         }
 
@@ -1845,7 +1847,7 @@ exports.getVictimsDetailsByFirId = (req, res) => {
         db.commit((err) => {
           if (err) {
             db.rollback(() => {
-              return res.status(500).json({ message: 'Transaction commit error', error: err });
+              return res.status(500).json({ message: 'Transaction commit error' });
             });
           }
 
@@ -1889,7 +1891,7 @@ exports.getVictimsDetailsByFirId = (req, res) => {
 
 //   db.query(query, values, (err, result) => {
 //     if (err) {
-//       return res.status(500).json({ message: 'Failed to update FIR status', error: err });
+//       return res.status(500).json({ message: 'Failed to update FIR status' });
 //     }
 
 //     if (result.affectedRows > 0) {
@@ -1918,7 +1920,7 @@ exports.updateFirStatus = async (req, res) => {
       firstatus = firStatusResults[0].status;
     }
 
-    console.log(status, '>', firstatus);
+    // console.log(status, '>', firstatus);
     
     if (status > firstatus) {
       // Update the status in the database
@@ -1932,18 +1934,18 @@ exports.updateFirStatus = async (req, res) => {
       const [updateResult] = await db.promise().query(query, values);
 
       if (updateResult.affectedRows > 0) {
-        console.log('updated');
+        // console.log('updated');
         return res.status(200).json({ message: 'FIR status updated successfully' });
       } else {
         return res.status(404).json({ message: 'FIR not found' });
       }
     } else {
-      console.log('not updated');
+      // console.log('not updated');
       return res.status(200).json({ message: 'FIR status not changed' });
     }
   } catch (error) {
     console.error('Error updating FIR status:', error);
-    return res.status(500).json({ message: 'Failed to update FIR status', error: error.message });
+    return res.status(500).json({ message: 'Failed to update FIR status' });
   }
 };
 
@@ -1953,7 +1955,7 @@ exports.GetVictimDetail = (req, res) => {
 
   // Check if FIR ID and status are provided
   if (!firId) {
-    console.log('FIR ID missing',firId)
+    // console.log('FIR ID missing',firId)
     return res.status(400).json({ message: 'FIR ID missing' });
   }
 
@@ -1963,7 +1965,7 @@ exports.GetVictimDetail = (req, res) => {
 
   db.query(query, values, (err, result) => {
     if (err) {
-      return res.status(500).json({ message: 'Failed to GET DETAIL', error: err });
+      return res.status(500).json({ message: 'Failed to GET DETAIL' });
     }
     if (result) {
       return res.status(200).json({ datacount : result[0] ,message: 'getting detail successfully' });
@@ -1981,7 +1983,7 @@ exports.Getstep5Detail = (req, res) => {
 
   // Check if FIR ID and status are provided
   if (!firId) {
-    console.log('FIR ID missing',firId)
+    // console.log('FIR ID missing',firId)
     return res.status(400).json({ message: 'FIR ID missing' });
   }
 
@@ -1997,7 +1999,7 @@ exports.Getstep5Detail = (req, res) => {
 
   db.query(query, values, (err, result) => {
     if (err) {
-      return res.status(500).json({ message: 'Failed to GET DETAIL', error: err });
+      return res.status(500).json({ message: 'Failed to GET DETAIL' });
     }
     if (result) {
       return res.status(200).json({ datacount : result[0] ,message: 'getting detail successfully' });
@@ -2014,7 +2016,7 @@ exports.GetChargesheetDetail = (req, res) => {
 
   // Check if FIR ID and status are provided
   if (!firId) {
-    console.log('FIR ID missing',firId)
+    // console.log('FIR ID missing',firId)
     return res.status(400).json({ message: 'FIR ID missing' });
   }
 
@@ -2024,7 +2026,7 @@ exports.GetChargesheetDetail = (req, res) => {
 
   db.query(query, values, (err, result) => {
     if (err) {
-      return res.status(500).json({ message: 'Failed to GET DETAIL', error: err });
+      return res.status(500).json({ message: 'Failed to GET DETAIL' });
     }
     if (result) {
       return res.status(200).json({ datacount : result[0] ,message: 'getting detail successfully' });
@@ -2049,7 +2051,7 @@ const upload_step5 = multer({ storage: storage_step5 }).fields([
 ]);
 // exports.handleStepFive = (req, res) => {
 //   upload_step5(req, res, (err) => {
-//     if (err) return res.status(500).json({ message: 'File upload error', error: err });
+//     if (err) return res.status(500).json({ message: 'File upload error' });
 
 //     const {
 //       firId,
@@ -2072,7 +2074,7 @@ const upload_step5 = multer({ storage: storage_step5 }).fields([
 //     };
 
 //     db.beginTransaction((err) => {
-//       if (err) return res.status(500).json({ message: 'Transaction error', error: err });
+//       if (err) return res.status(500).json({ message: 'Transaction error' });
 
 //       const savedData = { victims: [], proceedings: null, attachments: [] };
 
@@ -2108,11 +2110,11 @@ const upload_step5 = multer({ storage: storage_step5 }).fields([
 //           ];
 
 //           db.query(insertQuery, values, (err) => {
-//             if (err) return reject({ step: 'victim_relief', error: err });
+//             if (err) return reject({ step: 'victim_relief' });
 
 //             const selectQuery = 'SELECT * FROM victim_relief WHERE victim_id = ?';
 //             db.query(selectQuery, [victimId], (err, result) => {
-//               if (err) return reject({ step: 'select_victim_relief', error: err });
+//               if (err) return reject({ step: 'select_victim_relief' });
 //               savedData.victims.push(result[0]);
 //               resolve();
 //             });
@@ -2144,11 +2146,11 @@ const upload_step5 = multer({ storage: storage_step5 }).fields([
 //       ];
 
 //         db.query(insertQuery, values, (err) => {
-//           if (err) return reject({ step: 'proceedings_victim_relief', error: err });
+//           if (err) return reject({ step: 'proceedings_victim_relief' });
 
 //           const selectQuery = 'SELECT * FROM proceedings_victim_relief WHERE proceedings_id = ?';
 //           db.query(selectQuery, [proceedingsId], (err, result) => {
-//             if (err) return reject({ step: 'select_proceedings_victim_relief', error: err });
+//             if (err) return reject({ step: 'select_proceedings_victim_relief' });
 //             savedData.proceedings = result[0];
 //             resolve();
 //           });
@@ -2186,14 +2188,14 @@ const upload_step5 = multer({ storage: storage_step5 }).fields([
 //             db.query(insertQuery, values, (err) => {
 //                 if (err) {
 //                     console.error("Database Insert Error:", err);
-//                     return reject({ step: 'attachment_relief', error: err });
+//                     return reject({ step: 'attachment_relief' });
 //                 }
     
 //                 const selectQuery = 'SELECT * FROM attachment_relief WHERE attachment_id = ?';
 //                 db.query(selectQuery, [attachmentId], (err, result) => {
 //                     if (err) {
 //                         console.error("Database Select Error:", err);
-//                         return reject({ step: 'select_attachment_relief', error: err });
+//                         return reject({ step: 'select_attachment_relief' });
 //                     }
     
 //                     if (result.length > 0) {
@@ -2213,7 +2215,7 @@ const upload_step5 = multer({ storage: storage_step5 }).fields([
 //         .then(() => {
 //           db.commit((err) => {
 //             if (err) {
-//               return db.rollback(() => res.status(500).json({ message: 'Commit error', error: err }));
+//               return db.rollback(() => res.status(500).json({ message: 'Commit error' }));
 //             }
 //             res.status(200).json({ message: 'Step 5 data saved successfully, including attachments.', data: savedData });
 //           });
@@ -2221,7 +2223,7 @@ const upload_step5 = multer({ storage: storage_step5 }).fields([
 //         .catch((err) => {
 //           db.rollback(() => {
 //             console.error('Transaction failed at:', err.step, err.error);
-//             res.status(500).json({ message: `Transaction failed at ${err.step}`, error: err.error });
+//             res.status(500).json({ message: `Transaction failed at ${err.step}`.error });
 //           });
 //         });
 //     });
@@ -2230,7 +2232,7 @@ const upload_step5 = multer({ storage: storage_step5 }).fields([
 
 // exports.handleStepFive = (req, res) => {
 //   upload_step5(req, res, (err) => {
-//     if (err) return res.status(500).json({ message: 'File upload error', error: err });
+//     if (err) return res.status(500).json({ message: 'File upload error' });
 
 //     const {
 //       firId,
@@ -2253,12 +2255,12 @@ const upload_step5 = multer({ storage: storage_step5 }).fields([
 //     };
 
 //     db.getConnection((err, connection) => {
-//       if (err) return res.status(500).json({ message: 'DB connection error', error: err });
+//       if (err) return res.status(500).json({ message: 'DB connection error' });
 
 //       connection.beginTransaction((err) => {
 //         if (err) {
 //           connection.release();
-//           return res.status(500).json({ message: 'Transaction start error', error: err });
+//           return res.status(500).json({ message: 'Transaction start error' });
 //         }
 
 //         const savedData = { victims: [], proceedings: null, attachments: [] };
@@ -2295,11 +2297,11 @@ const upload_step5 = multer({ storage: storage_step5 }).fields([
 //             ];
 
 //             connection.query(insertQuery, values, (err) => {
-//               if (err) return reject({ step: 'victim_relief', error: err });
+//               if (err) return reject({ step: 'victim_relief' });
 
 //               const selectQuery = 'SELECT * FROM victim_relief WHERE victim_id = ?';
 //               connection.query(selectQuery, [victimId], (err, result) => {
-//                 if (err) return reject({ step: 'select_victim_relief', error: err });
+//                 if (err) return reject({ step: 'select_victim_relief' });
 //                 savedData.victims.push(result[0]);
 //                 resolve();
 //               });
@@ -2330,11 +2332,11 @@ const upload_step5 = multer({ storage: storage_step5 }).fields([
 //           ];
 
 //           connection.query(insertQuery, values, (err) => {
-//             if (err) return reject({ step: 'proceedings_victim_relief', error: err });
+//             if (err) return reject({ step: 'proceedings_victim_relief' });
 
 //             const selectQuery = 'SELECT * FROM proceedings_victim_relief WHERE proceedings_id = ?';
 //             connection.query(selectQuery, [proceedingsId], (err, result) => {
-//               if (err) return reject({ step: 'select_proceedings_victim_relief', error: err });
+//               if (err) return reject({ step: 'select_proceedings_victim_relief' });
 //               savedData.proceedings = result[0];
 //               resolve();
 //             });
@@ -2362,11 +2364,11 @@ const upload_step5 = multer({ storage: storage_step5 }).fields([
 //             ];
 
 //             connection.query(insertQuery, values, (err) => {
-//               if (err) return reject({ step: 'attachment_relief', error: err });
+//               if (err) return reject({ step: 'attachment_relief' });
 
 //               const selectQuery = 'SELECT * FROM attachment_relief WHERE attachment_id = ?';
 //               connection.query(selectQuery, [attachmentId], (err, result) => {
-//                 if (err) return reject({ step: 'select_attachment_relief', error: err });
+//                 if (err) return reject({ step: 'select_attachment_relief' });
 
 //                 if (result.length > 0) {
 //                   savedData.attachments.push(result[0]);
@@ -2385,7 +2387,7 @@ const upload_step5 = multer({ storage: storage_step5 }).fields([
 //               if (err) {
 //                 return connection.rollback(() => {
 //                   connection.release();
-//                   res.status(500).json({ message: 'Commit error', error: err });
+//                   res.status(500).json({ message: 'Commit error' });
 //                 });
 //               }
 
@@ -2400,7 +2402,7 @@ const upload_step5 = multer({ storage: storage_step5 }).fields([
 //             connection.rollback(() => {
 //               connection.release();
 //               console.error('Transaction failed at:', err.step, err.error);
-//               res.status(500).json({ message: `Transaction failed at ${err.step}`, error: err.error });
+//               res.status(500).json({ message: `Transaction failed at ${err.step}`.error });
 //             });
 //           });
 //       });
@@ -2412,7 +2414,7 @@ const upload_step5 = multer({ storage: storage_step5 }).fields([
 // modify step5 for attachment
 exports.handleStepFive = (req, res) => {
   upload_step5(req, res, (err) => {
-    if (err) return res.status(500).json({ message: 'File upload error', error: err });
+    if (err) return res.status(500).json({ message: 'File upload error' });
 
     const {
       firId,
@@ -2435,12 +2437,12 @@ exports.handleStepFive = (req, res) => {
     };
 
     db.getConnection((err, connection) => {
-      if (err) return res.status(500).json({ message: 'DB connection error', error: err });
+      if (err) return res.status(500).json({ message: 'DB connection error' });
 
       connection.beginTransaction((err) => {
         if (err) {
           connection.release();
-          return res.status(500).json({ message: 'Transaction start error', error: err });
+          return res.status(500).json({ message: 'Transaction start error' });
         }
 
         const savedData = { victims: [], proceedings: null, attachments: [] };
@@ -2477,11 +2479,11 @@ exports.handleStepFive = (req, res) => {
             ];
 
             connection.query(insertQuery, values, (err) => {
-              if (err) return reject({ step: 'victim_relief', error: err });
+              if (err) return reject({ step: 'victim_relief' });
 
               const selectQuery = 'SELECT * FROM victim_relief WHERE victim_id = ?';
               connection.query(selectQuery, [victimId], (err, result) => {
-                if (err) return reject({ step: 'select_victim_relief', error: err });
+                if (err) return reject({ step: 'select_victim_relief' });
                 savedData.victims.push(result[0]);
                 resolve();
               });
@@ -2512,11 +2514,11 @@ exports.handleStepFive = (req, res) => {
           ];
 
           connection.query(insertQuery, values, (err) => {
-            if (err) return reject({ step: 'proceedings_victim_relief', error: err });
+            if (err) return reject({ step: 'proceedings_victim_relief' });
 
             const selectQuery = 'SELECT * FROM proceedings_victim_relief WHERE proceedings_id = ?';
             connection.query(selectQuery, [proceedingsId], (err, result) => {
-              if (err) return reject({ step: 'select_proceedings_victim_relief', error: err });
+              if (err) return reject({ step: 'select_proceedings_victim_relief' });
               savedData.proceedings = result[0];
               resolve();
             });
@@ -2544,11 +2546,11 @@ exports.handleStepFive = (req, res) => {
             ];
 
             connection.query(insertQuery, values, (err) => {
-              if (err) return reject({ step: 'attachment_relief', error: err });
+              if (err) return reject({ step: 'attachment_relief' });
 
               const selectQuery = 'SELECT * FROM attachment_relief WHERE attachment_id = ?';
               connection.query(selectQuery, [attachmentId], (err, result) => {
-                if (err) return reject({ step: 'select_attachment_relief', error: err });
+                if (err) return reject({ step: 'select_attachment_relief' });
 
                 if (result.length > 0) {
                   savedData.attachments.push(result[0]);
@@ -2567,7 +2569,7 @@ exports.handleStepFive = (req, res) => {
               if (err) {
                 return connection.rollback(() => {
                   connection.release();
-                  res.status(500).json({ message: 'Commit error', error: err });
+                  res.status(500).json({ message: 'Commit error' });
                 });
               }
 
@@ -2582,7 +2584,7 @@ exports.handleStepFive = (req, res) => {
             connection.rollback(() => {
               connection.release();
               console.error('Transaction failed at:', err.step, err.error);
-              res.status(500).json({ message: `Transaction failed at ${err.step}`, error: err.error });
+              res.status(500).json({ message: `Transaction failed at`.error });
             });
           });
       });
@@ -2598,7 +2600,7 @@ const upload_step6 = multer({ storage: storage_step5 }).fields([
 
 // exports.handleStepSix = (req, res) => {
 //   upload_step6(req, res, (err) => {
-//     if (err) return res.status(500).json({ message: 'File upload error', error: err });
+//     if (err) return res.status(500).json({ message: 'File upload error' });
 
 //     const { firId, chargesheetDetails, victimsRelief } = req.body;
 
@@ -2620,7 +2622,7 @@ const upload_step6 = multer({ storage: storage_step5 }).fields([
 //     };
 
 //     db.beginTransaction((err) => {
-//       if (err) return res.status(500).json({ message: 'Transaction error', error: err });
+//       if (err) return res.status(500).json({ message: 'Transaction error' });
 
 //       // Update FIR Status
 //       const updateFirStatusPromise = new Promise((resolve, reject) => {
@@ -2774,12 +2776,12 @@ const upload_step6 = multer({ storage: storage_step5 }).fields([
 //       Promise.all([updateFirStatusPromise, chargesheetPromise, ...victimPromises, ...attachmentPromises])
 //         .then(() => {
 //           db.commit((err) => {
-//             if (err) return db.rollback(() => res.status(500).json({ message: 'Commit error', error: err }));
+//             if (err) return db.rollback(() => res.status(500).json({ message: 'Commit error' }));
 //             res.status(200).json({ message: 'Step 6 data saved successfully, and FIR status updated to 6.' });
 //           });
 //         })
 //         .catch((err) => {
-//           db.rollback(() => res.status(500).json({ message: 'Transaction failed', error: err }));
+//           db.rollback(() => res.status(500).json({ message: 'Transaction failed' }));
 //         });
 //     });
 //   });
@@ -2788,7 +2790,7 @@ const upload_step6 = multer({ storage: storage_step5 }).fields([
 
 exports.handleStepSix = (req, res) => {
   upload_step6(req, res, (err) => {
-    if (err) return res.status(500).json({ message: 'File upload error', error: err });
+    if (err) return res.status(500).json({ message: 'File upload error' });
 
     const { firId, chargesheetDetails, victimsRelief } = req.body;
     const proceedingsFile = req.files['proceedingsFile'] ? req.files['proceedingsFile'][0].path : null;
@@ -2804,12 +2806,12 @@ exports.handleStepSix = (req, res) => {
     };
 
     db.getConnection((err, connection) => {
-      if (err) return res.status(500).json({ message: 'DB connection error', error: err });
+      if (err) return res.status(500).json({ message: 'DB connection error' });
 
       connection.beginTransaction((err) => {
         if (err) {
           connection.release();
-          return res.status(500).json({ message: 'Transaction error', error: err });
+          return res.status(500).json({ message: 'Transaction error' });
         }
 
         // Update FIR Status
@@ -2957,7 +2959,7 @@ exports.handleStepSix = (req, res) => {
               if (err) {
                 return connection.rollback(() => {
                   connection.release();
-                  res.status(500).json({ message: 'Commit error', error: err });
+                  res.status(500).json({ message: 'Commit error' });
                 });
               }
 
@@ -2970,7 +2972,7 @@ exports.handleStepSix = (req, res) => {
           .catch((err) => {
             connection.rollback(() => {
               connection.release();
-              res.status(500).json({ message: 'Transaction failed', error: err });
+              res.status(500).json({ message: 'Transaction failed' });
             });
           });
       });
@@ -2986,22 +2988,22 @@ exports.getPoliceStations = (req, res) => {
 
   db.query(query, [district], (err, results) => {
     if (err) {
-      return res.status(500).json({ message: 'Failed to fetch police stations', error: err });
+      return res.status(500).json({ message: 'Failed to fetch police stations' });
     }
     res.json(results.map(row => row.station_name));
   });
 };
 
 exports.getalteredcasebasedID = (req, res) => {
-  console.log('hi')
+  // console.log('hi')
   const { id } = req.query;
   const query = `SELECT al.*, vm.victim_name FROM victim_altered_child_table al
                 left join victims vm on vm.victim_id = al.victim_id
                 WHERE al.parent_id = ?`;
-console.log(query,id)
+// console.log(query,id)
   db.query(query, [id], (err, results) => {
     if (err) {
-      return res.status(500).json({ message: 'Failed to fetch data', error: err });
+      return res.status(500).json({ message: 'Failed to fetch data' });
     }
     res.json(results);
   });
@@ -3013,7 +3015,7 @@ console.log(query,id)
 //   const query = 'SELECT ofe.id, ofe.offence_name ,ofa.offence_act_name FROM offence ofe left join offence_acts ofa on ofa.offence_id = ofe.id';
 //   db.query(query, (err, results) => {
 //     if (err) {
-//       return res.status(500).json({ message: 'Failed to fetch offences', error: err });
+//       return res.status(500).json({ message: 'Failed to fetch offences' });
 //     }
 //     res.json(results);
 //   });
@@ -3032,7 +3034,7 @@ exports.getAllOffences = (req, res) => {
 
   db.query(query, (err, results) => {
     if (err) {
-      return res.status(500).json({ message: 'Failed to fetch offences', error: err });
+      return res.status(500).json({ message: 'Failed to fetch offences' });
     }
     res.json(results);
   });
@@ -3044,7 +3046,7 @@ exports.getAllOffences = (req, res) => {
 exports.getAllOffenceActs = (req, res) => {
   // console.log('api calling')
   const { offence } = req.query;
-  console.log(offence)
+  // console.log(offence)
   let query = `
     SELECT
       id,
@@ -3065,7 +3067,7 @@ exports.getAllOffenceActs = (req, res) => {
     // console.log(query)
   db.query(query, (err, results) => {
     if (err) {
-      return res.status(500).json({ message: 'Failed to fetch offence acts', error: err });
+      return res.status(500).json({ message: 'Failed to fetch offence acts' });
     }
     if(offence)
       res.json(results[0]);
@@ -3078,7 +3080,7 @@ exports.getAllCastes = (req, res) => {
   const query = 'SELECT caste_name FROM caste_community';
   db.query(query, (err, results) => {
     if (err) {
-      return res.status(500).json({ message: 'Failed to fetch caste names', error: err });
+      return res.status(500).json({ message: 'Failed to fetch caste names' });
     }
     res.json(results);
   });
@@ -3086,14 +3088,14 @@ exports.getAllCastes = (req, res) => {
 
 exports.removechargesheetrelief = (req, res) => { 
   const { id } = req.query;
-  console.log(id);
+  // console.log(id);
   const deletequery = `Delete from attachment_relief where id=?`;
     const deletequeryvalues = [ 
       id,
     ];
     db.query(deletequery, deletequeryvalues, (err) => {
       if (err) {
-        return res.status(500).json({ message: 'Failed to delete FIR data', error: err });
+        return res.status(500).json({ message: 'Failed to delete FIR data' });
       }
       return res.status(200).json({ status:true,message:"Deleted Successfully" });
     });
@@ -3101,14 +3103,14 @@ exports.removechargesheetrelief = (req, res) => {
 
 exports.removechargesheet = (req, res) => { 
   const { id } = req.query;
-  console.log(id);
+  // console.log(id);
   const deletequery = `Delete from chargesheet_attachments where id=?`;
     const deletequeryvalues = [ 
       id,
     ];
     db.query(deletequery, deletequeryvalues, (err) => {
       if (err) {
-        return res.status(500).json({ message: 'Failed to delete FIR data', error: err });
+        return res.status(500).json({ message: 'Failed to delete FIR data' });
       }
       return res.status(200).json({ status:true,message:"Deleted Successfully" });
     });
@@ -3118,7 +3120,7 @@ exports.getAllCommunities = (req, res) => {
   const query = 'SELECT DISTINCT community_name FROM caste_community';
   db.query(query, (err, results) => {
     if (err) {
-      return res.status(500).json({ message: 'Failed to fetch communities', error: err });
+      return res.status(500).json({ message: 'Failed to fetch communities' });
     }
     res.json(results.map(row => row.community_name));
   });
@@ -3137,7 +3139,7 @@ exports.getCastesByCommunity = (req, res) => {
   db.query(query, [community], (err, results) => {
     if (err) {
       // console.error('Error executing query:', err); // Log detailed error
-      return res.status(500).json({ message: 'Failed to fetch caste names', error: err });
+      return res.status(500).json({ message: 'Failed to fetch caste names' });
     }
     // console.log('Query results:', results); // Log results for debugging
     res.json(results.map(row => row.caste_name));
@@ -3150,7 +3152,7 @@ exports.getCastesByCommunity = (req, res) => {
 //   const query = 'SELECT DISTINCT community_name FROM acquest_community_caste';
 //   db.query(query, (err, results) => {
 //     if (err) {
-//       return res.status(500).json({ message: 'Failed to fetch accused communities', error: err });
+//       return res.status(500).json({ message: 'Failed to fetch accused communities' });
 //     }
 //     res.json(results.map(row => row.community_name));
 //   });
@@ -3168,7 +3170,7 @@ exports.getAllAccusedCommunities = (req, res) => {
 
   db.query(query, (err, results) => {
     if (err) {
-      return res.status(500).json({ message: 'Failed to fetch accused communities', error: err });
+      return res.status(500).json({ message: 'Failed to fetch accused communities' });
     }
     res.json(results.map(row => row.community_name));
   });
@@ -3187,7 +3189,7 @@ exports.getAccusedCastesByCommunity = (req, res) => {
   const query = `SELECT caste_name FROM ${TableName} WHERE community_name = ?`;
   db.query(query, [community], (err, results) => {
     if (err) {
-      return res.status(500).json({ message: 'Failed to fetch accused castes', error: err });
+      return res.status(500).json({ message: 'Failed to fetch accused castes' });
     }
     res.json(results.map(row => row.caste_name));
   });
@@ -3198,7 +3200,7 @@ exports.getAllRevenues = (req, res) => {
   const query = 'SELECT revenue_district_name FROM district_revenue';
   db.query(query, (err, results) => {
     if (err) {
-      return res.status(500).json({ message: 'Failed to fetch revenue districts', error: err });
+      return res.status(500).json({ message: 'Failed to fetch revenue districts' });
     }
     res.json(results);
   });
@@ -3209,7 +3211,7 @@ exports.getAllCourtDivisions = (req, res) => {
   const query = 'SELECT DISTINCT court_division_name FROM court';
   db.query(query, (err, results) => {
     if (err) {
-      return res.status(500).json({ message: 'Failed to fetch court divisions', error: err });
+      return res.status(500).json({ message: 'Failed to fetch court divisions' });
     }
     res.json(results.map(row => row.court_division_name));
   });
@@ -3221,7 +3223,7 @@ exports.getCourtRangesByDivision = (req, res) => {
   const query = 'SELECT court_range_name FROM court WHERE court_division_name = ?';
   db.query(query, [division], (err, results) => {
     if (err) {
-      return res.status(500).json({ message: 'Failed to fetch court ranges', error: err });
+      return res.status(500).json({ message: 'Failed to fetch court ranges' });
     }
     res.json(results.map(row => row.court_range_name));
   });
@@ -3232,7 +3234,7 @@ exports.getAllDistricts = (req, res) => {
   const query = 'SELECT district_name FROM district';
   db.query(query, (err, results) => {
     if (err) {
-      return res.status(500).json({ message: 'Failed to fetch districts', error: err });
+      return res.status(500).json({ message: 'Failed to fetch districts' });
     }
     res.json(results.map(row => row.district_name));
   });
@@ -3264,7 +3266,7 @@ exports.getAllDistricts = (req, res) => {
 
 //   db.query(queryVictims, [firId], (err, results) => {
 //     if (err) {
-//       return res.status(500).json({ message: 'Failed to fetch victim details', error: err });
+//       return res.status(500).json({ message: 'Failed to fetch victim details' });
 //     }
 
 //     const victimPromises = results.map((victim) => {
@@ -3307,6 +3309,111 @@ exports.getAllDistricts = (req, res) => {
 // };
 
 
+// exports.getVictimsReliefDetails = (req, res) => {
+//   const { firId } = req.params;
+
+//   if (!firId) {
+//     return res.status(400).json({ message: 'FIR ID is required' });
+//   }
+
+//   const queryVictims = `
+//     SELECT
+//       victim_id,
+//       victim_name,
+//       fir_stage_as_per_act,
+//       fir_stage_ex_gratia,
+//       chargesheet_stage_as_per_act,
+//       chargesheet_stage_ex_gratia,
+//       final_stage_as_per_act,
+//       final_stage_ex_gratia,
+//       relief_applicable,
+//       offence_committed
+//     FROM victims
+//     WHERE fir_id = ? and delete_status = 0
+//   `;
+
+//   db.query(queryVictims, [firId], (err, results) => {
+//     if (err) {
+//       return res.status(500).json({ message: 'Failed to fetch victim details' });
+//     }
+
+//     const victimPromises = results.map((victim) => {
+//       // const queryRelief = `SELECT * FROM victim_relief WHERE victim_id = ?`;
+//       // const queryChargesheetVictims = `SELECT * FROM chargesheet_victims WHERE victim_id = ?`;
+//       // const queryTrialRelief = `SELECT * FROM trial_relief WHERE victim_id = ?`;
+
+//       const queryRelief = `
+//       SELECT
+//          vr.* , vm.victim_name
+//       FROM 
+//         victim_relief vr
+//       LEFT JOIN 
+//         victims vm on vm.victim_id = vr.victim_id
+
+//       WHERE vr.victim_id = ? and vm.delete_status = 0`;
+
+//       const queryChargesheetVictims = `
+//         SELECT 
+//           cv.*, vm.victim_name
+//         FROM 
+//           chargesheet_victims cv
+//         LEFT JOIN 
+//           victims vm ON vm.victim_id = cv.victim_id
+//         WHERE cv.victim_id = ? and vm.delete_status = 0`;
+      
+//       const queryTrialRelief = `
+//         SELECT 
+//           tr.*, vm.victim_name
+//         FROM 
+//           trial_relief tr
+//         LEFT JOIN 
+//           victims vm ON vm.victim_id = tr.victim_id
+//         WHERE tr.victim_id = ? and vm.delete_status = 0`;
+
+//       return new Promise((resolve, reject) => {
+//         const reliefPromise = new Promise((res, rej) => {
+//           db.query(queryRelief, [victim.victim_id], (err, result) =>
+//             err ? rej(err) : res(result[0] || {}));
+//         });
+
+//         const chargesheetPromise = new Promise((res, rej) => {
+//           db.query(queryChargesheetVictims, [victim.victim_id], (err, result) =>
+//             err ? rej(err) : res(result[0] || {}));
+//         });
+
+//         const trialPromise = new Promise((res, rej) => {
+//           db.query(queryTrialRelief, [victim.victim_id], (err, result) =>
+//             err ? rej(err) : res(result[0] || {}));
+//         });
+
+//         Promise.all([reliefPromise, chargesheetPromise, trialPromise])
+//           .then(([reliefData, chargesheetData, trialData]) => {
+//             const mergedVictim = {
+//               ...victim,
+//               ...reliefData,
+//               ...chargesheetData,
+//               ...trialData,
+//             };
+//             resolve(mergedVictim);
+//           })
+//           .catch(reject);
+//       });
+//     });
+
+//     Promise.all(victimPromises)
+//       .then((victimsWithAllDetails) => {
+//         res.status(200).json({ victimsReliefDetails: victimsWithAllDetails });
+//       })
+//       .catch((error) => {
+//         console.error('Error fetching full victim details:', error);
+//         res.status(500).json({ message: 'Failed to fetch full victim details', error });
+//       });
+//   });
+// };
+
+
+
+// optimized API reduced load
 exports.getVictimsReliefDetails = (req, res) => {
   const { firId } = req.params;
 
@@ -3314,6 +3421,7 @@ exports.getVictimsReliefDetails = (req, res) => {
     return res.status(400).json({ message: 'FIR ID is required' });
   }
 
+  // Step 1: Fetch all victims
   const queryVictims = `
     SELECT
       victim_id,
@@ -3327,239 +3435,308 @@ exports.getVictimsReliefDetails = (req, res) => {
       relief_applicable,
       offence_committed
     FROM victims
-    WHERE fir_id = ? and delete_status = 0
+    WHERE fir_id = ? AND delete_status = 0
   `;
 
-  db.query(queryVictims, [firId], (err, results) => {
+  db.query(queryVictims, [firId], (err, victims) => {
     if (err) {
-      return res.status(500).json({ message: 'Failed to fetch victim details', error: err });
+      return res.status(500).json({ message: 'Failed to fetch victim details' });
     }
 
-    const victimPromises = results.map((victim) => {
-      // const queryRelief = `SELECT * FROM victim_relief WHERE victim_id = ?`;
-      // const queryChargesheetVictims = `SELECT * FROM chargesheet_victims WHERE victim_id = ?`;
-      // const queryTrialRelief = `SELECT * FROM trial_relief WHERE victim_id = ?`;
+    if (victims.length === 0) {
+      return res.status(200).json({ victimsReliefDetails: [] });
+    }
 
-      const queryRelief = `
-      SELECT
-         vr.* , vm.victim_name
-      FROM 
-        victim_relief vr
-      LEFT JOIN 
-        victims vm on vm.victim_id = vr.victim_id
+    const victimIds = victims.map(v => v.victim_id);
 
-      WHERE vr.victim_id = ? and vm.delete_status = 0`;
+    // Step 2: Fetch all reliefs, chargesheet and trial reliefs in bulk
+    const reliefQuery = `
+      SELECT id, relief_id, fir_id, victim_id, community_certificate, relief_amount_scst, relief_amount_exgratia, relief_amount_first_stage, additional_relief FROM victim_relief WHERE victim_id IN (?)`;
+    const chargesheetQuery = `
+      SELECT id, fir_id, victim_id, relief_amount_scst_1, relief_amount_ex_gratia_1, relief_amount_second_stage FROM chargesheet_victims WHERE victim_id IN (?)`;
+    const trialQuery = `
+      SELECT id, victim_id, fir_id, relief_amount_act, relief_amount_government, relief_amount_final_stage FROM trial_relief WHERE victim_id IN (?)`;
 
-      const queryChargesheetVictims = `
-        SELECT 
-          cv.*, vm.victim_name
-        FROM 
-          chargesheet_victims cv
-        LEFT JOIN 
-          victims vm ON vm.victim_id = cv.victim_id
-        WHERE cv.victim_id = ? and vm.delete_status = 0`;
-      
-      const queryTrialRelief = `
-        SELECT 
-          tr.*, vm.victim_name
-        FROM 
-          trial_relief tr
-        LEFT JOIN 
-          victims vm ON vm.victim_id = tr.victim_id
-        WHERE tr.victim_id = ? and vm.delete_status = 0`;
+    Promise.all([
+      queryAsync(reliefQuery, [victimIds]),
+      queryAsync(chargesheetQuery, [victimIds]),
+      queryAsync(trialQuery, [victimIds])
+    ])
+    .then(([reliefs, chargesheets, trials]) => {
+      // Step 3: Group all by victim_id for fast access
+      const reliefMap = Object.fromEntries(reliefs.map(r => [r.victim_id, r]));
+      const chargesheetMap = Object.fromEntries(chargesheets.map(c => [c.victim_id, c]));
+      const trialMap = Object.fromEntries(trials.map(t => [t.victim_id, t]));
 
-      return new Promise((resolve, reject) => {
-        const reliefPromise = new Promise((res, rej) => {
-          db.query(queryRelief, [victim.victim_id], (err, result) =>
-            err ? rej(err) : res(result[0] || {}));
-        });
+      // Step 4: Merge each victim with their related data
+      const fullDetails = victims.map(v => ({
+        ...v,
+        ...(reliefMap[v.victim_id] || {}),
+        ...(chargesheetMap[v.victim_id] || {}),
+        ...(trialMap[v.victim_id] || {})
+      }));
 
-        const chargesheetPromise = new Promise((res, rej) => {
-          db.query(queryChargesheetVictims, [victim.victim_id], (err, result) =>
-            err ? rej(err) : res(result[0] || {}));
-        });
-
-        const trialPromise = new Promise((res, rej) => {
-          db.query(queryTrialRelief, [victim.victim_id], (err, result) =>
-            err ? rej(err) : res(result[0] || {}));
-        });
-
-        Promise.all([reliefPromise, chargesheetPromise, trialPromise])
-          .then(([reliefData, chargesheetData, trialData]) => {
-            const mergedVictim = {
-              ...victim,
-              ...reliefData,
-              ...chargesheetData,
-              ...trialData,
-            };
-            resolve(mergedVictim);
-          })
-          .catch(reject);
-      });
+      res.status(200).json({ victimsReliefDetails: fullDetails });
+    })
+    .catch(error => {
+      console.error('Error during victim detail merge:', error);
+      res.status(500).json({ message: 'Failed to fetch victim relief details', error });
     });
-
-    Promise.all(victimPromises)
-      .then((victimsWithAllDetails) => {
-        res.status(200).json({ victimsReliefDetails: victimsWithAllDetails });
-      })
-      .catch((error) => {
-        console.error('Error fetching full victim details:', error);
-        res.status(500).json({ message: 'Failed to fetch full victim details', error });
-      });
   });
 };
 
 
 
-exports.getFirDetails = async  (req, res) => 
-{
-  const { fir_id } = req.query;
-  if (!fir_id) 
-    return res.status(400).json({ message: 'FIR ID is required.' });  
 
-  const query = `SELECT *,DATE_FORMAT(date_of_occurrence, '%Y-%m-%d') AS date_of_occurrence , DATE_FORMAT(date_of_occurrence_to, '%Y-%m-%d') AS date_of_occurrence_to , DATE_FORMAT(date_of_registration, '%Y-%m-%d') AS date_of_registration FROM fir_add WHERE fir_id = ?`;
-  db.query(query, [fir_id], async (err, result) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ message: 'Error fetching FIR details.', error: err });
-    }
 
-    const query1 = `SELECT * FROM victims WHERE fir_id = ? and delete_status = 0`;
-    db.query(query1, [fir_id], async (err, result1) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).json({ message: 'Error fetching victims.', error: err });
-      }
+// exports.getFirDetails = async  (req, res) => 
+// {
+//   const { fir_id } = req.query;
+//   if (!fir_id) 
+//     return res.status(400).json({ message: 'FIR ID is required.' });  
 
-      const query2 = `SELECT * FROM accuseds WHERE fir_id = ? and delete_status = 0`;
-      db.query(query2, [fir_id], async (err, result2) => {
-        if (err) {
-          console.error(err);
-          return res.status(500).json({ message: 'Error fetching accused.', error: err });
-        }
+//   const query = `SELECT *,DATE_FORMAT(date_of_occurrence, '%Y-%m-%d') AS date_of_occurrence , DATE_FORMAT(date_of_occurrence_to, '%Y-%m-%d') AS date_of_occurrence_to , DATE_FORMAT(date_of_registration, '%Y-%m-%d') AS date_of_registration FROM fir_add WHERE fir_id = ?`;
+//   db.query(query, [fir_id], async (err, result) => {
+//     if (err) {
+//       console.error(err);
+//       return res.status(500).json({ message: 'Error fetching FIR details.' });
+//     }
 
-        const query3 = `SELECT * FROM proceedings_victim_relief cd LEFT JOIN attachment_relief ca ON cd.fir_id = ca.fir_id WHERE cd.fir_id = ? GROUP BY cd.fir_id, cd.total_compensation, cd.proceedings_file_no, cd.proceedings_file, cd.proceedings_date`;
-        db.query(query3, [fir_id], async (err, result3) => {
-          if (err) {
-            console.error(err);
-            return res.status(500).json({ message: 'Error fetching proceedings victim relief.', error: err });
-          }
+//     const query1 = `SELECT * FROM victims WHERE fir_id = ? and delete_status = 0`;
+//     db.query(query1, [fir_id], async (err, result1) => {
+//       if (err) {
+//         console.error(err);
+//         return res.status(500).json({ message: 'Error fetching victims.' });
+//       }
 
-          const query4 = `SELECT cd.*, ca.id AS attachment_id, ca.file_path FROM chargesheet_details cd LEFT JOIN chargesheet_attachments ca ON cd.fir_id = ca.fir_id WHERE cd.fir_id = ?`;
-          db.query(query4, [fir_id], async (err, result4) => {
-            if (err) {
-              console.error(err);
-              return res.status(500).json({ message: 'Error fetching chargesheet details.', error: err });
-            }
+//       const query2 = `SELECT * FROM accuseds WHERE fir_id = ? and delete_status = 0`;
+//       db.query(query2, [fir_id], async (err, result2) => {
+//         if (err) {
+//           console.error(err);
+//           return res.status(500).json({ message: 'Error fetching accused.' });
+//         }
 
-            let chargesheetData = null;
-            let attachments = [];
+//         const query3 = `SELECT * FROM proceedings_victim_relief cd LEFT JOIN attachment_relief ca ON cd.fir_id = ca.fir_id WHERE cd.fir_id = ? GROUP BY cd.fir_id, cd.total_compensation, cd.proceedings_file_no, cd.proceedings_file, cd.proceedings_date`;
+//         db.query(query3, [fir_id], async (err, result3) => {
+//           if (err) {
+//             console.error(err);
+//             return res.status(500).json({ message: 'Error fetching proceedings victim relief.' });
+//           }
 
-            if (result4.length > 0) {
-              chargesheetData = {
-                fir_id: result4[0].fir_id,
-                chargesheet_id: result4[0].chargesheet_id,
-                ChargeSheet_CRL_number: result4[0].ChargeSheet_CRL_number,
-                quash_petition_no: result4[0].quash_petition_no,
-                petition_date: result4[0].petition_date,
-                upload_court_order_path: result4[0].upload_court_order_path,
-                chargesheetDate : result4[0].chargesheetDate,
-                charge_sheet_filed: result4[0].charge_sheet_filed,
-                court_district: result4[0].court_district,
-                court_name: result4[0].court_name,
-                case_type: result4[0].case_type,
-                case_number: result4[0].case_number,
-                rcs_file_number: result4[0].rcs_file_number,
-                rcs_filing_date: result4[0].rcs_filing_date,
-                mf_copy_path: result4[0].mf_copy_path,
-                total_compensation_1: result4[0].total_compensation_1,
-                proceedings_file_no: result4[0].proceedings_file_no,
-                proceedings_date: result4[0].proceedings_date,
-                upload_proceedings_path: result4[0].upload_proceedings_path,
-                attachments: result4.filter(row => row.attachment_id !== null).map(row => ({id: row.attachment_id, path: row.file_path}))};
-            }
+//           const query4 = `SELECT cd.*, ca.id AS attachment_id, ca.file_path FROM chargesheet_details cd LEFT JOIN chargesheet_attachments ca ON cd.fir_id = ca.fir_id WHERE cd.fir_id = ?`;
+//           db.query(query4, [fir_id], async (err, result4) => {
+//             if (err) {
+//               console.error(err);
+//               return res.status(500).json({ message: 'Error fetching chargesheet details.' });
+//             }
 
-            const query5 = `SELECT *,  DATE_FORMAT(Judgement_Date, '%Y-%m-%d') as Judgement_Date FROM case_details WHERE fir_id = ?`;
+//             let chargesheetData = null;
+//             let attachments = [];
 
-            db.query(query5, [fir_id], async (err, result5) => {
-              if (err) {
-                console.error(err);
-                return res.status(500).json({ message: 'Error fetching case details.', error: err });
-              }
+//             if (result4.length > 0) {
+//               chargesheetData = {
+//                 fir_id: result4[0].fir_id,
+//                 chargesheet_id: result4[0].chargesheet_id,
+//                 ChargeSheet_CRL_number: result4[0].ChargeSheet_CRL_number,
+//                 quash_petition_no: result4[0].quash_petition_no,
+//                 petition_date: result4[0].petition_date,
+//                 upload_court_order_path: result4[0].upload_court_order_path,
+//                 chargesheetDate : result4[0].chargesheetDate,
+//                 charge_sheet_filed: result4[0].charge_sheet_filed,
+//                 court_district: result4[0].court_district,
+//                 court_name: result4[0].court_name,
+//                 case_type: result4[0].case_type,
+//                 case_number: result4[0].case_number,
+//                 rcs_file_number: result4[0].rcs_file_number,
+//                 rcs_filing_date: result4[0].rcs_filing_date,
+//                 mf_copy_path: result4[0].mf_copy_path,
+//                 total_compensation_1: result4[0].total_compensation_1,
+//                 proceedings_file_no: result4[0].proceedings_file_no,
+//                 proceedings_date: result4[0].proceedings_date,
+//                 upload_proceedings_path: result4[0].upload_proceedings_path,
+//                 attachments: result4.filter(row => row.attachment_id !== null).map(row => ({id: row.attachment_id, path: row.file_path}))};
+//             }
 
-              const query6 = `SELECT * FROM fir_trial WHERE fir_id = ?`;
-              db.query(query6, [fir_id], async (err, result6) => {
-                if (err) {
-                  console.error(err);
-                  return res.status(500).json({ message: 'Error fetching FIR trial.', error: err });
-                }
+//             const query5 = `SELECT *,  DATE_FORMAT(Judgement_Date, '%Y-%m-%d') as Judgement_Date FROM case_details WHERE fir_id = ?`;
 
-                const hearingDetailsOne = await queryAsync('SELECT * FROM hearing_details_one WHERE fir_id = ?', [fir_id]);
-                const hearingDetailsTwo = await queryAsync('SELECT * FROM hearing_details_two WHERE fir_id = ?', [fir_id]);
-                const hearingDetailsThree = await queryAsync('SELECT * FROM hearing_details_three WHERE fir_id = ?', [fir_id]);
+//             db.query(query5, [fir_id], async (err, result5) => {
+//               if (err) {
+//                 console.error(err);
+//                 return res.status(500).json({ message: 'Error fetching case details.' });
+//               }
 
-                // Appeal details (all 3)
-                const appealDetails = await queryAsync('SELECT * FROM appeal_details WHERE fir_id = ?', [fir_id]);
-                const appealDetailsOne = await queryAsync('SELECT * FROM appeal_details_one WHERE fir_id = ?', [fir_id]);
-                const caseAppealDetailsTwo = await queryAsync('SELECT * FROM case_appeal_details_two WHERE fir_id = ?', [fir_id]);
+//               const query6 = `SELECT * FROM fir_trial WHERE fir_id = ?`;
+//               db.query(query6, [fir_id], async (err, result6) => {
+//                 if (err) {
+//                   console.error(err);
+//                   return res.status(500).json({ message: 'Error fetching FIR trial.' });
+//                 }
 
-                const compensation_details = await queryAsync(`SELECT * FROM compensation_details WHERE fir_id = ?`, [fir_id]);
-                const compensation_details_1 = await queryAsync(`SELECT * FROM compensation_details_1 WHERE fir_id = ?`, [fir_id]);
-                const compensation_details_2 = await queryAsync(`SELECT * FROM compensation_details_2 WHERE fir_id = ?`, [fir_id]);
+//                 const hearingDetailsOne = await queryAsync('SELECT * FROM hearing_details_one WHERE fir_id = ?', [fir_id]);
+//                 const hearingDetailsTwo = await queryAsync('SELECT * FROM hearing_details_two WHERE fir_id = ?', [fir_id]);
+//                 const hearingDetailsThree = await queryAsync('SELECT * FROM hearing_details_three WHERE fir_id = ?', [fir_id]);
+
+//                 // Appeal details (all 3)
+//                 const appealDetails = await queryAsync('SELECT * FROM appeal_details WHERE fir_id = ?', [fir_id]);
+//                 const appealDetailsOne = await queryAsync('SELECT * FROM appeal_details_one WHERE fir_id = ?', [fir_id]);
+//                 const caseAppealDetailsTwo = await queryAsync('SELECT * FROM case_appeal_details_two WHERE fir_id = ?', [fir_id]);
+
+//                 const compensation_details = await queryAsync(`SELECT * FROM compensation_details WHERE fir_id = ?`, [fir_id]);
+//                 const compensation_details_1 = await queryAsync(`SELECT * FROM compensation_details_1 WHERE fir_id = ?`, [fir_id]);
+//                 const compensation_details_2 = await queryAsync(`SELECT * FROM compensation_details_2 WHERE fir_id = ?`, [fir_id]);
                                            
-                // casedetail_one
-                const casedetail_one = await queryAsync('SELECT *,  DATE_FORMAT(Judgement_Date, "%Y-%m-%d") as Judgement_Date FROM case_court_detail_one WHERE fir_id = ?', [fir_id]);
-                const casedetail_two = await queryAsync('SELECT *,  DATE_FORMAT(Judgement_Date, "%Y-%m-%d") as Judgement_Date FROM case_court_details_two WHERE fir_id = ?', [fir_id]);
+//                 // casedetail_one
+//                 const casedetail_one = await queryAsync('SELECT *,  DATE_FORMAT(Judgement_Date, "%Y-%m-%d") as Judgement_Date FROM case_court_detail_one WHERE fir_id = ?', [fir_id]);
+//                 const casedetail_two = await queryAsync('SELECT *,  DATE_FORMAT(Judgement_Date, "%Y-%m-%d") as Judgement_Date FROM case_court_details_two WHERE fir_id = ?', [fir_id]);
 
-                const trialAttachments = await queryAsync('SELECT file_name FROM case_attachments WHERE fir_id = ?', [fir_id]);
+//                 const trialAttachments = await queryAsync('SELECT file_name FROM case_attachments WHERE fir_id = ?', [fir_id]);
 
-                console.log(casedetail_two);
+//                 // console.log(casedetail_two);
 
-                const queryAttachments = `SELECT file_path FROM attachment_relief WHERE fir_id = ?`;
-                db.query(queryAttachments, [fir_id], (err, attachmentResults) => {
-                  if (err) {
-                    console.error(err);
-                    return res.status(500).json({ message: 'Error fetching attachment file paths.', error: err });
-                  }
-                  const filePaths = attachmentResults.map(row => row.file_path).filter(path => path !== null);
+//                 const queryAttachments = `SELECT file_path FROM attachment_relief WHERE fir_id = ?`;
+//                 db.query(queryAttachments, [fir_id], (err, attachmentResults) => {
+//                   if (err) {
+//                     console.error(err);
+//                     return res.status(500).json({ message: 'Error fetching attachment file paths.' });
+//                   }
+//                   const filePaths = attachmentResults.map(row => row.file_path).filter(path => path !== null);
       
                   
-                  if (result3 && result3.length > 0) 
-                    result3[0].file_paths = filePaths;
-                  else 
-                    console.error("result3 is undefined or empty");
+//                   if (result3 && result3.length > 0) 
+//                     result3[0].file_paths = filePaths;
+//                   else 
+//                     console.error("result3 is undefined or empty");
                   
-                  return res.status(200).json({
-                    data: result[0],
-                    data1: result1,
-                    data2: result2,
-                    data3: result3[0] ,
-                    data4: chargesheetData, // Includes attachments array
-                    data5: result5,
-                    casedetail_one:casedetail_one,
-                    casedetail_two:casedetail_two,
-                    data6: result6[0],
-                    hearingDetails: hearingDetailsOne,
-                    hearingDetails_one: hearingDetailsTwo,
-                    hearingDetails_two: hearingDetailsThree,
-                    appeal_details: appealDetails,
-                    appeal_details_one: appealDetailsOne,
-                    case_appeal_details_two: caseAppealDetailsTwo,
-                    compensation_details:compensation_details,
-                    compensation_details_1:compensation_details_1,
-                    compensation_details_2:compensation_details_2,
-                    trialAttachments:trialAttachments,
+//                   return res.status(200).json({
+//                     data: result[0],
+//                     data1: result1,
+//                     data2: result2,
+//                     data3: result3[0] ,
+//                     data4: chargesheetData, // Includes attachments array
+//                     data5: result5,
+//                     casedetail_one:casedetail_one,
+//                     casedetail_two:casedetail_two,
+//                     data6: result6[0],
+//                     hearingDetails: hearingDetailsOne,
+//                     hearingDetails_one: hearingDetailsTwo,
+//                     hearingDetails_two: hearingDetailsThree,
+//                     appeal_details: appealDetails,
+//                     appeal_details_one: appealDetailsOne,
+//                     case_appeal_details_two: caseAppealDetailsTwo,
+//                     compensation_details:compensation_details,
+//                     compensation_details_1:compensation_details_1,
+//                     compensation_details_2:compensation_details_2,
+//                     trialAttachments:trialAttachments,
               
-                  });
-                });
-              });
-            });
-          });
-        });
-      });
+//                   });
+//                 });
+//               });
+//             });
+//           });
+//         });
+//       });
+//     });
+//   });
+// };
+
+
+
+// enhancement approch
+exports.getFirDetails = async (req, res) => {
+  const { fir_id } = req.query;
+  if (!fir_id) return res.status(400).json({ message: 'FIR ID is required.' });
+
+  try {
+    const firQuery = `
+      SELECT *, 
+        DATE_FORMAT(date_of_occurrence, '%Y-%m-%d') AS date_of_occurrence,
+        DATE_FORMAT(date_of_occurrence_to, '%Y-%m-%d') AS date_of_occurrence_to,
+        DATE_FORMAT(date_of_registration, '%Y-%m-%d') AS date_of_registration 
+      FROM fir_add WHERE fir_id = ?`;
+
+    const [
+      firData,
+      victims,
+      accuseds,
+      reliefs,
+      chargesheets,
+      caseDetails,
+      firTrial,
+      hearingOne,
+      hearingTwo,
+      hearingThree,
+      appeal1,
+      appeal2,
+      appeal3,
+      compensation1,
+      compensation2,
+      compensation3,
+      caseCourt1,
+      caseCourt2,
+      trialAttachments,
+      reliefAttachments
+    ] = await Promise.all([
+      queryAsyncenhanced(firQuery, [fir_id]),
+      queryAsyncenhanced('SELECT victim_id, fir_id, victim_name, victim_age, victim_gender, mobile_number, address, victim_pincode, community, caste, guardian_name, is_native_district_same, native_district, offence_committed, sectionsIPC_JSON, scst_sections, relief_applicable FROM victims WHERE fir_id = ? AND delete_status = 0', [fir_id]),
+      queryAsyncenhanced('SELECT accused_id, fir_id, age, name, gender, custom_gender, address, pincode, community, caste, guardian_name, previous_incident, previous_fir_number, previous_fir_number_suffix, scst_offence, scst_fir_number, scst_fir_number_suffix, antecedentsOption, antecedents, landOIssueOption, land_o_issues, gist_of_current_case, upload_fir_copy, previous_incident_remarks, previous_offence_remarks FROM accuseds WHERE fir_id = ? AND delete_status = 0', [fir_id]),
+      queryAsyncenhanced(`SELECT id, proceedings_id, fir_id, total_compensation, proceedings_file_no, proceedings_date, proceedings_file FROM proceedings_victim_relief WHERE fir_id = ?`, [fir_id]),
+      queryAsyncenhanced(`SELECT cd.*, ca.id AS attachment_id, ca.file_path FROM chargesheet_details cd LEFT JOIN chargesheet_attachments ca ON cd.fir_id = ca.fir_id WHERE cd.fir_id = ?`, [fir_id]),
+      queryAsyncenhanced(`SELECT *, DATE_FORMAT(Judgement_Date, '%Y-%m-%d') as Judgement_Date FROM case_details WHERE fir_id = ?`, [fir_id]),
+      queryAsyncenhanced('SELECT id, fir_id, case_id, total_amount_third_stage, proceedings_file_no, proceedings_date, Commissionerate_file, status FROM fir_trial WHERE fir_id = ?', [fir_id]),
+      queryAsyncenhanced('SELECT id, fir_id, case_id, next_hearing_date, reason_next_hearing, judgement_awarded FROM hearing_details_one WHERE fir_id = ?', [fir_id]),
+      queryAsyncenhanced('SELECT id, fir_id, case_id, next_hearing_date, reason_next_hearing, judgement_awarded FROM hearing_details_two WHERE fir_id = ?', [fir_id]),
+      queryAsyncenhanced('SELECT id, fir_id, case_id, next_hearing_date, reason_next_hearing, judgement_awarded FROM hearing_details_three WHERE fir_id = ?', [fir_id]),
+      queryAsyncenhanced('SELECT * FROM appeal_details WHERE fir_id = ?', [fir_id]),
+      queryAsyncenhanced('SELECT id, fir_id, case_id, legal_opinion_obtained, case_fit_for_appeal, government_approval_for_appeal, filed_by, designated_court, judgementNature FROM appeal_details_one WHERE fir_id = ?', [fir_id]),
+      queryAsyncenhanced('SELECT id, fir_id, case_id, legal_opinion_obtained, case_fit_for_appeal, government_approval_for_appeal, filed_by, designated_court, judgementNature FROM case_appeal_details_two WHERE fir_id = ?', [fir_id]),
+      queryAsyncenhanced('SELECT id, fir_id, case_id, total_compensation, proceedings_file_no, proceedings_date, upload_proceedings FROM compensation_details WHERE fir_id = ?', [fir_id]),
+      queryAsyncenhanced('SELECT id, fir_id, case_id, total_compensation, proceedings_file_no, proceedings_date, upload_proceedings FROM compensation_details_1 WHERE fir_id = ?', [fir_id]),
+      queryAsyncenhanced('SELECT id, fir_id, case_id, total_compensation, proceedings_file_no, proceedings_date, upload_proceedings FROM compensation_details_2 WHERE fir_id = ?', [fir_id]),
+      queryAsyncenhanced(`SELECT *, DATE_FORMAT(Judgement_Date, "%Y-%m-%d") as Judgement_Date FROM case_court_detail_one WHERE fir_id = ?`, [fir_id]),
+      queryAsyncenhanced(`SELECT *, DATE_FORMAT(Judgement_Date, "%Y-%m-%d") as Judgement_Date FROM case_court_details_two WHERE fir_id = ?`, [fir_id]),
+      queryAsyncenhanced('SELECT file_name FROM case_attachments WHERE fir_id = ?', [fir_id]),
+      queryAsyncenhanced('SELECT file_path FROM attachment_relief WHERE fir_id = ?', [fir_id])
+    ]);
+
+    const chargesheetData = chargesheets.length > 0 ? {
+      ...chargesheets[0],
+      attachments: chargesheets.filter(c => c.attachment_id).map(c => ({
+        id: c.attachment_id,
+        path: c.file_path
+      }))
+    } : null;
+
+    const reliefData = reliefs[0] || {};
+    reliefData.file_paths = reliefAttachments.map(a => a.file_path).filter(Boolean);
+
+    return res.status(200).json({
+      data: firData[0],
+      data1: victims,
+      data2: accuseds,
+      data3: reliefData,
+      data4: chargesheetData,
+      data5: caseDetails,
+      casedetail_one: caseCourt1,
+      casedetail_two: caseCourt2,
+      data6: firTrial[0],
+      hearingDetails: hearingOne,
+      hearingDetails_one: hearingTwo,
+      hearingDetails_two: hearingThree,
+      appeal_details: appeal1,
+      appeal_details_one: appeal2,
+      case_appeal_details_two: appeal3,
+      compensation_details: compensation1,
+      compensation_details_1: compensation2,
+      compensation_details_2: compensation3,
+      trialAttachments
     });
-  });
+
+  } catch (err) {
+    console.error('Error fetching FIR data:', err);
+    return res.status(500).json({ message: 'Error fetching FIR details' });
+  }
 };
+
 
 
 
@@ -3569,7 +3746,7 @@ exports.getFirStatus = (req, res) => {
   const query = `SELECT status FROM fir_add WHERE fir_id = ?`;
   db.query(query, [firId], (err, results) => {
     if (err) {
-      return res.status(500).json({ message: 'Error fetching FIR status', error: err });
+      return res.status(500).json({ message: 'Error fetching FIR status' });
     }
 
     if (results.length > 0) {
@@ -3599,7 +3776,7 @@ exports.updateFirStatus_1 = (req, res) => {
   db.query(query, values, (err, result) => {
     if (err) {
       console.error(err);
-      return res.status(500).json({ message: 'Failed to update FIR status', error: err });
+      return res.status(500).json({ message: 'Failed to update FIR status' });
     }
 
     if (result.affectedRows > 0) {
@@ -3689,7 +3866,7 @@ exports.editStepSevenAsDraft = (req, res) => {
 //   const caseId = generateRandomId(8); // Example: Length = 8 characters
 
 //   db.beginTransaction((err) => {
-//       if (err) return res.status(500).json({ message: "Transaction error", error: err });
+//       if (err) return res.status(500).json({ message: "Transaction error" });
 
 //       // Insert into `case_details` with the generated `case_id`
 //       const caseDetailsQuery = `
@@ -3712,7 +3889,7 @@ exports.editStepSevenAsDraft = (req, res) => {
 //       ];
 
 //       db.query(caseDetailsQuery, caseDetailsValues, (err) => {
-//           if (err) return db.rollback(() => res.status(500).json({ message: "Error saving case details.", error: err }));
+//           if (err) return db.rollback(() => res.status(500).json({ message: "Error saving case details." }));
 
 //           // Insert or Update `fir_trial` Table
 //           const firTrialQuery = `
@@ -3736,7 +3913,7 @@ exports.editStepSevenAsDraft = (req, res) => {
 //           ];
 
 //           db.query(firTrialQuery, firTrialValues, (err) => {
-//               if (err) return db.rollback(() => res.status(500).json({ message: "Error saving fir_trial details.", error: err }));
+//               if (err) return db.rollback(() => res.status(500).json({ message: "Error saving fir_trial details." }));
 
 //               // Insert into `trial_relief` Table (Victim Details)
 //               const victimPromises = victimsDetails.map((victim) => {
@@ -3776,18 +3953,18 @@ exports.editStepSevenAsDraft = (req, res) => {
 //               ];
 
 //               db.query(firAddQuery, firAddValues, (err) => {
-//                   if (err) return db.rollback(() => res.status(500).json({ message: "Error updating fir_add.", error: err }));
+//                   if (err) return db.rollback(() => res.status(500).json({ message: "Error updating fir_add." }));
 
 //                   // Execute Victim Promises
 //                   Promise.all(victimPromises)
 //                       .then(() => {
 //                           db.commit((err) => {
-//                               if (err) return db.rollback(() => res.status(500).json({ message: "Transaction commit failed.", error: err }));
+//                               if (err) return db.rollback(() => res.status(500).json({ message: "Transaction commit failed." }));
 //                               res.status(200).json({ message: "Draft data saved successfully.", caseId });
 //                           });
 //                       })
 //                       .catch((err) => {
-//                           db.rollback(() => res.status(500).json({ message: "Error saving victim details.", error: err }));
+//                           db.rollback(() => res.status(500).json({ message: "Error saving victim details." }));
 //                       });
 //               });
 //           });
@@ -3846,7 +4023,7 @@ exports.editStepSevenAsDraft = (req, res) => {
 //   db.beginTransaction(async (err) => {
 //     if (err) {
 //       console.error('Transaction error:', err);
-//       return res.status(500).json({ message: 'Transaction error', error: err });
+//       return res.status(500).json({ message: 'Transaction error' });
 //     }
 
 //     try {
@@ -4195,7 +4372,7 @@ exports.editStepSevenAsDraft = (req, res) => {
 
 //       db.commit((err) => {
 //         if (err) {
-//           db.rollback(() => res.status(500).json({ message: 'Transaction commit error', error: err }));
+//           db.rollback(() => res.status(500).json({ message: 'Transaction commit error' }));
 //         }
 //         res.status(200).json({ message: 'Step 7 updated successfully.' });
 //       });
@@ -4208,7 +4385,7 @@ exports.editStepSevenAsDraft = (req, res) => {
 
 exports.saveStepSevenAsDraft = (req, res) => {
 
-  console.log(req.body);
+  // console.log(req.body);
 
   const {
     firId, trialDetails, trialDetails_one, trialDetails_two, compensationDetails, attachments,
@@ -4237,7 +4414,7 @@ exports.saveStepSevenAsDraft = (req, res) => {
   const parsedCaseAppealDetailsTwo = parseJSON(caseAppealDetailsTwo);
 
         const randomCaseId_1 = generateRandomId(10);
-        console.log(randomCaseId_1)
+        // console.log(randomCaseId_1)
   if (!ogId) {
     return res.status(400).json({ message: 'Missing required firId field.' });
   }
@@ -4245,7 +4422,7 @@ exports.saveStepSevenAsDraft = (req, res) => {
   db.beginTransaction(async (err) => {
     if (err) {
       console.error('Transaction error:', err);
-      return res.status(500).json({ message: 'Transaction error', error: err });
+      return res.status(500).json({ message: 'Transaction error' });
     }
 
     try {
@@ -4493,7 +4670,7 @@ if (existingCaseCourtDetailTwo.length > 0) {
         if (data) {
        
           const existingRecord = await queryAsync(`SELECT * FROM ${table} WHERE fir_id = ?`, [ogId]);
-          console.log('ogId:', ogId);
+          // console.log('ogId:', ogId);
       
           if (existingRecord.length > 0) {
           
@@ -4543,7 +4720,7 @@ if (existingCaseCourtDetailTwo.length > 0) {
       
         try {
           await queryAsync(`DELETE FROM ${tableName} WHERE fir_id = ?`, [ogId]);
-          console.log(`Cleared existing data for fir_id: ${ogId} in ${tableName}`);
+          // console.log(`Cleared existing data for fir_id: ${ogId} in ${tableName}`);
         } catch (error) {
           console.error(`Failed to clear existing data for fir_id: ${ogId} in ${tableName}`, error);
           continue;
@@ -4572,7 +4749,7 @@ if (existingCaseCourtDetailTwo.length > 0) {
                VALUES (?, ?, ?)`,
               [ogId, nextHearingDate, reasonNextHearing]
             );
-            console.log(`Inserted record into ${tableName}: ${nextHearingDate}, ${reasonNextHearing}`);
+            // console.log(`Inserted record into ${tableName}: ${nextHearingDate}, ${reasonNextHearing}`);
           } catch (error) {
             console.error(`Database error for table "${tableName}":`, error);
           }
@@ -4594,7 +4771,7 @@ if (existingCaseCourtDetailTwo.length > 0) {
 
       db.commit((err) => {
         if (err) {
-          db.rollback(() => res.status(500).json({ message: 'Transaction commit error', error: err }));
+          db.rollback(() => res.status(500).json({ message: 'Transaction commit error' }));
         }
         res.status(200).json({ message: 'Step 7 updated successfully.' });
       });
@@ -4611,8 +4788,8 @@ const queryAsync = (query, params) => {
     db.query(query, params, (err, results) => {
       // if (err) return reject(err);
       if(err) {
-        console.log(err)
-        console.log(query)
+        // console.log(err)
+        // console.log(query)
         return reject(err)
       }
       resolve(results);
@@ -4636,7 +4813,7 @@ const queryAsync = (query, params) => {
 //   // Get a connection from the pool
 //   db.getConnection((err, connection) => {
 //     if (err) {
-//       return res.status(500).json({ message: 'Failed to get database connection', error: err.message });
+//       return res.status(500).json({ message: 'Failed to get database connection'.message });
 //     }
     
 //     // Start a transaction on the specific connection
@@ -4731,7 +4908,7 @@ exports.AlterSave = (req, res) => {
   // Get a connection from the pool
   db.getConnection((err, connection) => {
     if (err) {
-      return res.status(500).json({ message: 'Failed to get database connection', error: err.message });
+      return res.status(500).json({ message: 'Failed to get database connection'.message });
     }
     
     // Start a transaction on the specific connection

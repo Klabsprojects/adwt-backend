@@ -36,7 +36,7 @@ const Acceptnewusershg = async (req, res) => {
         }
         return res.status(200).send({ status: true, data: updatedData, message: "SHG data updated in shgMapTest successfully" });
     } catch (e) {
-        return res.status(500).send({ status: false, error: `Error updating SHG data: ${e.message}` });
+        return res.status(500).send({ status: false, error: `Error updating SHG data` });
     }
 };
 

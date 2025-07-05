@@ -49,7 +49,7 @@ exports.getVictimsByFirId = (req, res) => {
   const query = 'SELECT * FROM victims WHERE fir_id = ?';
   db.query(query, [fir_id], (error, results) => {
     if (error) {
-      return res.status(500).json({ message: 'Failed to fetch victims', error });
+      return res.status(500).json({ message: 'Failed to fetch victims'});
     }
     res.status(200).json(results);
   });
@@ -63,8 +63,8 @@ exports.updateVictims = (req, res) => {
     return res.status(400).json({ message: 'Invalid input. Missing FIR ID or victims data.' });
   }
 
-  console.log('Received FIR ID:', fir_id);
-  console.log('Victims:', victims);
+  // console.log('Received FIR ID:', fir_id);
+  // console.log('Victims:', victims);
 
   const updateQueries = victims.map((victim) => {
     const query = `
@@ -303,7 +303,7 @@ exports.updateVictimCountAndDetails = (req, res) => {
       })
       .catch((err) => {
         console.error('Error processing victims:', err);
-        res.status(500).json({ message: 'Failed to process victim data.', error: err });
+        res.status(500).json({ message: 'Failed to process victim data.' });
       });
   });
 };
@@ -327,7 +327,7 @@ exports.handleAccusedData = (req, res) => {
 
   db.query(updateFirQuery, updateFirValues, (err) => {
     if (err) {
-      return res.status(500).json({ message: 'Failed to update FIR data', error: err });
+      return res.status(500).json({ message: 'Failed to update FIR data'});
     }
 
     // Process accused records
@@ -397,7 +397,7 @@ exports.handleAccusedData = (req, res) => {
       })
       .catch((err) => {
         console.error('Failed to process accused data:', err);
-        res.status(500).json({ message: 'Failed to process accused data', error: err });
+        res.status(500).json({ message: 'Failed to process accused data' });
       });
   });
 };
@@ -462,8 +462,8 @@ exports.getOffenceActsBySections_new = (req, res) => {
     WHERE offence_act_name IN (${placeholders})
   `;
 
-  console.log('Executing Query:', query);
-  console.log('With Parameters:', selectedSections_new);
+  // console.log('Executing Query:', query);
+  // console.log('With Parameters:', selectedSections_new);
 
   db.query(query, selectedSections_new, (error, results) => {
     if (error) {
@@ -471,7 +471,7 @@ exports.getOffenceActsBySections_new = (req, res) => {
       return res.status(500).json({ message: 'Failed to fetch offence acts' });
     }
 
-    console.log('Fetched offence acts:', results);
+    // console.log('Fetched offence acts:', results);
     res.status(200).json(results);
   });
 };

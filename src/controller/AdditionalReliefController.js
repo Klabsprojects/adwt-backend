@@ -30,7 +30,7 @@ exports.getFIRAdditionalReliefList = (req, res) => {
 
   db.query(query, (error, results) => {
     if (error) {
-      return res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: "Something went wrong. Please contact support." });
     }
     res.status(200).json(results);
   });
@@ -225,15 +225,14 @@ exports.getFIRAdditionalReliefListByVictim = (req, res) => {
 
   const queryParams = [...params];
 
-  console.log(query);
-  console.log(queryParams);
+  // console.log(query);
+  // console.log(queryParams);
   
   db.query(query, queryParams, (err, results) => {
     if (err) {
       console.error('Database query error:', err);
       return res.status(500).json({ 
-        message: 'Failed to retrieve FIR list', 
-        error: err.message // Don't expose full error object in production
+        message: 'Failed to retrieve FIR list' // Don't expose full error object in production
       });
     }
     
@@ -267,7 +266,7 @@ exports.getVictimDetailsByFirId = (req, res) => {
 
   db.query(query, [fir_id,victim_id], (error, results) => {
     if (error) {
-      return res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: "Something went wrong. Please contact support." });
     }
 
     if (results.length === 0) {
@@ -292,7 +291,7 @@ exports.getAdditionalReliefByFirId = (req, res) => {
 
   db.query(query, [fir_id,victim_id], (error, results) => {
     if (error) {
-      return res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: "Something went wrong. Please contact support." });
     }
 
     if (results.length === 0) {
@@ -508,7 +507,7 @@ exports.saveAdditionalRelief = (req, res) => {
     db.execute(checkQuery, [formData.fir_id, victimidvalue], (checkError, checkResult) => {
       if (checkError) {
         console.error('Error checking existing record:', checkError);
-        return res.status(500).json({ message: 'Error checking existing record', checkError });
+        return res.status(500).json({ message: 'Error checking existing record' });
       }
 
       // If record exists, update it
@@ -532,14 +531,14 @@ exports.saveAdditionalRelief = (req, res) => {
         db.execute(updateQuery, updateValues, (error, result) => {
           if (error) {
             console.error('Error updating data:', error);
-            return res.status(500).json({ message: 'Error updating data', error });
+            return res.status(500).json({ message: 'Error updating data' });
           }
 
           // After update, handle the details table
           handleDetailsTable(checkResult[0].id, formData, i, res, (err) => {
             if (err) {
               console.error('Error handling details table:', err);
-              return res.status(500).json({ message: 'Error handling details table', err });
+              return res.status(500).json({ message: 'Error handling details table' });
             }
 
             promisesLeft--;
@@ -568,14 +567,14 @@ exports.saveAdditionalRelief = (req, res) => {
         db.execute(insertQuery, insertValues, (error, result) => {
           if (error) {
             console.error('Error inserting data:', error);
-            return res.status(500).json({ message: 'Error inserting data', error });
+            return res.status(500).json({ message: 'Error inserting data' });
           }
 
           // After insert, handle the details table
           handleDetailsTable(result.insertId, formData, i, res, (err) => {
             if (err) {
               console.error('Error handling details table:', err);
-              return res.status(500).json({ message: 'Error handling details table', err });
+              return res.status(500).json({ message: 'Error handling details table' });
             }
 
             promisesLeft--;
@@ -982,7 +981,7 @@ function handleDetailsTable(additionalReliefId, formData, index, res, callback) 
       insertIntoAnotherTable(additionalReliefId, formData, index, (err) => {
         if (err) {
           console.error('Error inserting into another table:', err);
-          return res.status(500).json({ error: 'Internal Server Error', details: err.message })
+          return res.status(500).json({ error: 'Internal Server Error' })
         }
         return res.status(200).json({ message: 'Data saved successfully!' });
       });

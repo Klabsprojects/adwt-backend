@@ -51,7 +51,7 @@ const aadharverify = async (req, res) => {
       });
       
       instance.interceptors.request.use(request => {
-        console.log('Starting Request', request);
+        // console.log('Starting Request', request);
         return request;
       });
       
@@ -63,7 +63,7 @@ const aadharverify = async (req, res) => {
         return Promise.reject(error);
       });
 
-    console.log(req.params.Aadharnumber);
+    // console.log(req.params.Aadharnumber);
 
     // Define the request parameters
     const requestData = {
@@ -296,7 +296,7 @@ const getApproved = async (req, res) => {
         console.error("Error rejecting SHG from the active list:", error);
         res.status(500).json({
             status: false,
-            error: `Internal server error: ${error.message}`,
+            error: `Internal server error}`,
         });
     }
 };
@@ -528,7 +528,7 @@ const Acceptshg1 = async (req, res) => {
         console.error("Error rejecting SHG from the active list:", error);
         res.status(500).json({
             status: false,
-            error: `Internal server error: ${error.message}`,
+            error: `Internal server error}`,
         });
     }
 }
@@ -1310,7 +1310,7 @@ const Acceptshg = async (req, res) => {
     } catch (error) {
         return res.status(500).json({
             status: false,
-            error: error,
+            error: 'error',
         });
     }
 };
@@ -1354,7 +1354,7 @@ const Acceptnewusershg = async (req, res) => {
         }
         return res.status(200).send({ status: true, data: updatedData, message: "SHG data updated in shgMapTest successfully" });
     } catch (e) {
-        return res.status(500).send({ status: false, error: `Error updating SHG data: ${e.message}` });
+        return res.status(500).send({ status: false, error: `Error updating SHG data` });
     }
 };
 
@@ -1374,7 +1374,7 @@ const rejectshg = async (req, res) => {
         console.error("Error rejecting SHG from the active list:", error);
         res.status(500).json({
             status: false,
-            error: `Internal server error: ${error.message}`,
+            error: `Internal server error`,
         });
     }
 };
@@ -1654,7 +1654,7 @@ const AcceptshgMember = async (req, res) => {
     } catch (error) {
         return res.status(500).json({
             status: false,
-            error: `Error updating SHG data: ${error.message}`,
+            error: `Error updating SHG data`,
         });
     }
 };
@@ -1680,7 +1680,7 @@ const Acceptnewusershgmember = async (req, res) => {
         }
         return res.status(200).send({ status: true, data: updatedData, message: "SHG data updated in shgMapTest successfully" });
     } catch (e) {
-        return res.status(500).send({ status: false, error: `Error updating SHG data: ${e.message}` });
+        return res.status(500).send({ status: false, error: `Error updating SHG data` });
     }
 };
 
@@ -1699,7 +1699,7 @@ const rejectshgmember = async (req, res) => {
         await modelSHGMember.updateOne({ SHGId, MemberId }, { $set: { reject: 1, approvedBy, approved, approvedAt, rejectionSummary } });
         return res.status(200).send({ status: true, message: "SHG rejected successfully, and the rejection summary is added to shgMapTest" });
     } catch (e) {
-        return res.status(500).send({ status: false, error: `Error updating SHG data: ${e.message}` });
+        return res.status(500).send({ status: false, error: `Error updating SHG data` });
     }
 };
 async function generateShgCode() {
@@ -2696,7 +2696,7 @@ const getUpdatedshgmember = async (req, res) => {
         };
         res.json({ status: true, data:result  });
     } catch (e) {
-        res.status(500).json({ status: false, error: `Invalid Query err: ${e.message}`  });
+        res.status(500).json({ status: false, error: `Invalid Query err`  });
     }
 };
 

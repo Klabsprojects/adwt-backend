@@ -615,25 +615,25 @@ exports.saveFirstInstallment = (req, res) => {
               ? [
                   victim.victimId,
                   victim.reliefId,
-                  victim.victimName,
-                  victim.bankAccountNumber,
-                  victim.ifscCode,
-                  victim.bankName,
+                  victim.victimName || null,
+                  victim.bankAccountNumber || null,
+                  victim.ifscCode || null,
+                  victim.bankName || null,
                   victim.reliefAmountScst || 0,
                   victim.reliefAmountExGratia || 0,
                   victim.reliefAmountFirstStage || 0,
-                  victim.victimReliefId,
+                  victim.victimReliefId || null,
                   firId,
                 ]
               : [
                   victim.victimReliefId || generateRandomId(6), // Generate ID if not provided
                   victim.victimId,
-                  victim.reliefId,
+                  victim.reliefId || null,
                   firId,
-                  victim.victimName,
-                  victim.bankAccountNumber,
-                  victim.ifscCode,
-                  victim.bankName,
+                  victim.victimName || null,
+                  victim.bankAccountNumber || null,
+                  victim.ifscCode || null,
+                  victim.bankName || null,
                   victim.reliefAmountScst || 0,
                   victim.reliefAmountExGratia || 0,
                   victim.reliefAmountFirstStage || 0,
@@ -663,21 +663,21 @@ exports.saveFirstInstallment = (req, res) => {
 
           const values = exists
             ? [
-                proceedings.fileNo,
-                proceedings.fileDate,
-                proceedings.uploadDocument,
-                proceedings.pfmsPortalUploaded,
-                proceedings.dateOfDisbursement,
+                proceedings.fileNo || null,
+                proceedings.fileDate || null,
+                proceedings.uploadDocument || null,
+                proceedings.pfmsPortalUploaded || null,
+                proceedings.dateOfDisbursement || null,
                 firId,
               ]
             : [
                 generateRandomId(6), // Generate new ID
                 firId,
-                proceedings.fileNo,
-                proceedings.fileDate,
-                proceedings.uploadDocument,
-                proceedings.pfmsPortalUploaded,
-                proceedings.dateOfDisbursement,
+                proceedings.fileNo || null,
+                proceedings.fileDate || null,
+                proceedings.uploadDocument || null,
+                proceedings.pfmsPortalUploaded || null,
+                proceedings.dateOfDisbursement || null,
               ];
 
           connection.query(query, values, (err) => (err ? reject(err) : resolve()));
@@ -704,18 +704,18 @@ exports.saveFirstInstallment = (req, res) => {
           const values = exists
             ? [
                 proceedings.totalCompensation || 0.0,
-                proceedings.fileNo,
-                proceedings.fileDate,
-                proceedings.uploadDocument,
+                proceedings.fileNo || null,
+                proceedings.fileDate || null,
+                proceedings.uploadDocument || null,
                 firId,
               ]
             : [
                 generateRandomId(6), // Generate new ID
                 firId,
                 proceedings.totalCompensation || 0.0,
-                proceedings.fileNo,
-                proceedings.fileDate,
-                proceedings.uploadDocument,
+                proceedings.fileNo || null,
+                proceedings.fileDate || null,
+                proceedings.uploadDocument || null,
               ];
 
           connection.query(query, values, (err) => (err ? reject(err) : resolve()));
@@ -1019,20 +1019,20 @@ exports.saveSecondInstallment = (req, res) => {
             const values = exists
               ? [
                   victim.victimId,
-                  victim.chargesheetId,
-                  victim.victimName,
+                  victim.chargesheetId || null,
+                  victim.victimName || null,
                   victim.secondInstallmentReliefScst || 0,
                   victim.secondInstallmentReliefExGratia || 0,
                   victim.secondInstallmentTotalRelief || 0,
-                  victimChargesheetId,
+                  victimChargesheetId || null,
                   firId,
                 ]
               : [
-                  victimChargesheetId,
+                  victimChargesheetId || null,
                   victim.victimId,
-                  victim.chargesheetId,
+                  victim.chargesheetId || null,
                   firId,
-                  victim.victimName,
+                  victim.victimName || null,
                   victim.secondInstallmentReliefScst || 0,
                   victim.secondInstallmentReliefExGratia || 0,
                   victim.secondInstallmentTotalRelief || 0,
@@ -1063,20 +1063,20 @@ exports.saveSecondInstallment = (req, res) => {
 
           const values = exists
             ? [
-                proceedings.fileNumber,
-                proceedings.fileDate,
+                proceedings.fileNumber || null,
+                proceedings.fileDate || null,
                 proceedings.uploadDocument || null,
-                proceedings.pfmsPortalUploaded,
-                proceedings.dateOfDisbursement,
+                proceedings.pfmsPortalUploaded || null,
+                proceedings.dateOfDisbursement || null,
                 firId,
               ]
             : [
                 firId,
-                proceedings.fileNumber,
-                proceedings.fileDate,
+                proceedings.fileNumber || null,
+                proceedings.fileDate || null,
                 proceedings.uploadDocument || null,
-                proceedings.pfmsPortalUploaded,
-                proceedings.dateOfDisbursement,
+                proceedings.pfmsPortalUploaded || null,
+                proceedings.dateOfDisbursement || null,
               ];
 
           connection.query(query, values, (err) => (err ? reject(err) : resolve()));
@@ -1243,6 +1243,151 @@ exports.saveSecondInstallment = (req, res) => {
 // };
 
 
+// exports.saveThirdInstallmentDetails = (req, res) => {
+//   const { firId, victims, proceedings } = req.body;
+
+//   if (!firId || !victims || !proceedings) {
+//     return res.status(400).json({ message: "Missing required fields." });
+//   }
+
+//   // Get a connection from the pool
+//   db.getConnection((err, connection) => {
+//     if (err) {
+//       return res.status(500).json({ message: 'Database connection error', error: err });
+//     }
+
+//     // Begin transaction on the connection
+//     connection.beginTransaction((err) => {
+//       if (err) {
+//         connection.release();
+//         return res.status(500).json({ message: "Transaction error", error: err });
+//       }
+
+//       // Handle Victims - Update if exists, else Insert
+//       const victimPromises = victims.map((victim) => {
+//         return new Promise((resolve, reject) => {
+//           const checkQuery = `SELECT id FROM trial_stage_relief WHERE victim_id = ? AND fir_id = ?`;
+
+//           connection.query(checkQuery, [victim.victimId, firId], (err, results) => {
+//             if (err) return reject(err);
+
+//             const trialStageId = results.length > 0 ? results[0].trial_stage_id : generateRandomId(10);
+//             console.log('trialStageId', trialStageId);
+//             console.log('checkQuery', checkQuery);
+//             console.log('results', results);
+
+//             const query = results.length > 0
+//               ? `UPDATE trial_stage_relief 
+//                  SET victim_id = ?, trial_id = ?, victim_name = ?, 
+//                      trialStageReliefAct = ?, trialStageReliefGovernment = ?, trialStageReliefTotal = ?
+//                  WHERE trial_stage_id = ? AND fir_id = ?`
+//               : `INSERT INTO trial_stage_relief 
+//                  (trial_stage_id, victim_id, trial_id, fir_id, victim_name, 
+//                   trialStageReliefAct, trialStageReliefGovernment, trialStageReliefTotal) 
+//                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+
+//             const values = results.length > 0
+//               ? [
+//                   victim.victimId,
+//                   victim.trialId || null,
+//                   victim.victimName || null,
+//                   victim.thirdInstallmentReliefAct || 0,
+//                   victim.thirdInstallmentReliefGovernment || 0,
+//                   victim.thirdInstallmentReliefTotal || 0,
+//                   trialStageId || null,
+//                   firId,
+//                 ]
+//               : [
+//                   trialStageId || null,
+//                   victim.victimId,
+//                   victim.trialId || null,
+//                   firId,
+//                   victim.victimName || null,
+//                   victim.thirdInstallmentReliefAct || 0,
+//                   victim.thirdInstallmentReliefGovernment || 0,
+//                   victim.thirdInstallmentReliefTotal || 0,
+//                 ];
+
+//             connection.query(query, values, (err) => (err ? reject(err) : resolve()));
+//           });
+//         });
+//       });
+
+//       // Handle Proceedings - Update if exists, else Insert
+//       const proceedingsPromise = new Promise((resolve, reject) => {
+//         const checkQuery = `SELECT COUNT(*) as count FROM trial_proceedings WHERE fir_id = ?`;
+
+//         connection.query(checkQuery, [firId], (err, results) => {
+//           if (err) return reject(err);
+
+//           const exists = results[0].count > 0;
+
+//           const query = exists
+//             ? `UPDATE trial_proceedings 
+//                SET file_number = ?, file_date = ?, upload_document = ?, 
+//                    pfms_portal_uploaded = ?, date_of_disbursement = ?
+//                WHERE fir_id = ? AND trial_id = ?`
+//             : `INSERT INTO trial_proceedings 
+//                (trial_id, fir_id, file_number, file_date, upload_document, pfms_portal_uploaded, date_of_disbursement) 
+//                VALUES (?, ?, ?, ?, ?, ?, ?)`;
+
+//           const values = exists
+//             ? [
+//                 proceedings.fileNumber || null,
+//                 proceedings.fileDate || null,
+//                 proceedings.uploadDocument || null,
+//                 proceedings.pfmsPortalUploaded || null,
+//                 proceedings.dateOfDisbursement || null,
+//                 firId,
+//                 proceedings.trialId || null,
+//               ]
+//             : [
+//                 proceedings.trialId || null,
+//                 firId,
+//                 proceedings.fileNumber || null,
+//                 proceedings.fileDate || null,
+//                 proceedings.uploadDocument || null,
+//                 proceedings.pfmsPortalUploaded || null,
+//                 proceedings.dateOfDisbursement || null,
+//               ];
+
+//           connection.query(query, values, (err) => (err ? reject(err) : resolve()));
+//         });
+//       });
+
+//       // Update FIR Status
+//       const updateFirStatus = new Promise((resolve, reject) => {
+//         const query = `UPDATE fir_add SET relief_status = ? WHERE fir_id = ?`;
+//         const values = [3, firId];
+
+//         connection.query(query, values, (err) => (err ? reject(err) : resolve()));
+//       });
+
+//       // Execute all queries within the transaction
+//       Promise.all([...victimPromises, proceedingsPromise, updateFirStatus])
+//         .then(() => {
+//           connection.commit((err) => {
+//             if (err) {
+//               return connection.rollback(() => {
+//                 connection.release();
+//                 res.status(500).json({ message: "Commit error", error: err });
+//               });
+//             }
+//             connection.release();
+//             res.status(200).json({ message: "Third Installment Details Saved/Updated and FIR status updated successfully." });
+//           });
+//         })
+//         .catch((err) => {
+//           connection.rollback(() => {
+//             connection.release();
+//             res.status(500).json({ message: "Transaction failed", error: err });
+//           });
+//         });
+//     });
+//   });
+// };
+
+
 exports.saveThirdInstallmentDetails = (req, res) => {
   const { firId, victims, proceedings } = req.body;
 
@@ -1250,35 +1395,26 @@ exports.saveThirdInstallmentDetails = (req, res) => {
     return res.status(400).json({ message: "Missing required fields." });
   }
 
-  // Get a connection from the pool
   db.getConnection((err, connection) => {
-    if (err) {
-      return res.status(500).json({ message: 'Database connection error', error: err });
-    }
+    if (err) return res.status(500).json({ message: 'Database connection error', error: err });
 
-    // Begin transaction on the connection
     connection.beginTransaction((err) => {
       if (err) {
         connection.release();
         return res.status(500).json({ message: "Transaction error", error: err });
       }
 
-      // Handle Victims - Update if exists, else Insert
       const victimPromises = victims.map((victim) => {
         return new Promise((resolve, reject) => {
-          const checkQuery = `SELECT trial_stage_id FROM trial_stage_relief WHERE victim_id = ? AND fir_id = ?`;
+          const checkQuery = `SELECT id, trial_stage_id FROM trial_stage_relief WHERE victim_id = ? AND fir_id = ?`;
 
           connection.query(checkQuery, [victim.victimId, firId], (err, results) => {
             if (err) return reject(err);
 
             const trialStageId = results.length > 0 ? results[0].trial_stage_id : generateRandomId(10);
-            console.log('trialStageId', trialStageId);
-            console.log('checkQuery', checkQuery);
-            console.log('results', results);
-
             const query = results.length > 0
               ? `UPDATE trial_stage_relief 
-                 SET victim_id = ?, trial_id = ?, victim_name = ?, 
+                 SET trial_id = ?, victim_name = ?, 
                      trialStageReliefAct = ?, trialStageReliefGovernment = ?, trialStageReliefTotal = ?
                  WHERE trial_stage_id = ? AND fir_id = ?`
               : `INSERT INTO trial_stage_relief 
@@ -1288,24 +1424,23 @@ exports.saveThirdInstallmentDetails = (req, res) => {
 
             const values = results.length > 0
               ? [
-                  victim.victimId,
-                  victim.trialId,
-                  victim.victimName,
+                  victim.trialId || null,
+                  victim.victimName || null,
                   victim.thirdInstallmentReliefAct || 0,
                   victim.thirdInstallmentReliefGovernment || 0,
                   victim.thirdInstallmentReliefTotal || 0,
                   trialStageId,
-                  firId,
+                  firId
                 ]
               : [
                   trialStageId,
                   victim.victimId,
-                  victim.trialId,
+                  victim.trialId || null,
                   firId,
-                  victim.victimName,
+                  victim.victimName || null,
                   victim.thirdInstallmentReliefAct || 0,
                   victim.thirdInstallmentReliefGovernment || 0,
-                  victim.thirdInstallmentReliefTotal || 0,
+                  victim.thirdInstallmentReliefTotal || 0
                 ];
 
             connection.query(query, values, (err) => (err ? reject(err) : resolve()));
@@ -1313,57 +1448,52 @@ exports.saveThirdInstallmentDetails = (req, res) => {
         });
       });
 
-      // Handle Proceedings - Update if exists, else Insert
       const proceedingsPromise = new Promise((resolve, reject) => {
-        const checkQuery = `SELECT COUNT(*) as count FROM trial_proceedings WHERE fir_id = ? AND trial_id = ?`;
+        const checkQuery = `SELECT COUNT(*) as count FROM trial_proceedings WHERE fir_id = ?`;
 
-        connection.query(checkQuery, [firId, proceedings.trialId], (err, results) => {
+        connection.query(checkQuery, [firId], (err, results) => {
           if (err) return reject(err);
 
           const exists = results[0].count > 0;
-
           const query = exists
             ? `UPDATE trial_proceedings 
                SET file_number = ?, file_date = ?, upload_document = ?, 
                    pfms_portal_uploaded = ?, date_of_disbursement = ?
-               WHERE fir_id = ? AND trial_id = ?`
+               WHERE fir_id = ?`
             : `INSERT INTO trial_proceedings 
-               (trial_id, fir_id, file_number, file_date, upload_document, pfms_portal_uploaded, date_of_disbursement) 
+               ( fir_id, file_number, file_date, upload_document, pfms_portal_uploaded, date_of_disbursement) 
                VALUES (?, ?, ?, ?, ?, ?, ?)`;
 
           const values = exists
             ? [
-                proceedings.fileNumber,
-                proceedings.fileDate,
+                proceedings.fileNumber || null,
+                proceedings.fileDate || null,
                 proceedings.uploadDocument || null,
-                proceedings.pfmsPortalUploaded,
-                proceedings.dateOfDisbursement,
+                proceedings.pfmsPortalUploaded || null,
+                proceedings.dateOfDisbursement || null,
                 firId,
-                proceedings.trialId,
               ]
             : [
-                proceedings.trialId,
                 firId,
-                proceedings.fileNumber,
-                proceedings.fileDate,
+                proceedings.fileNumber || null,
+                proceedings.fileDate || null,
                 proceedings.uploadDocument || null,
-                proceedings.pfmsPortalUploaded,
-                proceedings.dateOfDisbursement,
+                proceedings.pfmsPortalUploaded || null,
+                proceedings.dateOfDisbursement || null
               ];
 
           connection.query(query, values, (err) => (err ? reject(err) : resolve()));
         });
       });
 
-      // Update FIR Status
       const updateFirStatus = new Promise((resolve, reject) => {
-        const query = `UPDATE fir_add SET relief_status = ? WHERE fir_id = ?`;
-        const values = [3, firId];
-
-        connection.query(query, values, (err) => (err ? reject(err) : resolve()));
+        connection.query(
+          `UPDATE fir_add SET relief_status = ? WHERE fir_id = ?`,
+          [3, firId],
+          (err) => (err ? reject(err) : resolve())
+        );
       });
 
-      // Execute all queries within the transaction
       Promise.all([...victimPromises, proceedingsPromise, updateFirStatus])
         .then(() => {
           connection.commit((err) => {
@@ -1386,6 +1516,7 @@ exports.saveThirdInstallmentDetails = (req, res) => {
     });
   });
 };
+
 
 
 exports.AllReliefDetails = async (req, res) => {

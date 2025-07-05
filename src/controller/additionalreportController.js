@@ -34,7 +34,7 @@ exports.getadditionalreportdetail = async (req, res) => {
         console.error("Database error:", err);
         return res
           .status(500)
-          .json({ message: "Failed to retrieve data", error: err });
+          .json({ message: "Failed to retrieve data" });
       }
       if (results.length === 0) {
         console.log("No records found");

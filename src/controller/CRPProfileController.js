@@ -63,7 +63,7 @@ const getAutoFill = async (req, res) => {
     return res.status(200).send({ status: true, data: response });
   } catch (e) {
     console.error(e);
-    return res.status(500).send({ status: false, error: `Internal server error: ${e.message}` });
+    return res.status(500).send({ status: false, error: `Internal server error` });
   }
 };
 

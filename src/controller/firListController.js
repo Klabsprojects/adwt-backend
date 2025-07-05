@@ -121,202 +121,327 @@ exports.getRevenue_district = (req, res) => {
 
 
 
+// exports.getFirListPaginated = (req, res) => {
+//   const page = parseInt(req.query.page) || 1;
+//   const pageSize = parseInt(req.query.pageSize) || 10;
+//   const offset = (page - 1) * pageSize;
+  
+//   // Build WHERE clause based on provided filters
+//   let whereClause = '';
+//   const params = [];
+  
+//   // Add filters to where clause
+//   if (req.query.search) {
+//     const searchValue = `%${req.query.search}%`;
+//     const searchValue2 = `${req.query.search}`;
+//     whereClause += ` WHERE (fir_add.fir_id LIKE ? OR CONCAT(fir_add.fir_number, '/', fir_add.fir_number_suffix) = ? OR fir_add.revenue_district LIKE ? OR fir_add.police_city LIKE ? OR fir_add.police_station LIKE ?)`;
+    
+//     params.push(searchValue, searchValue2, searchValue, searchValue, searchValue);
+//   }
+  
+//   if (req.query.district) {
+//     whereClause += whereClause ? ' AND ' : ' WHERE ';
+//     whereClause += 'fir_add.police_city = ?';
+//     params.push(req.query.district);
+//   }
+
+//   if (req.query.police_zone) {
+//     whereClause += whereClause ? ' AND ' : ' WHERE ';
+//     whereClause += 'fir_add.police_zone = ?';
+//     params.push(req.query.police_zone);
+//   }
+
+//   if (req.query.police_range) {
+//     whereClause += whereClause ? ' AND ' : ' WHERE ';
+//     whereClause += 'fir_add.police_range = ?';
+//     params.push(req.query.police_range);
+//   }
+
+//   if (req.query.revenue_district) {
+//     whereClause += whereClause ? ' AND ' : ' WHERE ';
+//     whereClause += 'fir_add.revenue_district = ?';
+//     params.push(req.query.revenue_district);
+//   }
+
+//   if (req.query.Offence_group) {
+//     whereClause += whereClause ? ' AND ' : ' WHERE ';
+//     whereClause += 'fir_add.Offence_group = ?';
+//     params.push(req.query.Offence_group);
+//   }
+
+//   if (req.query.complaintReceivedType) {
+//     whereClause += whereClause ? ' AND ' : ' WHERE ';
+//     whereClause += 'fir_add.complaintReceivedType = ?';
+//     params.push(req.query.complaintReceivedType);
+//   }
+  
+//   if (req.query.start_date) {
+//     whereClause += whereClause ? ' AND ' : ' WHERE ';
+//     whereClause += 'DATE(fir_add.date_of_registration) >= ?';
+//     params.push(req.query.start_date);
+//   }
+  
+//   if (req.query.end_date) {
+//     whereClause += whereClause ? ' AND ' : ' WHERE ';
+//     whereClause += 'DATE(fir_add.date_of_registration) <= ?';
+//     params.push(req.query.end_date);
+//   }
+
+//   if (req.query.UIPT) {
+//     whereClause += whereClause ? ' AND ' : ' WHERE ';
+//     if (req.query.UIPT == 'UI') {
+//       whereClause += 'fir_add.status <= 5';
+//     } else {
+//       whereClause += 'fir_add.status >= 6';
+//     }
+//   }
+
+//   if (req.query.status) {
+//     whereClause += whereClause ? ' AND ' : ' WHERE ';
+//     if (req.query.status == 0) {
+//       whereClause += 'fir_add.status >= 0 AND fir_add.status <= 5';
+//     } else {
+//       whereClause += 'fir_add.status = ?';
+//       params.push(req.query.status);
+//     }
+//   }
+
+//   if (req.query.year) {
+//     whereClause += whereClause ? ' AND ' : ' WHERE ';
+//     whereClause += 'DATE_FORMAT(fir_add.date_of_registration, "%Y") = ? ';
+//     params.push(req.query.year);
+//   }
+  
+//   // Add other filters as needed
+  
+//   // Count total records query
+//   const countQuery = `SELECT COUNT(*) as total FROM fir_add${whereClause}`;
+  
+//   db.query(countQuery, params, (err, countResults) => {
+//     if (err) {
+//       return res.status(500).json({ 
+//         message: 'Failed to count FIR records', 
+//         error: err 
+//       });
+//     }
+    
+//     const total = countResults[0].total;
+    
+//     // If no records found
+//     if (total === 0) {
+//       return res.status(200).json({
+//         data: [],
+//         total: 0,
+//         page: page,
+//         pageSize: pageSize,
+//         totalPages: 0
+//       });
+//     }
+    
+//     // Calculate total pages
+//     const totalPages = Math.ceil(total / pageSize);
+    
+//     // Ensure the page is within valid range
+//     const validPage = Math.min(Math.max(1, page), totalPages);
+//     const validOffset = (validPage - 1) * pageSize;
+    
+//     // Get paginated data query
+//     // const query = `
+//     // SELECT ROW_NUMBER() OVER () AS row_num, id, fir_id, DATE_FORMAT(date_of_registration, "%Y") as year , police_city, police_station, police_zone, police_range, revenue_district,  officer_name, complaintReceivedType, complaintRegisteredBy, complaintReceiverName, officer_designation, place_of_occurrence,  DATE_FORMAT(date_of_registration, '%d/%m/%Y') AS date_of_registration,  nature_of_judgement,  DATE_FORMAT(date_of_occurrence, '%d/%m/%Y') AS date_of_occurrence,  time_of_occurrence, DATE_FORMAT(date_of_occurrence_to, '%d/%m/%Y') AS date_of_occurrence_to, time_of_occurrence_to , time_of_registration, name_of_complainant, Offence_group,
+//     //               concat(fir_number,'/',fir_number_suffix) fir_number, 
+//     //               created_by, created_at, status, relief_status 
+//     //               FROM fir_add${whereClause} 
+//     //               ORDER BY created_at DESC 
+//     //               LIMIT ? OFFSET ?
+//     //               `;
+
+//           const query = `
+//                     SELECT ROW_NUMBER() OVER () AS row_num, 
+//                       fir_add.id, 
+//                       fir_add.fir_id, 
+//                       DATE_FORMAT(fir_add.date_of_registration, "%Y") as year, 
+//                       fir_add.police_city, 
+//                       fir_add.police_station, 
+//                       fir_add.police_zone, 
+//                       fir_add.police_range, 
+//                       fir_add.revenue_district,  
+//                       fir_add.officer_name, 
+//                       fir_add.complaintReceivedType, 
+//                       fir_add.complaintRegisteredBy, 
+//                       fir_add.complaintReceiverName, 
+//                       fir_add.officer_designation, 
+//                       fir_add.place_of_occurrence,  
+//                       DATE_FORMAT(fir_add.date_of_registration, '%d/%m/%Y') AS date_of_registration,  
+//                       fir_add.nature_of_judgement,  
+//                       DATE_FORMAT(fir_add.date_of_occurrence, '%d/%m/%Y') AS date_of_occurrence,  
+//                       fir_add.time_of_occurrence, 
+//                       DATE_FORMAT(fir_add.date_of_occurrence_to, '%d/%m/%Y') AS date_of_occurrence_to, 
+//                       fir_add.time_of_occurrence_to, 
+//                       fir_add.time_of_registration, 
+//                       fir_add.name_of_complainant, 
+//                       fir_add.Offence_group,
+//                       CONCAT(fir_add.fir_number,'/',fir_add.fir_number_suffix) fir_number, 
+//                       users.name AS created_by, 
+//                       fir_add.created_at, 
+//                       fir_add.status, 
+//                       fir_add.relief_status ,
+//                       fir_add.case_altered_status
+//                 FROM fir_add
+//                 LEFT JOIN users ON users.id = fir_add.created_by
+//                 ${whereClause} 
+//                 ORDER BY fir_add.created_at DESC 
+//                 LIMIT ? OFFSET ?
+//           `;
+    
+//     const queryParams = [...params, pageSize, validOffset];
+
+//     // console.log(query)
+//     // console.log(queryParams)
+    
+//     db.query(query, queryParams, (err, results) => {
+//       if (err) {
+//         return res.status(500).json({ 
+//           message: 'Failed to retrieve FIR list', 
+//           error: err 
+//         });
+//       }
+      
+//       // Return paginated data with metadata
+//       res.status(200).json({
+//         data: results,
+//         total: total,
+//         page: validPage,
+//         pageSize: pageSize,
+//         totalPages: totalPages
+//       });
+//     });
+//   });
+// };
+
+
+// enhanced version
 exports.getFirListPaginated = (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const pageSize = parseInt(req.query.pageSize) || 10;
   const offset = (page - 1) * pageSize;
-  
-  // Build WHERE clause based on provided filters
-  let whereClause = '';
+
+  const conditions = [];
   const params = [];
-  
-  // Add filters to where clause
-  if (req.query.search) {
-    const searchValue = `%${req.query.search}%`;
-    const searchValue2 = `${req.query.search}`;
-    whereClause += ` WHERE (fir_add.fir_id LIKE ? OR CONCAT(fir_add.fir_number, '/', fir_add.fir_number_suffix) = ? OR fir_add.revenue_district LIKE ? OR fir_add.police_city LIKE ? OR fir_add.police_station LIKE ?)`;
-    
-    params.push(searchValue, searchValue2, searchValue, searchValue, searchValue);
-  }
-  
-  if (req.query.district) {
-    whereClause += whereClause ? ' AND ' : ' WHERE ';
-    whereClause += 'fir_add.police_city = ?';
-    params.push(req.query.district);
+
+  const addCondition = (sql, value, wildcard = false) => {
+    conditions.push(sql);
+    params.push(wildcard ? `%${value}%` : value);
+  };
+
+  const { search, district, police_zone, police_range, revenue_district, Offence_group,
+          complaintReceivedType, start_date, end_date, UIPT, status, year, created_at, modified_at, CreatedATstartDate, CreatedATendDate, ModifiedATstartDate, ModifiedATDate } = req.query;
+
+  if (search) {
+    conditions.push(`(
+      fir_add.fir_id LIKE ? OR
+      CONCAT(fir_add.fir_number, '/', fir_add.fir_number_suffix) = ? OR
+      fir_add.revenue_district LIKE ? OR
+      fir_add.police_city LIKE ? OR
+      fir_add.police_station LIKE ?
+    )`);
+    params.push(`%${search}%`, search, `%${search}%`, `%${search}%`, `%${search}%`);
   }
 
-  if (req.query.police_zone) {
-    whereClause += whereClause ? ' AND ' : ' WHERE ';
-    whereClause += 'fir_add.police_zone = ?';
-    params.push(req.query.police_zone);
-  }
+  if (district) addCondition('fir_add.police_city = ?', district);
+  if (police_zone) addCondition('fir_add.police_zone = ?', police_zone);
+  if (police_range) addCondition('fir_add.police_range = ?', police_range);
+  if (revenue_district) addCondition('fir_add.revenue_district = ?', revenue_district);
+  if (Offence_group) addCondition('fir_add.Offence_group = ?', Offence_group);
+  if (complaintReceivedType) addCondition('fir_add.complaintReceivedType = ?', complaintReceivedType);
+  if (start_date) addCondition('DATE(fir_add.date_of_registration) >= ?', start_date);
+  if (end_date) addCondition('DATE(fir_add.date_of_registration) <= ?', end_date);
+  if (CreatedATstartDate) addCondition('DATE(fir_add.created_at) >= ?', CreatedATstartDate);
+  if (CreatedATendDate) addCondition('DATE(fir_add.created_at) <= ?', CreatedATendDate);
+  if (ModifiedATstartDate) addCondition('DATE(fir_add.updated_at) >= ?', ModifiedATstartDate);
+  if (ModifiedATDate) addCondition('DATE(fir_add.updated_at) <= ?', ModifiedATDate);
+  // if (created_at) addCondition('DATE_FORMAT(fa.created_at, "%Y-%m-%d") = ?', created_at);
+  // if (modified_at) addCondition('DATE_FORMAT(fa.updated_at, "%Y-%m-%d") = ?', modified_at);
 
-  if (req.query.police_range) {
-    whereClause += whereClause ? ' AND ' : ' WHERE ';
-    whereClause += 'fir_add.police_range = ?';
-    params.push(req.query.police_range);
-  }
-
-  if (req.query.revenue_district) {
-    whereClause += whereClause ? ' AND ' : ' WHERE ';
-    whereClause += 'fir_add.revenue_district = ?';
-    params.push(req.query.revenue_district);
-  }
-
-  if (req.query.Offence_group) {
-    whereClause += whereClause ? ' AND ' : ' WHERE ';
-    whereClause += 'fir_add.Offence_group = ?';
-    params.push(req.query.Offence_group);
-  }
-
-  if (req.query.complaintReceivedType) {
-    whereClause += whereClause ? ' AND ' : ' WHERE ';
-    whereClause += 'fir_add.complaintReceivedType = ?';
-    params.push(req.query.complaintReceivedType);
-  }
-  
-  if (req.query.start_date) {
-    whereClause += whereClause ? ' AND ' : ' WHERE ';
-    whereClause += 'DATE(fir_add.date_of_registration) >= ?';
-    params.push(req.query.start_date);
-  }
-  
-  if (req.query.end_date) {
-    whereClause += whereClause ? ' AND ' : ' WHERE ';
-    whereClause += 'DATE(fir_add.date_of_registration) <= ?';
-    params.push(req.query.end_date);
-  }
-
-  if (req.query.UIPT) {
-    whereClause += whereClause ? ' AND ' : ' WHERE ';
-    if (req.query.UIPT == 'UI') {
-      whereClause += 'fir_add.status <= 5';
+  if (UIPT) {
+    if (UIPT === 'UI') {
+      conditions.push('fir_add.status <= 5');
     } else {
-      whereClause += 'fir_add.status >= 6';
+      conditions.push('fir_add.status >= 6');
     }
   }
 
-  if (req.query.status) {
-    whereClause += whereClause ? ' AND ' : ' WHERE ';
-    if (req.query.status == 0) {
-      whereClause += 'fir_add.status >= 0 AND fir_add.status <= 5';
+  if (status !== undefined) {
+    if (parseInt(status) === 0) {
+      conditions.push('fir_add.status BETWEEN 0 AND 5');
     } else {
-      whereClause += 'fir_add.status = ?';
-      params.push(req.query.status);
+      addCondition('fir_add.status = ?', status);
     }
   }
 
-  if (req.query.year) {
-    whereClause += whereClause ? ' AND ' : ' WHERE ';
-    whereClause += 'DATE_FORMAT(fir_add.date_of_registration, "%Y") = ? ';
-    params.push(req.query.year);
-  }
-  
-  // Add other filters as needed
-  
-  // Count total records query
-  const countQuery = `SELECT COUNT(*) as total FROM fir_add${whereClause}`;
-  
+  if (year) addCondition('DATE_FORMAT(fir_add.date_of_registration, "%Y") = ?', year);
+
+  const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+
+  const countQuery = `SELECT COUNT(*) AS total FROM fir_add ${whereClause}`;
+
   db.query(countQuery, params, (err, countResults) => {
-    if (err) {
-      return res.status(500).json({ 
-        message: 'Failed to count FIR records', 
-        error: err 
-      });
-    }
-    
+    if (err) return res.status(500).json({ message: 'Count query failed', error: err });
+
     const total = countResults[0].total;
-    
-    // If no records found
     if (total === 0) {
-      return res.status(200).json({
-        data: [],
-        total: 0,
-        page: page,
-        pageSize: pageSize,
-        totalPages: 0
-      });
+      return res.status(200).json({ data: [], total: 0, page, pageSize, totalPages: 0 });
     }
-    
-    // Calculate total pages
+
     const totalPages = Math.ceil(total / pageSize);
-    
-    // Ensure the page is within valid range
     const validPage = Math.min(Math.max(1, page), totalPages);
     const validOffset = (validPage - 1) * pageSize;
-    
-    // Get paginated data query
-    // const query = `
-    // SELECT ROW_NUMBER() OVER () AS row_num, id, fir_id, DATE_FORMAT(date_of_registration, "%Y") as year , police_city, police_station, police_zone, police_range, revenue_district,  officer_name, complaintReceivedType, complaintRegisteredBy, complaintReceiverName, officer_designation, place_of_occurrence,  DATE_FORMAT(date_of_registration, '%d/%m/%Y') AS date_of_registration,  nature_of_judgement,  DATE_FORMAT(date_of_occurrence, '%d/%m/%Y') AS date_of_occurrence,  time_of_occurrence, DATE_FORMAT(date_of_occurrence_to, '%d/%m/%Y') AS date_of_occurrence_to, time_of_occurrence_to , time_of_registration, name_of_complainant, Offence_group,
-    //               concat(fir_number,'/',fir_number_suffix) fir_number, 
-    //               created_by, created_at, status, relief_status 
-    //               FROM fir_add${whereClause} 
-    //               ORDER BY created_at DESC 
-    //               LIMIT ? OFFSET ?
-    //               `;
 
-          const query = `
-                    SELECT ROW_NUMBER() OVER () AS row_num, 
-                      fir_add.id, 
-                      fir_add.fir_id, 
-                      DATE_FORMAT(fir_add.date_of_registration, "%Y") as year, 
-                      fir_add.police_city, 
-                      fir_add.police_station, 
-                      fir_add.police_zone, 
-                      fir_add.police_range, 
-                      fir_add.revenue_district,  
-                      fir_add.officer_name, 
-                      fir_add.complaintReceivedType, 
-                      fir_add.complaintRegisteredBy, 
-                      fir_add.complaintReceiverName, 
-                      fir_add.officer_designation, 
-                      fir_add.place_of_occurrence,  
-                      DATE_FORMAT(fir_add.date_of_registration, '%d/%m/%Y') AS date_of_registration,  
-                      fir_add.nature_of_judgement,  
-                      DATE_FORMAT(fir_add.date_of_occurrence, '%d/%m/%Y') AS date_of_occurrence,  
-                      fir_add.time_of_occurrence, 
-                      DATE_FORMAT(fir_add.date_of_occurrence_to, '%d/%m/%Y') AS date_of_occurrence_to, 
-                      fir_add.time_of_occurrence_to, 
-                      fir_add.time_of_registration, 
-                      fir_add.name_of_complainant, 
-                      fir_add.Offence_group,
-                      CONCAT(fir_add.fir_number,'/',fir_add.fir_number_suffix) fir_number, 
-                      users.name AS created_by, 
-                      fir_add.created_at, 
-                      fir_add.status, 
-                      fir_add.relief_status ,
-                      fir_add.case_altered_status
-                FROM fir_add
-                LEFT JOIN users ON users.id = fir_add.created_by
-                ${whereClause} 
-                ORDER BY fir_add.created_at DESC 
-                LIMIT ? OFFSET ?
-          `;
-    
-    const queryParams = [...params, pageSize, validOffset];
+    const query = `
+      SELECT 
+        ROW_NUMBER() OVER () AS row_num,
+        fir_add.id, fir_add.fir_id,
+        DATE_FORMAT(fir_add.date_of_registration, "%Y") AS year,
+        fir_add.police_city, fir_add.police_station,
+        fir_add.police_zone, fir_add.police_range,
+        fir_add.revenue_district, fir_add.officer_name,
+        fir_add.complaintReceivedType, fir_add.complaintRegisteredBy,
+        fir_add.complaintReceiverName, fir_add.officer_designation,
+        fir_add.place_of_occurrence,
+        DATE_FORMAT(fir_add.date_of_registration, '%d/%m/%Y') AS date_of_registration,
+        fir_add.nature_of_judgement,
+        DATE_FORMAT(fir_add.date_of_occurrence, '%d/%m/%Y') AS date_of_occurrence,
+        fir_add.time_of_occurrence,
+        DATE_FORMAT(fir_add.date_of_occurrence_to, '%d/%m/%Y') AS date_of_occurrence_to,
+        fir_add.time_of_occurrence_to, fir_add.time_of_registration,
+        fir_add.name_of_complainant, fir_add.Offence_group,
+        CONCAT(fir_add.fir_number,'/',fir_add.fir_number_suffix) AS fir_number,
+        users.name AS created_by,
+        DATE_FORMAT(fir_add.created_at, '%d/%m/%Y') AS created_at,
+        DATE_FORMAT(fir_add.updated_at, '%d/%m/%Y') AS modified_at,
+        fir_add.status,
+        fir_add.relief_status, fir_add.case_altered_status,
+        HascaseMF
+      FROM fir_add
+      LEFT JOIN users ON users.id = fir_add.created_by
+      ${whereClause}
+      ORDER BY fir_add.created_at DESC
+      LIMIT ? OFFSET ?
+    `;
 
-    // console.log(query)
-    // console.log(queryParams)
-    
-    db.query(query, queryParams, (err, results) => {
-      if (err) {
-        return res.status(500).json({ 
-          message: 'Failed to retrieve FIR list', 
-          error: err 
-        });
-      }
-      
-      // Return paginated data with metadata
+    db.query(query, [...params, pageSize, validOffset], (err, results) => {
+      if (err) return res.status(500).json({ message: 'Data query failed', error: err });
+
       res.status(200).json({
         data: results,
-        total: total,
+        total,
         page: validPage,
-        pageSize: pageSize,
-        totalPages: totalPages
+        pageSize,
+        totalPages
       });
     });
   });
 };
+
 
 
 // view
@@ -542,7 +667,7 @@ const hearingDetailsThree = await queryAsync(`SELECT * FROM hearing_details_thre
           return res.status(404).json({ message: 'No data found for the given FIR in query3' });
         }
 
-        console.log(query4,fir_id)
+        // console.log(query4,fir_id)
 
         db.query(query4, [fir_id], (err, results4) => {
           if (err) {

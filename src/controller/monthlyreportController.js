@@ -17,8 +17,11 @@ exports.getmonthlyreportdetail = async (req, res) => {
       v.caste,
       fa.police_zone,
       fa.revenue_district,
+      fa.is_case_altered,
+      fa.altered_date,
       us.name AS created_by, 
       DATE_FORMAT(fa.created_at, '%Y-%m-%d') AS created_at,
+      DATE_FORMAT(fa.updated_at, '%Y-%m-%d') AS modified_at,
       DATE_FORMAT(fa.date_of_registration, '%Y-%m-%d') AS date_of_registration,
       DATE_FORMAT(rr.report_month, '%Y-%m-%d') AS report_month,
 
