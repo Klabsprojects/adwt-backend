@@ -35,11 +35,11 @@ const mysql = require('mysql2');
 
 const db = mysql.createPool({
   host: 'localhost',
-  user: 'onlinetn_adw_usr',
-  password: 'KharW4UQuQhA',
+  user: 'root',
+  password: 'U*qJ$#A$T9',
   database: 'onlinetn_adw_database',
   waitForConnections: true,
-  connectionLimit: 10,
+  connectionLimit: 70,
   queueLimit: 0
 });
 

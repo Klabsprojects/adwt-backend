@@ -1,4 +1,3 @@
-const e = require('cors');
 const db = require('../db'); // Update with actual DB connection
 
 
@@ -15,17 +14,17 @@ function generateRandomId(length) {
 
 exports.getFIRAdditionalReliefList = (req, res) => {
   const query = `
-    SELECT
+    SELECT 
       f.fir_id,
       COUNT(v.relief_id) AS number_of_victims,
-      SUM(v.additional_relief IS NOT NULL) AS victims_with_relief
-    FROM
+      SUM(v.additional_relief IS NOT NULL) AS victims_with_relief 
+    FROM 
       fir_add f
-    LEFT JOIN
-      victim_relief v
-    ON
+    LEFT JOIN 
+      victim_relief v 
+    ON 
       f.fir_id = v.fir_id
-    GROUP BY
+    GROUP BY 
       f.fir_id;
   `;
 
@@ -40,15 +39,15 @@ exports.getFIRAdditionalReliefList = (req, res) => {
 
 // exports.getFIRAdditionalReliefListByVictim = (req, res) => {
 //   const query = `
-//     SELECT
+//     SELECT 
 //       f.fir_id,
 //       v.victim_id,
 //       v.victim_name
-//     FROM
+//     FROM 
 //       fir_add f
-//     LEFT JOIN
-//       victim_relief v
-//     ON
+//     LEFT JOIN 
+//       victim_relief v 
+//     ON 
 //       f.fir_id = v.fir_id
 //     WHERE SUM(v.additional_relief IS NOT NULL) > 0 GROUP BY f.fir_id
 //   `;
@@ -63,11 +62,11 @@ exports.getFIRAdditionalReliefList = (req, res) => {
 
 // exports.getFIRAdditionalReliefListByVictim = (req, res) => {
 //   const query = `
-//     SELECT
-//       f.fir_id,
+//     SELECT 
+//       f.fir_id, 
 //       CONCAT(f.fir_number,'/', f.fir_number_suffix) fir_number ,
-//       v.victim_id,
-//       v.victim_name
+//       v.victim_id, 
+//       v.victim_name 
 //     FROM fir_add f
 //     LEFT JOIN victim_relief v ON f.fir_id = v.fir_id
 //     LEFT JOIN victims vm ON vm.victim_id = v.victim_id
@@ -87,20 +86,20 @@ exports.getFIRAdditionalReliefList = (req, res) => {
 
 // exports.getFIRAdditionalReliefListByVictim = (req, res) => {
 
-
+  
 //   // Build WHERE clause based on provided filters
 //   let whereClause = '  WHERE JSON_LENGTH(v.additional_relief) > 0 and vm.delete_status = 0 ';
 //   const params = [];
-
+  
 //   // Add filters to where clause
 //   if (req.query.search) {
 //     const searchValue = `%${req.query.search}%`;
 //     const searchValue2 = `${req.query.search}`;
 //     whereClause += ` WHERE (f.fir_id LIKE ? OR CONCAT(f.fir_number, '/', f.fir_number_suffix) = ? OR f.revenue_district LIKE ? OR f.police_city LIKE ? OR f.police_station LIKE ?)`;
-
+    
 //     params.push(searchValue, searchValue2, searchValue, searchValue, searchValue);
 //   }
-
+  
 //   if (req.query.district) {
 //     whereClause += whereClause ? ' AND ' : ' WHERE ';
 //     whereClause += 'f.police_city = ?';
@@ -130,10 +129,10 @@ exports.getFIRAdditionalReliefList = (req, res) => {
 //   }
 
 //           const query = `
-//                 SELECT
-//                       f.fir_id,
+//                 SELECT 
+//                       f.fir_id, 
 //                       CONCAT(f.fir_number,'/', f.fir_number_suffix) fir_number ,
-//                       v.victim_id,
+//                       v.victim_id, 
 //                       v.victim_name ,
 //                       f.revenue_district,
 //                       f.police_station,
@@ -143,22 +142,22 @@ exports.getFIRAdditionalReliefList = (req, res) => {
 //                     LEFT JOIN victim_relief v ON f.fir_id = v.fir_id
 //                     LEFT JOIN victims vm ON vm.victim_id = v.victim_id
 //                    ${whereClause}
-//                     GROUP BY f.fir_id, v.victim_id, v.victim_name  ORDER BY v.created_at DESC
+//                     GROUP BY f.fir_id, v.victim_id, v.victim_name  ORDER BY v.created_at DESC 
 //           `;
-
+    
 //     const queryParams = [...params];
 
 //     console.log(query)
 //     console.log(queryParams)
-
+    
 //     db.query(query, queryParams, (err, results) => {
 //       if (err) {
-//         return res.status(500).json({
-//           message: 'Failed to retrieve FIR list',
-//           error: err
+//         return res.status(500).json({ 
+//           message: 'Failed to retrieve FIR list', 
+//           error: err 
 //         });
 //       }
-
+      
 //       // Return paginated data with metadata
 //       // res.status(200).json({
 //       //   data: results
@@ -170,18 +169,18 @@ exports.getFIRAdditionalReliefList = (req, res) => {
 
 exports.getFIRAdditionalReliefListByVictim = (req, res) => {
   // Build WHERE clause based on provided filters
-  let whereClause = ' AND JSON_LENGTH(v.additional_relief) > 0 AND vm.delete_status = 0';
+  let whereClause = 'WHERE JSON_LENGTH(v.additional_relief) > 0 AND vm.delete_status = 0';
   const params = [];
-
+  
   // Add filters to where clause
   if (req.query.search) {
     const searchValue = `%${req.query.search}%`;
     const searchValue2 = `${req.query.search}`;
     whereClause += ` AND (f.fir_id LIKE ? OR CONCAT(f.fir_number, '/', f.fir_number_suffix) = ? OR f.revenue_district LIKE ? OR f.police_city LIKE ? OR f.police_station LIKE ?)`;
-
+    
     params.push(searchValue, searchValue2, searchValue, searchValue, searchValue);
   }
-
+  
   if (req.query.district) {
     whereClause += ' AND f.police_city = ?';
     params.push(req.query.district);
@@ -198,359 +197,50 @@ exports.getFIRAdditionalReliefListByVictim = (req, res) => {
   }
 
   if (req.query.status) {
-    whereClause += ' AND f.status = ?';
+    whereClause += 'f.status = ?';
     params.push(req.query.status);
   }
-
+  
   if (req.query.start_date) {
-    whereClause += ' AND DATE(f.date_of_registration) >= ?';
+    whereClause += 'DATE(f.date_of_registration) <= ?';
     params.push(req.query.start_date);
   }
   if (req.query.end_date) {
-    whereClause += ' AND DATE(f.date_of_registration) <= ?';
+    whereClause += 'DATE(f.date_of_registration) <= ?';
     params.push(req.query.end_date);
   }
-  
-  // if(req.query.reliefStatus == "given"){
-  //   whereClause += ` AND ((a.section LIKE '%Employment%' AND ad.employment_status = 'Yes') 
-  //                    OR (a.section LIKE '%Pension%' AND ad.pension_status = 'Yes')
-  //                    OR (a.section LIKE '%House site Patta%' AND ad.house_site_patta_status = 'Yes')
-  //                    OR (a.section LIKE '%Education concession%' AND ad.education_concession_status = 'Yes')
-  //                    OR (a.section LIKE '%Provisions%' AND ad.provisions_status = 'Yes'))`;
-  // }
-  // else if(req.query.reliefStatus == "pending"){
-  //   whereClause += ` AND ((a.section LIKE '%Employment%' AND (ad.employment_status IS NULL OR ad.employment_status = 'No')) 
-  //                    OR (a.section LIKE '%Pension%' AND (ad.pension_status IS NULL OR ad.pension_status = 'No'))
-  //                    OR (a.section LIKE '%House site Patta%' AND (ad.house_site_patta_status IS NULL OR ad.house_site_patta_status = 'No'))
-  //                    OR (a.section LIKE '%Education concession%' AND (ad.education_concession_status IS NULL OR ad.education_concession_status = 'No'))
-  //                    OR (a.section LIKE '%Provisions%' AND (ad.provisions_status IS NULL OR ad.provisions_status = 'No')))`;
-  // }
-  // else if(req.query.reliefStatus == "notApplicable"){
-  //   whereClause += ` AND ((a.section LIKE '%Employment%' AND ad.employment_status = 'Not Applicable') 
-  //                    OR (a.section LIKE '%Pension%' AND ad.pension_status = 'Not Applicable')
-  //                    OR (a.section LIKE '%House site Patta%' AND ad.house_site_patta_status = 'Not Applicable')
-  //                    OR (a.section LIKE '%Education concession%' AND ad.education_concession_status = 'Not Applicable')
-  //                    OR (a.section LIKE '%Provisions%' AND ad.provisions_status = 'Not Applicable'))`;
-  // }
 
-  // let column = `COALESCE(
-  //   CASE 
-  //     WHEN a.section LIKE '%Employment%' 
-  //          AND ad.employment_status = 'Yes' 
-  //     THEN "Job Given"
-  //     WHEN a.section LIKE '%Employment%' 
-  //          AND ad.employment_status = 'Not Applicable' 
-  //     THEN "Job Not Applicable"
-  //     WHEN a.section LIKE '%Employment%' 
-  //          AND (ad.employment_status IS NULL OR ad.employment_status = 'No') 
-  //     THEN "Job Pending"
-  //   END
-  // ) AS EmpStatus,
-  // COALESCE(
-  //   CASE 
-  //     WHEN a.section LIKE '%Pension%' 
-  //          AND ad.pension_status = 'Yes' 
-  //     THEN "Pension Given"
-  //     WHEN a.section LIKE '%Pension%' 
-  //          AND ad.pension_status = 'Not Applicable' 
-  //     THEN "Pension Not Applicable"
-  //     WHEN a.section LIKE '%Pension%' 
-  //          AND (ad.pension_status IS NULL OR ad.pension_status = 'No') 
-  //     THEN "Pension Pending"
-  //   END
-  // ) AS PensionStatus,
-  // COALESCE(
-  //   CASE 
-  //     WHEN a.section LIKE '%House site Patta%' 
-  //          AND ad.house_site_patta_status = 'Yes' 
-  //     THEN "Patta Given"
-  //     WHEN a.section LIKE '%House site Patta%' 
-  //          AND ad.house_site_patta_status = 'Not Applicable' 
-  //     THEN "Patta Not Applicable"
-  //     WHEN a.section LIKE '%House site Patta%' 
-  //          AND (ad.house_site_patta_status IS NULL OR ad.house_site_patta_status = 'No') 
-  //     THEN "Patta Pending"
-  //   END
-  // ) AS PattaStatus,
-  // COALESCE(
-  //   CASE 
-  //     WHEN a.section LIKE '%Education concession%' 
-  //          AND ad.education_concession_status = 'Yes' 
-  //     THEN "Education Given"
-  //     WHEN a.section LIKE '%Education concession%' 
-  //          AND ad.education_concession_status = 'Not Applicable' 
-  //     THEN "Education Not Applicable"
-  //     WHEN a.section LIKE '%Education concession%' 
-  //          AND (ad.education_concession_status IS NULL OR ad.education_concession_status = 'No') 
-  //     THEN "Education Pending"
-  //   END
-  // ) AS EducationStatus,
-  // COALESCE(
-  //   CASE 
-  //     WHEN a.section LIKE '%Provisions%' 
-  //          AND ad.provisions_status = 'Yes' 
-  //     THEN "Provisions Given"
-  //     WHEN a.section LIKE '%Provisions%' 
-  //          AND ad.provisions_status = 'Not Applicable' 
-  //     THEN "Provisions Not Applicable"
-  //     WHEN a.section LIKE '%Provisions%' 
-  //          AND (ad.provisions_status IS NULL OR ad.provisions_status = 'No') 
-  //     THEN "Provisions Pending"
-  //   END
-  // ) AS ProvisionStatus`;
-  // if(req.query.additionalReliefType){
-  //   if(req.query.additionalReliefType == "employment"){
-  //     column = `COALESCE(
-  //       CASE 
-  //         WHEN a.section LIKE '%Employment%' 
-  //              AND ad.employment_status = 'Yes' 
-  //         THEN "Job Given"
-  //         WHEN a.section LIKE '%Employment%' 
-  //              AND ad.employment_status = 'Not Applicable' 
-  //         THEN "Job Not Applicable"
-  //         WHEN a.section LIKE '%Employment%' 
-  //              AND (ad.employment_status IS NULL OR ad.employment_status = 'No') 
-  //         THEN "Job Pending"
-  //       END
-  //     ) AS EmpStatus`;
-  //     if(req.query.reliefStatus == "given"){
-  //       whereClause += ` AND (a.section LIKE '%Employment%' AND ad.employment_status = 'Yes')`;
-  //     }
-  //     else if(req.query.reliefStatus == "pending"){
-  //       whereClause += ` AND (a.section LIKE '%Employment%' AND (ad.employment_status IS NULL OR ad.employment_status = 'No'))`;
-  //     }
-  //     else if(req.query.reliefStatus == "notApplicable"){
-  //       whereClause += ` AND (a.section LIKE '%Employment%' AND ad.employment_status = 'Not Applicable')`;
-  //     }
-  //   }
-  //   else if(req.query.additionalReliefType == "pension"){
-  //     column = `COALESCE(
-  //       CASE 
-  //         WHEN a.section LIKE '%Pension%' 
-  //              AND ad.pension_status = 'Yes' 
-  //         THEN "Pension Given"
-  //         WHEN a.section LIKE '%Pension%' 
-  //              AND ad.pension_status = 'Not Applicable' 
-  //         THEN "Pension Not Applicable"
-  //         WHEN a.section LIKE '%Pension%' 
-  //              AND (ad.pension_status IS NULL OR ad.pension_status = 'No') 
-  //         THEN "Pension Pending"
-  //       END
-  //     ) AS PensionStatus`;
-  //     if(req.query.reliefStatus == "given"){
-  //       whereClause += ` AND a.section LIKE '%Pension%' AND ad.pension_status = 'Yes'`;
-  //     }
-  //     else if(req.query.reliefStatus == "pending"){
-  //       whereClause += ` AND (a.section LIKE '%Pension%' AND (ad.pension_status IS NULL OR ad.pension_status = 'No'))`;
-  //     }
-  //     else if(req.query.reliefStatus == "notApplicable"){
-  //       whereClause += ` AND (a.section LIKE '%Pension%' AND ad.pension_status = 'Not Applicable')`;
-  //     }
-  //   }
-  //   else if(req.query.additionalReliefType == "education"){
-  //     column = `COALESCE(
-  //       CASE 
-  //         WHEN a.section LIKE '%Education concession%' 
-  //              AND ad.education_concession_status = 'Yes' 
-  //         THEN "Education Given"
-  //         WHEN a.section LIKE '%Education concession%' 
-  //              AND ad.education_concession_status = 'Not Applicable' 
-  //         THEN "Education Not Applicable"
-  //         WHEN a.section LIKE '%Education concession%' 
-  //              AND (ad.education_concession_status IS NULL OR ad.education_concession_status = 'No') 
-  //         THEN "Education Pending"
-  //       END
-  //     ) AS EducationStatus`;
-  //     if(req.query.reliefStatus == "given"){
-  //       whereClause += ` AND a.section LIKE '%Education concession%' AND ad.education_concession_status = 'Yes'`;
-  //     }
-  //     else if(req.query.reliefStatus == "pending"){
-  //       whereClause += ` AND (a.section LIKE '%Education concession%' AND (ad.education_concession_status IS NULL OR ad.education_concession_status = 'No'))`;
-  //     }
-  //     else if(req.query.reliefStatus == "notApplicable"){
-  //       whereClause += ` AND (a.section LIKE '%Education concession%' AND ad.education_concession_status = 'Not Applicable')`;
-  //     }
-  //   }
-  //   else if(req.query.additionalReliefType == "provision"){
-  //     column = `COALESCE(
-  //       CASE 
-  //         WHEN a.section LIKE '%Provisions%' 
-  //              AND ad.provisions_status = 'Yes' 
-  //         THEN "Provisions Given"
-  //         WHEN a.section LIKE '%Provisions%' 
-  //              AND ad.provisions_status = 'Not Applicable' 
-  //         THEN "Provisions Not Applicable"
-  //         WHEN a.section LIKE '%Provisions%' 
-  //              AND (ad.provisions_status IS NULL OR ad.provisions_status = 'No') 
-  //         THEN "Provisions Pending"
-  //       END
-  //     ) AS ProvisionStatus`;
-  //     if(req.query.reliefStatus == "given"){
-  //       whereClause += ` AND a.section LIKE '%Provisions%' AND ad.provisions_status = 'Yes'`;
-  //     }
-  //     else if(req.query.reliefStatus == "pending"){
-  //       whereClause += ` AND (a.section LIKE '%Provisions%' AND (ad.provisions_status IS NULL OR ad.provisions_status = 'No'))`;
-  //     }
-  //     else if(req.query.reliefStatus == "notApplicable"){
-  //       whereClause += ` AND (a.section LIKE '%Provisions%' AND ad.provisions_status = 'Not Applicable')`;
-  //     }
-  //   }
-  //   else if(req.query.additionalReliefType == "patta"){
-  //     column = `COALESCE(
-  //       CASE 
-  //         WHEN a.section LIKE '%House site Patta%' 
-  //              AND ad.house_site_patta_status = 'Yes' 
-  //         THEN "Patta Given"
-  //         WHEN a.section LIKE '%House site Patta%' 
-  //              AND ad.house_site_patta_status = 'Not Applicable' 
-  //         THEN "Patta Not Applicable"
-  //         WHEN a.section LIKE '%House site Patta%' 
-  //              AND (ad.house_site_patta_status IS NULL OR ad.house_site_patta_status = 'No') 
-  //         THEN "Patta Pending"
-  //       END
-  //     ) AS PattaStatus`;
-  //     if(req.query.reliefStatus == "given"){
-  //       whereClause += ` AND a.section LIKE '%House site Patta%' AND ad.house_site_patta_status = 'Yes'`;
-  //     }
-  //     else if(req.query.reliefStatus == "pending"){
-  //       whereClause += ` AND (a.section LIKE '%House site Patta%' AND (ad.house_site_patta_status IS NULL OR ad.house_site_patta_status = 'No'))`;
-  //     }
-  //     else if(req.query.reliefStatus == "notApplicable"){
-  //       whereClause += ` AND (a.section LIKE '%House site Patta%' AND ad.house_site_patta_status = 'Not Applicable')`;
-  //     }
-  //   }
-  // }
-  
-  // Relief type mapping
-const reliefMap = {
-  employment: {
-    alias: "EmpStatus",
-    label: "Job",
-    column: `CASE 
-               WHEN a.section LIKE '%Employment%' AND ad.employment_status = 'Yes' THEN 'Job Given'
-               WHEN a.section LIKE '%Employment%' AND ad.employment_status = 'Not Applicable' THEN 'Job Not Applicable'
-               WHEN a.section LIKE '%Employment%' AND (ad.employment_status IS NULL OR ad.employment_status = 'No') THEN 'Job Pending'
-             END`,
-    where: {
-      given: `a.section LIKE '%Employment%' AND ad.employment_status = 'Yes'`,
-      pending: `a.section LIKE '%Employment%' AND (ad.employment_status IS NULL OR ad.employment_status = 'No')`,
-      notApplicable: `a.section LIKE '%Employment%' AND ad.employment_status = 'Not Applicable'`
-    }
-  },
-  pension: {
-    alias: "PensionStatus",
-    label: "Pension",
-    column: `CASE 
-               WHEN a.section LIKE '%Pension%' AND ad.pension_status = 'Yes' THEN 'Pension Given'
-               WHEN a.section LIKE '%Pension%' AND ad.pension_status = 'Not Applicable' THEN 'Pension Not Applicable'
-               WHEN a.section LIKE '%Pension%' AND (ad.pension_status IS NULL OR ad.pension_status = 'No') THEN 'Pension Pending'
-             END`,
-    where: {
-      given: `a.section LIKE '%Pension%' AND ad.pension_status = 'Yes'`,
-      pending: `a.section LIKE '%Pension%' AND (ad.pension_status IS NULL OR ad.pension_status = 'No')`,
-      notApplicable: `a.section LIKE '%Pension%' AND ad.pension_status = 'Not Applicable'`
-    }
-  },
-  education: {
-    alias: "EducationStatus",
-    label: "Education",
-    column: `CASE 
-               WHEN a.section LIKE '%Education concession%' AND ad.education_concession_status = 'Yes' THEN 'Education Given'
-               WHEN a.section LIKE '%Education concession%' AND ad.education_concession_status = 'Not Applicable' THEN 'Education Not Applicable'
-               WHEN a.section LIKE '%Education concession%' AND (ad.education_concession_status IS NULL OR ad.education_concession_status = 'No') THEN 'Education Pending'
-             END`,
-    where: {
-      given: `a.section LIKE '%Education concession%' AND ad.education_concession_status = 'Yes'`,
-      pending: `a.section LIKE '%Education concession%' AND (ad.education_concession_status IS NULL OR ad.education_concession_status = 'No')`,
-      notApplicable: `a.section LIKE '%Education concession%' AND ad.education_concession_status = 'Not Applicable'`
-    }
-  },
-  provision: {
-    alias: "ProvisionStatus",
-    label: "Provisions",
-    column: `CASE 
-               WHEN a.section LIKE '%Provisions%' AND ad.provisions_status = 'Yes' THEN 'Provisions Given'
-               WHEN a.section LIKE '%Provisions%' AND ad.provisions_status = 'Not Applicable' THEN 'Provisions Not Applicable'
-               WHEN a.section LIKE '%Provisions%' AND (ad.provisions_status IS NULL OR ad.provisions_status = 'No') THEN 'Provisions Pending'
-             END`,
-    where: {
-      given: `a.section LIKE '%Provisions%' AND ad.provisions_status = 'Yes'`,
-      pending: `a.section LIKE '%Provisions%' AND (ad.provisions_status IS NULL OR ad.provisions_status = 'No')`,
-      notApplicable: `a.section LIKE '%Provisions%' AND ad.provisions_status = 'Not Applicable'`
-    }
-  },
-  patta: {
-    alias: "PattaStatus",
-    label: "Patta",
-    column: `CASE 
-               WHEN a.section LIKE '%House site Patta%' AND ad.house_site_patta_status = 'Yes' THEN 'Patta Given'
-               WHEN a.section LIKE '%House site Patta%' AND ad.house_site_patta_status = 'Not Applicable' THEN 'Patta Not Applicable'
-               WHEN a.section LIKE '%House site Patta%' AND (ad.house_site_patta_status IS NULL OR ad.house_site_patta_status = 'No') THEN 'Patta Pending'
-             END`,
-    where: {
-      given: `a.section LIKE '%House site Patta%' AND ad.house_site_patta_status = 'Yes'`,
-      pending: `a.section LIKE '%House site Patta%' AND (ad.house_site_patta_status IS NULL OR ad.house_site_patta_status = 'No')`,
-      notApplicable: `a.section LIKE '%House site Patta%' AND ad.house_site_patta_status = 'Not Applicable'`
-    }
-  }
-};
-
-let column = "";
-
-// Handle specific relief type
-if (req.query.additionalReliefType && reliefMap[req.query.additionalReliefType]) {
-  const relief = reliefMap[req.query.additionalReliefType];
-  column = `${relief.column} AS ${relief.alias}`;
-
-  if (req.query.reliefStatus && relief.where[req.query.reliefStatus]) {
-    whereClause += ` AND ${relief.where[req.query.reliefStatus]}`;
-  }
-} else {
-  // Default: all relief types
-  column = Object.values(reliefMap)
-    .map(r => `${r.column} AS ${r.alias}`)
-    .join(",\n  ");
-
-  if (req.query.reliefStatus) {
-    const allWhere = Object.values(reliefMap)
-      .map(r => r.where[req.query.reliefStatus])
-      .join(" OR ");
-    whereClause += ` AND (${allWhere})`;
-  }
-}
   const query = `
-    SELECT
-      f.fir_id,
+    SELECT 
+      f.fir_id, 
       CONCAT(f.fir_number,'/', f.fir_number_suffix) AS fir_number,
-      v.victim_id,
+      v.victim_id, 
       v.victim_name,
       f.revenue_district,
       f.police_station,
       f.police_city,
-      f.status,
-      DATE(f.date_of_registration) AS date_of_registration,
-      ${column}
+      f.status
     FROM fir_add f
-    LEFT JOIN victim_relief v ON v.fir_id = f.fir_id
-    LEFT JOIN additional_relief a ON a.fir_id = f.fir_id
-    LEFT JOIN victims vm ON vm.victim_id = a.victim_id
-    LEFT JOIN additional_relief_details ad ON a.id = ad.additional_relief_id
-    WHERE COALESCE(f.fir_id, vm.fir_id) IS NOT NULL
-    AND TRIM(vm.victim_name) <> '' ${whereClause}
-    GROUP BY f.fir_id, v.victim_id, v.victim_name
-    ORDER BY v.created_at DESC
+    LEFT JOIN victim_relief v ON f.fir_id = v.fir_id
+    LEFT JOIN victims vm ON vm.victim_id = v.victim_id
+    ${whereClause}
+    GROUP BY f.fir_id, v.victim_id, v.victim_name  
+    ORDER BY v.created_at DESC 
   `;
 
   const queryParams = [...params];
 
+  // console.log(query);
+  // console.log(queryParams);
+  
   db.query(query, queryParams, (err, results) => {
     if (err) {
       console.error('Database query error:', err);
-      return res.status(500).json({
+      return res.status(500).json({ 
         message: 'Failed to retrieve FIR list' // Don't expose full error object in production
       });
     }
-
+    
     res.status(200).json(results);
   });
 };
@@ -577,7 +267,7 @@ exports.getVictimDetailsByFirId = (req, res) => {
 
   const query = `
   SELECT * FROM victim_relief WHERE fir_id = ? and victim_id = ?;
-`;
+`;  
 
   db.query(query, [fir_id,victim_id], (error, results) => {
     if (error) {
@@ -632,10 +322,10 @@ exports.getAdditionalReliefByFirId = (req, res) => {
 //     const query = `
 //       INSERT INTO additional_relief (
 //         fir_id, victim_id, victim_name, section, relief_id
-//       )
+//       ) 
 //       VALUES (?, ?, ?, ?, ?)
 //     `;
-
+    
 //     const victimNamevalue = formData.victimName[i] || '';
 //     const victimidvalue = formData.victimId[i] || '';
 //     const sectionValue = formData.sectionValue[i] || '';
@@ -824,7 +514,7 @@ exports.saveAdditionalRelief = (req, res) => {
 
   for (let i = 0; i < numberOfRecords; i++) {
     const checkQuery = `
-      SELECT id FROM additional_relief
+      SELECT id FROM additional_relief 
       WHERE fir_id = ? AND victim_id = ?
     `;
 
@@ -842,7 +532,7 @@ exports.saveAdditionalRelief = (req, res) => {
       // If record exists, update it
       if (checkResult.length > 0) {
         const updateQuery = `
-          UPDATE additional_relief
+          UPDATE additional_relief 
           SET victim_name = ?,
               section = ?,
               relief_id = ?
@@ -881,7 +571,7 @@ exports.saveAdditionalRelief = (req, res) => {
         const insertQuery = `
           INSERT INTO additional_relief (
             fir_id, victim_id, victim_name, section, relief_id
-          )
+          ) 
           VALUES (?, ?, ?, ?, ?)
         `;
 
@@ -920,7 +610,7 @@ exports.saveAdditionalRelief = (req, res) => {
 // function handleDetailsTable(additionalReliefId, formData, index, callback) {
 //   // First check if details record exists
 //   const checkQuery = `
-//     SELECT id FROM additional_relief_details
+//     SELECT id FROM additional_relief_details 
 //     WHERE additional_relief_id = ?
 //   `;
 
@@ -986,7 +676,7 @@ exports.saveAdditionalRelief = (req, res) => {
 //     if (checkResult.length > 0) {
 //       // Update existing details record
 //       const updateQuery = `
-//         UPDATE additional_relief_details
+//         UPDATE additional_relief_details 
 //         SET pension_status = ?,
 //             not_applicable_reason = ?,
 //             other_reason = ?,
@@ -1039,7 +729,7 @@ exports.saveAdditionalRelief = (req, res) => {
 //             burnt_house_document_upload = ?
 //         WHERE additional_relief_id = ?
 //       `;
-
+      
 //       // Add the additional_relief_id to the end for WHERE clause
 //       const updateValues = [...values, additionalReliefId];
 //       db.execute(updateQuery, updateValues, callback);
@@ -1101,7 +791,7 @@ exports.saveAdditionalRelief = (req, res) => {
 //         )
 //         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
 //       `;
-
+      
 //       db.execute(insertQuery, values, callback);
 //     }
 //   });
@@ -1111,7 +801,7 @@ exports.saveAdditionalRelief = (req, res) => {
 function handleDetailsTable(additionalReliefId, formData, index, res, callback) {
   // First check if details record exists
   const checkQuery = `
-    SELECT id FROM additional_relief_details
+    SELECT id FROM additional_relief_details 
     WHERE additional_relief_id = ?
   `;
 
@@ -1133,6 +823,9 @@ function handleDetailsTable(additionalReliefId, formData, index, res, callback) 
       formData.proceedingsDate || null,
       formData.uploadProceedings || null,
       formData.employmentStatus || null,
+      formData.employmentProceedingsFileNumber || null,
+      formData.employmentProceedingsDate || null,
+      formData.employmentProceedingsDocument || null,
       formData.notApplicableEmploymentReason || null,
       formData.employmentOtherReason || null,
       formData.relationshipToVictim || null,
@@ -1149,6 +842,9 @@ function handleDetailsTable(additionalReliefId, formData, index, res, callback) 
       formData.houseSitePattaOtherReason || null,
       formData.houseSitePattaRelationship || null,
       formData.houseSitePattaAddress || null,
+      formData.houseSitePattaProceedingsFileNumber || null,
+      formData.houseSitePattaProceedingsDate || null,
+      formData.houseSitePattaProceedingsDocument || null,
       formData.talukName || null,
       formData.districtName || null,
       formData.pinCode || null,
@@ -1156,6 +852,7 @@ function handleDetailsTable(additionalReliefId, formData, index, res, callback) 
       formData.educationConcessionStatus || null,
       formData.educationConcessionReason || null,
       formData.educationOtherReason || null,
+      formData.educationConcessionDocument || null,
       formData.numberOfChildren || null,
       formData.children || null,
       formData.provisionsGivenStatus || null,
@@ -1171,20 +868,13 @@ function handleDetailsTable(additionalReliefId, formData, index, res, callback) 
       formData.compensationestimatedAmount || null,
       formData.proceedingsFileNumber || null,
       formData.compensationdateOfProceedings || null,
-      formData.compensationuploadProceedings || null,
-      formData.employmentProceedingsFileNumber || null,
-      formData.employmentProceedingsDate || null,
-      formData.employmentProceedingsDocument || null,
-      formData.houseSitePattaProceedingsFileNumber || null,
-      formData.houseSitePattaProceedingsDate || null,
-      formData.houseSitePattaProceedingsDocument || null,
-      formData.educationConcessionDocument || null
+      formData.compensationuploadProceedings || null
     ];
 
     if (checkResult.length > 0) {
       // Update existing details record
       let updateQuery = `
-        UPDATE additional_relief_details
+        UPDATE additional_relief_details 
         SET pension_status = ${values[1] !== null ? `'${values[1]}'` : 'NULL'},
             not_applicable_reason = ${values[2] !== null ? `'${values[2]}'` : 'NULL'},
             other_reason = ${values[3] !== null ? `'${values[3]}'` : 'NULL'},
@@ -1331,3 +1021,4 @@ function handleDetailsTable(additionalReliefId, formData, index, res, callback) 
     }
   });
 }
+

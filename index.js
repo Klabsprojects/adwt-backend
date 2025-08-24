@@ -12,22 +12,22 @@ var morgan = require('morgan');
 const db = require('./src/db');
 const session = require('express-session');
 const app = express();
-const JWT_SECRET='0c60f8a33b9ccb3b8a0a8a5f9b4e34c1e2dd536f2174c9a9d12e34529c313e82053b1fe7'
+const JWT_SECRET = '0c60f8a33b9ccb3b8a0a8a5f9b4e34c1e2dd536f2174c9a9d12e34529c313e82053b1fe7'
 // Middleware
 app.use(express.json());
 app.use(bodyParser.json());
 
 
 // Enhanced HTTP Method Security Middleware
-const allowedMethods = ['GET', 'POST', 'PUT', 'DELETE','OPTIONS'];
+const allowedMethods = ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'];
 
 app.use((req, res, next) => {
   // Check if the method is allowed
   if (!allowedMethods.includes(req.method)) {
     res.set('Allow', allowedMethods.join(', '));
-    return res.status(405).json({ 
+    return res.status(405).json({
       message: `Method ${req.method} not allowed`,
-      allowedMethods: allowedMethods 
+      allowedMethods: allowedMethods
     });
   }
   next();
@@ -38,7 +38,7 @@ app.use((req, res, next) => {
     // Only allow OPTIONS for CORS preflight requests
     const origin = req.headers.origin;
     const accessControlRequestMethod = req.headers['access-control-request-method'];
-    
+
     // If it's not a proper CORS preflight request, block it
     if (!origin || !accessControlRequestMethod) {
       return res.status(405).json({ message: 'OPTIONS method not allowed for non-CORS requests' });
@@ -90,12 +90,6 @@ app.use((req, res, next) => {
 const whitelist = [
   "http://localhost:4200",
   "http://localhost:3000",
-  "http://a4f506a.online-server.cloud",
-  "http://127.0.0.1:8000",
-  "https://inspection1.proz.in",
-  "https://shg.mathikalam.org",
-  "https://mathikalam.org",
-  "http://104.254.244.178",
   "https://adwatrocity.onlinetn.com"
 ];
 
@@ -111,7 +105,7 @@ const corsOptions = {
   },
   methods: allowedMethods,
   maxAge: 600
-  
+
 };
 app.use(cors(corsOptions));
 
@@ -150,12 +144,12 @@ function JWTauthorization(req, res, next) {
   });
 }
 
-app.use("/auth/login",authController.login);
+app.use("/auth/login", authController.login);
 app.post('/auth/send-otp', authController.sendOtp);
 app.post('/auth/verify-otp', authController.verifyOtp);
 app.post('/auth/reset-password', authController.resetPassword);
 // Use routes
-app.use("/",JWTauthorization, routes);
+app.use("/", JWTauthorization, routes);
 
 
 
@@ -165,7 +159,7 @@ app.get("/", (req, res) => {
 
 // Centralized error handler - must be last
 app.use((err, req, res, next) => {
-  console.error("Caught error:", err.stack || err.message);
+  console.error("Caught error:", err);
 
   // CORS error
   if (err.message === 'CORS_ORIGIN_NOT_ALLOWED') {

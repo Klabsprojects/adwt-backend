@@ -1219,55 +1219,57 @@ exports.updateStepFive = (req, res) => {
 
       await connection.query('UPDATE fir_add SET HascaseMF = ? WHERE fir_id = ?', [HascaseMF, firId]);
 
-      for (const victim of victimsRelief) {
-        if (!victim.victimId) continue;
+      // if HascaseMF is false insert victim details
+      if(!HascaseMF){
+        for (const victim of victimsRelief) {
+          if (!victim.victimId) continue;
 
-        const [existingData] = await connection.query('SELECT id FROM victim_relief WHERE victim_id = ?', [victim.victimId]);
+          const [existingData] = await connection.query('SELECT id FROM victim_relief WHERE victim_id = ?', [victim.victimId]);
 
-        const fields = [
-          victim.victimName,
-          victim.communityCertificate,
-          victim.reliefAmountScst ? parseInt(victim.reliefAmountScst) : null,
-          victim.reliefAmountExGratia ? parseInt(victim.reliefAmountExGratia) : null,
-          victim.reliefAmountFirstStage ? parseInt(victim.reliefAmountFirstStage) : null,
-          victim.additionalRelief ? JSON.stringify(victim.additionalRelief) : null
-        ];
+          const fields = [
+            victim.victimName,
+            victim.communityCertificate,
+            victim.reliefAmountScst ? parseInt(victim.reliefAmountScst) : null,
+            victim.reliefAmountExGratia ? parseInt(victim.reliefAmountExGratia) : null,
+            victim.reliefAmountFirstStage ? parseInt(victim.reliefAmountFirstStage) : null,
+            victim.additionalRelief ? JSON.stringify(victim.additionalRelief) : null
+          ];
 
-        if (existingData.length === 0) {
+          if (existingData.length === 0) {
+            await connection.query(
+              `INSERT INTO victim_relief (victim_id, fir_id, relief_id, victim_name, community_certificate, relief_amount_scst, relief_amount_exgratia, relief_amount_first_stage, additional_relief)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              [victim.victimId, firId, reliefId, ...fields]
+            );
+          } else {
+            await connection.query(
+              `UPDATE victim_relief SET victim_name = ?, community_certificate = ?, relief_amount_scst = ?, relief_amount_exgratia = ?, relief_amount_first_stage = ?, additional_relief = ? WHERE id = ?`,
+              [...fields, existingData[0].id]
+            );
+          }
+        }
+
+        const [existingProceedings] = await connection.query('SELECT proceedings_id FROM proceedings_victim_relief WHERE fir_id = ?', [firId]);
+        if (existingProceedings.length > 0) {
           await connection.query(
-            `INSERT INTO victim_relief (victim_id, fir_id, relief_id, victim_name, community_certificate, relief_amount_scst, relief_amount_exgratia, relief_amount_first_stage, additional_relief)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [victim.victimId, firId, reliefId, ...fields]
+            `UPDATE proceedings_victim_relief SET total_compensation = ?, proceedings_file_no = ?, proceedings_date = ?, proceedings_file = ? WHERE fir_id = ?`,
+            [totalCompensation, proceedingsFileNo, proceedingsDate, proceedingsFile, firId]
           );
         } else {
+          const proceedingsId = generateRandomId(6);
           await connection.query(
-            `UPDATE victim_relief SET victim_name = ?, community_certificate = ?, relief_amount_scst = ?, relief_amount_exgratia = ?, relief_amount_first_stage = ?, additional_relief = ? WHERE id = ?`,
-            [...fields, existingData[0].id]
+            `INSERT INTO proceedings_victim_relief (fir_id, proceedings_id, total_compensation, proceedings_file_no, proceedings_date, proceedings_file) 
+            VALUES (?, ?, ?, ?, ?, ?)`,
+            [firId, proceedingsId, totalCompensation, proceedingsFileNo, proceedingsDate, proceedingsFile]
           );
         }
-      }
 
-      const [existingProceedings] = await connection.query('SELECT proceedings_id FROM proceedings_victim_relief WHERE fir_id = ?', [firId]);
-      if (existingProceedings.length > 0) {
-        await connection.query(
-          `UPDATE proceedings_victim_relief SET total_compensation = ?, proceedings_file_no = ?, proceedings_date = ?, proceedings_file = ? WHERE fir_id = ?`,
-          [totalCompensation, proceedingsFileNo, proceedingsDate, proceedingsFile, firId]
-        );
-      } else {
-        const proceedingsId = generateRandomId(6);
-        await connection.query(
-          `INSERT INTO proceedings_victim_relief (fir_id, proceedings_id, total_compensation, proceedings_file_no, proceedings_date, proceedings_file) 
-           VALUES (?, ?, ?, ?, ?, ?)`,
-          [firId, proceedingsId, totalCompensation, proceedingsFileNo, proceedingsDate, proceedingsFile]
-        );
+        await connection.query('DELETE FROM attachment_relief WHERE fir_id = ?', [firId]);
+        if (attachments.length > 0) {
+          const attachmentInsert = attachments.map(file => [firId, file]);
+          await connection.query('INSERT INTO attachment_relief (fir_id, file_path) VALUES ?', [attachmentInsert]);
+        }
       }
-
-      await connection.query('DELETE FROM attachment_relief WHERE fir_id = ?', [firId]);
-      if (attachments.length > 0) {
-        const attachmentInsert = attachments.map(file => [firId, file]);
-        await connection.query('INSERT INTO attachment_relief (fir_id, file_path) VALUES ?', [attachmentInsert]);
-      }
-
       if (status) {
         await connection.query(`UPDATE fir_add SET status = COALESCE(?, status) WHERE fir_id = ?`, [status, firId]);
       }

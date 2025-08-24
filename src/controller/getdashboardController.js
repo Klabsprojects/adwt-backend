@@ -1676,6 +1676,12 @@ exports.GetVmcDashboardCardsValues = (req, res) => {
     params.push(req.body.subdivision);
   }
 
+  if (req.body.year) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'year = ?';
+    params.push(req.body.year);
+  }
+
   // count(case when meeting_type = 'DLVMC' and meeting_status = 'Completed' then 1 end) as Total_dlvmc_meeting_as_per_quarter ,
   // count(case when meeting_type = 'SDLVMC' and meeting_status = 'Completed' then 1 end) as Total_No_of_Sub_dividion_meeting ,
   
@@ -1752,10 +1758,13 @@ exports.GetVmcQuarterlyMeetingStats = (req, res) => {
     whereConditions.push("district = ?");
     params.push(req.body.district);
   }
-
   if (req.body.subdivision) {
     whereConditions.push("subdivision = ?");
     params.push(req.body.subdivision);
+  }
+  if (req.body.year) {    
+    whereConditions.push("year = ?");
+    params.push(req.body.year);
   }
 
   const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
@@ -1855,10 +1864,13 @@ exports.GetVmcSubdivisionMeetingStats = (req, res) => {
     whereConditions.push("district = ?");
     params.push(req.body.district);
   }
-
   if (req.body.subdivision) {
     whereConditions.push("subdivision = ?");
     params.push(req.body.subdivision);
+  }
+  if (req.body.year) {    
+    whereConditions.push("year = ?");
+    params.push(req.body.year);
   }
 
   const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
@@ -1958,6 +1970,10 @@ exports.GetQuarterWiseMeetingStatus = (req, res) => {
   } else {
     // Common condition
     whereConditions.push("(subdivision IS NOT NULL OR subdivision != '')");
+  }
+  if (req.body.year) {
+    whereConditions.push('year = ?');
+    params.push(req.body.year);
   }
 
   const whereClause = whereConditions.length ? `WHERE ${whereConditions.join(' AND ')}` : '';

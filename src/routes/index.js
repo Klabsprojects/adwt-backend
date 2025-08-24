@@ -81,13 +81,13 @@ router.delete('/apps/permissions/:id', permissionsController.deletePermission);
 router.get('/apps/permissions/roles', permissionsController.getAllRoles);
 router.get('/apps/permissions/:roleId/permissions', permissionsController.getPermissionsByRoleId);
 router.put('/apps/permissions/:roleId/permissions/:permissionId', permissionsController.updateRolePermission);
-router.post("/auth/login",authController.login);
+router.post("/auth/login", authController.login);
 router.post('/auth/send-otp', authController.sendOtp);
 router.post('/auth/verify-otp', authController.verifyOtp);
 router.post('/auth/reset-password', authController.resetPassword);
 
 // Multer configuration
-const uploadFolder = "/home/onlinetn/adwt-backend/uploads/fir_copy";
+const uploadFolder = "/home/ubuntu/adwt-backend/uploads/fir_copy";
 // const uploadFolder = "uploads/fir_copy";
 if (!fs.existsSync(uploadFolder)) {
   fs.mkdirSync(uploadFolder, { recursive: true });
@@ -102,8 +102,8 @@ const upload = multer({ storage });
 
 router.get('/filter-options', getdashboardController.getFilterOptionData);
 
-router.post('/apply-filters', 
-  getdashboardController.applyfilterData, 
+router.post('/apply-filters',
+  getdashboardController.applyfilterData,
   getdashboardController.getDashboardData,
 );
 
@@ -385,7 +385,14 @@ router.get('/monthlyreport/GetReasonWisePendingUI', monthlyreportController.GetR
 router.get('/monthlyreport/GetCommunity_Certificate_Report', monthlyreportController.GetCommunity_Certificate_Report);
 router.get('/monthlyreport/GetDistrictWisePendingPT', monthlyreportController.GetDistrictWisePendingPT);
 router.get('/monthlyreport/GetConvictionTypeRepot', monthlyreportController.GetConvictionTypeRepot);
+router.get('/monthlyreport/getReasonCategories', monthlyreportController.getReasonCategories);
 router.put('/monthlyreport/MonnthlyUpdate', monthlyreportController.MonnthlyUpdate);
+router.post("/getMRFAbstract", monthlyreportController.getMRFAbstract);
+router.post('/monetaryRelief/getmonetaryReliefData', monetaryReliefController.getmonetaryReliefData);
+router.get('/monetaryRelief/getmonetaryReliefDatav1', monetaryReliefController.getmonetaryReliefDataV1);
+router.post('/addtionalReport/bf/abstract', additionalreportController.getAdditionalReportBfAbstract);
+router.post('/addtionalReport/af/abstract', additionalreportController.getAdditionalReportAfAbstract);
+router.post("/additionalReliefData", additionalreportController.getAdditionalReliefData);
 
 router.post('/fir/handle-step-five', firController.handleStepFive);
 
@@ -498,8 +505,8 @@ router.delete('/vmcmeeting/Delete_Meeting:id', vmcMeetingController.DeleteMeetin
 
 router.get('/dadtwo-dashboard-data', dadtwodashboardController.getDashboardData);
 
-router.post('/applybarchartgivenDataFilters',dadtwodashboardController.applybarchartgivenDataFilters);
-router.post('/applybarchartpendingDataFilters',dadtwodashboardController.applybarchartpendingDataFilters);
+router.post('/applybarchartgivenDataFilters', dadtwodashboardController.applybarchartgivenDataFilters);
+router.post('/applybarchartpendingDataFilters', dadtwodashboardController.applybarchartpendingDataFilters);
 // router.get('/vmcmeeting/statuses', vmcMeetingController.getMeetingStatuses);
 
 router.post('/FileUpload', UploadFileController.UploadFiles);

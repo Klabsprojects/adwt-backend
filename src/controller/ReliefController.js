@@ -98,6 +98,9 @@ exports.getFIRReliefList = (req, res) => {
     params.push(req.query.year);
   }
 
+  whereClause += whereClause ? ' AND ' : ' WHERE ';
+  whereClause += 'fir_add.status >= 0 AND fir_add.status <= 7';
+
           const query = `
             SELECT 
                   CONCAT(fir_add.fir_number,'/',fir_add.fir_number_suffix) as fir_number,
@@ -109,7 +112,8 @@ exports.getFIRReliefList = (req, res) => {
                   fir_add.created_at,
                   fir_add.status,
                   fir_add.relief_status as relief_status,
-                  nature_of_judgement as nature_of_judgement
+                  nature_of_judgement as nature_of_judgement,
+                  DATE(fir_add.date_of_registration) as date_of_reporting
                 FROM fir_add
                 LEFT JOIN users ON users.id = fir_add.created_by
                 ${whereClause} 
@@ -138,7 +142,267 @@ exports.getFIRReliefList = (req, res) => {
 };
 
 
+exports.getFIRReliefListV1 = (req, res) => { 
+  // Build WHERE clause based on provided filters
+  const page = parseInt(req.query.page) || 1;
+  const pageSize = parseInt(req.query.pageSize) || 10;
+  const offset = (page - 1) * pageSize;
 
+  const conditions = [];
+  const params = [];
+
+  const addCondition = (sql, value, wildcard = false) => {
+    conditions.push(sql);
+    params.push(wildcard ? `%${value}%` : value);
+  };
+
+  const { search, district, police_zone, police_range, revenue_district, Offence_group,
+          complaintReceivedType, start_date, end_date, UIPT, status, year, created_at, modified_at, 
+          CreatedATstartDate, CreatedATendDate, ModifiedATstartDate, ModifiedATDate, legacy, 
+          policeStation, caste, community, statusOfCase, sectionOfLaw, court, convictionType, 
+          chargesheetDate, hasLegalObtained, caseFitForAppeal, filedBy, appealCourt, dataEntryStatus } = req.query;
+
+  if (search) {
+    conditions.push(`(
+      fir_add.fir_id LIKE ? OR
+      CONCAT(fir_add.fir_number, '/', fir_add.fir_number_suffix) = ? OR
+      fir_add.revenue_district LIKE ? OR
+      fir_add.police_city LIKE ? OR
+      fir_add.police_station LIKE ?
+    )`);
+    params.push(`%${search}%`, search, `%${search}%`, `%${search}%`, `%${search}%`);
+  }
+
+  if (district) addCondition('fir_add.police_city = ?', district);
+  if (police_zone) addCondition('fir_add.police_zone = ?', police_zone);
+  if (police_range) addCondition('fir_add.police_range = ?', police_range);
+  if (revenue_district) addCondition('fir_add.revenue_district = ?', revenue_district);
+  if (Offence_group) addCondition('fir_add.Offence_group = ?', Offence_group);
+  if (complaintReceivedType) addCondition('fir_add.complaintReceivedType = ?', complaintReceivedType);
+  if (start_date) addCondition('DATE(fir_add.date_of_registration) >= ?', start_date);
+  if (end_date) addCondition('DATE(fir_add.date_of_registration) <= ?', end_date);
+  if (CreatedATstartDate) addCondition('DATE(fir_add.created_at) >= ?', CreatedATstartDate);
+  if (CreatedATendDate) addCondition('DATE(fir_add.created_at) <= ?', CreatedATendDate);
+  if (ModifiedATstartDate) addCondition('DATE(fir_add.updated_at) >= ?', ModifiedATstartDate);
+  if (ModifiedATDate) addCondition('DATE(fir_add.updated_at) <= ?', ModifiedATDate);
+  // if (created_at) addCondition('DATE_FORMAT(fa.created_at, "%Y-%m-%d") = ?', created_at);
+  // if (modified_at) addCondition('DATE_FORMAT(fa.updated_at, "%Y-%m-%d") = ?', modified_at);
+  //added by mohan02/aug/2025
+  if (policeStation) addCondition('fir_add.police_station = ?', policeStation);
+
+  let addingPTDetails = "";
+  let addingCaseDetails = "";
+  let addingChargeSheet = "";
+  let addingAppealDetails = "";
+  let addingOffenceActs = "";
+  let addingVictims = "";
+  let groupByClause = "";
+
+  let joinconditions = [];
+
+  if (statusOfCase) {
+    if (statusOfCase === 'UI') {
+      conditions.push('fir_add.status <= 5');
+    } else if (statusOfCase === 'PT') {
+      addingPTDetails = `LEFT JOIN case_details ON case_details.fir_id = fir_add.fir_id 
+      LEFT JOIN chargesheet_details ON chargesheet_details.fir_id = fir_add.fir_id`;
+
+      conditions.push('fir_add.status >= 6');
+      conditions.push(`case_details.judgement_awarded = 'no'`);
+      conditions.push(`chargesheet_details.case_type = 'chargeSheet'`);
+      
+      //add case_details table judgement_awarded - "no" & chargesheet_details table - case_type = "chargeSheet"
+    }
+  }
+  // 3. Conviction - Stage 7 - FNo: 87  => table - case_Details `judgementNature` = 'Convicted'
+  // 4. Acquitted - - Stage 7 - FNo: 87 => table - case_Details `judgementNature` = 'Acquitted'
+  // 5. FIR Quashed - Stage 6 - FNo:66 => chargesheet_details table - case_type = "rcs"
+  // 6. MF - Stage 6 - FNo:66 Value RCS, FIR Stage 5 - MF Check Box => if mf is true or chargesheet_details table - case_type = "rcs"
+  // 7. Section Deleted - Stage 6 - FNo:66 => chargesheet_details table - case_type = "rcs"
+  // 8. Charge Abated - Stage 7 - FNo: 87 => table - case_Details `judgementNature` = 'Convicted'
+  // 9. Quashed - Stage 7 - FNo: 87  => table - case_Details `judgementNature` = 'Convicted'
+  // Section of Law - get from offence_acts table use left join fir_add.offence_group
+  // Court - 
+  // conviction type => FROM `case_details` WHERE `fir_id` = 'qp1IRA' ORDER BY `Conviction_Type`
+  // chargesheetdate => table - chargesheet_details - chargesheetDate
+  // has legal => table - appeal_details - legal_opinion_obtained no, yes
+  // Is the Case Fit for Appeal => table - appeal_details - case_fit_for_appeal - yes, no
+  // Who has filed the appeal => table - appeal_details - filed_by - government,victim,no appeal yet
+  // Appeal Court (High Court/ Supreme Court) => table - appeal_details - designated_court - highCourt
+  // Judgement type - Need to get clarification from department
+
+  // 3. Conviction
+  if (statusOfCase == "Convicted") {
+    addingCaseDetails = `LEFT JOIN case_details ON case_details.fir_id = fir_add.fir_id`;
+    conditions.push(`case_details.judgementNature = 'Convicted'`);
+  }
+
+  // 4. Acquitted
+  if (statusOfCase == "Acquitted") {
+    addingCaseDetails = `LEFT JOIN case_details ON case_details.fir_id = fir_add.fir_id`;
+    conditions.push(`case_details.judgementNature = 'Acquitted'`);
+  }
+
+  // 5. FIR Quashed
+  if (statusOfCase == "FirQuashed") {
+    addingChargeSheet = `LEFT JOIN chargesheet_details ON chargesheet_details.fir_id = fir_add.fir_id`;
+    conditions.push(`chargesheet_details.case_type = 'firQuashed'`);
+  }
+
+  // 6. MF
+  if (statusOfCase == "MF") {
+    addingChargeSheet = `LEFT JOIN chargesheet_details ON chargesheet_details.fir_id = fir_add.fir_id`;
+    conditions.push(`fir_add.HascaseMF = 1 OR chargesheet_details.case_type = 'referredChargeSheet'`);
+  }
+
+  // 7. Section Deleted (same as RCS)
+  if (statusOfCase == "SectionDeleted") {
+    addingChargeSheet = `LEFT JOIN chargesheet_details ON chargesheet_details.fir_id = fir_add.fir_id`;
+    conditions.push(`chargesheet_details.case_type = 'sectionDeleted'`);
+  }
+
+  // 8 & 9. Charge Abated / Quashed (Stage 7, judgementNature = Convicted)
+  if (statusOfCase == "Charge_Abated") {
+    addingCaseDetails = `LEFT JOIN case_details ON case_details.fir_id = fir_add.fir_id`;
+    conditions.push(`case_details.judgementNature = 'Charge_Abated'`);
+  }
+
+  if (statusOfCase == "Quashed") {
+    addingCaseDetails = `LEFT JOIN case_details ON case_details.fir_id = fir_add.fir_id`;
+    conditions.push(`case_details.judgementNature = 'Quashed'`);
+  }
+
+  // Section of Law
+  if (sectionOfLaw) {
+    addingOffenceActs = `LEFT JOIN offence_acts ON offence_acts.group_code = fir_add.offence_group`;
+    conditions.push(`offence_acts.group_code = '${sectionOfLaw}'`);
+  }
+
+  // Court
+  if (court) {
+    addingCaseDetails = `LEFT JOIN case_details ON case_details.fir_id = fir_add.fir_id`;
+    conditions.push(`case_details.court_name = '${court}'`);
+  }
+
+  // Conviction Type
+  if (convictionType) {
+    addingCaseDetails = `LEFT JOIN case_details ON case_details.fir_id = fir_add.fir_id`;
+    conditions.push(`case_details.Conviction_Type = '${convictionType}'`);
+  }
+  
+  // Chargesheet Date
+  if (chargesheetDate) {
+    addingChargeSheet = `LEFT JOIN chargesheet_details ON chargesheet_details.fir_id = fir_add.fir_id`;
+    conditions.push(`chargesheet_details.chargesheetDate = '${chargesheetDate}'`);
+  }
+
+  // Has Legal
+  if (hasLegalObtained) {
+    addingAppealDetails = `LEFT JOIN appeal_details ON appeal_details.fir_id = fir_add.fir_id`;
+    conditions.push(`appeal_details.legal_opinion_obtained = '${hasLegalObtained}'`);
+  }
+
+  // Fit for Appeal
+  if (caseFitForAppeal) {
+    addingAppealDetails = `LEFT JOIN appeal_details ON appeal_details.fir_id = fir_add.fir_id`;
+    conditions.push(`appeal_details.case_fit_for_appeal = '${caseFitForAppeal}'`);
+  }
+
+  // Filed By
+  if (filedBy) {
+    addingAppealDetails = `LEFT JOIN appeal_details ON appeal_details.fir_id = fir_add.fir_id`;
+    conditions.push(`appeal_details.filed_by = '${filedBy}'`);
+  }
+
+  // Appeal Court
+  if (appealCourt) {
+    addingAppealDetails = `LEFT JOIN appeal_details ON appeal_details.fir_id = fir_add.fir_id`;
+    conditions.push(`appeal_details.designated_court = '${appealCourt}'`);
+  }
+
+  if(caste || community){
+    addingVictims = `LEFT JOIN victims ON victims.fir_id = fir_add.fir_id`;
+    if(community) conditions.push(`victims.community = '${community}'`);
+    if(caste) conditions.push(`victims.caste = '${caste}'`);
+    groupByClause = `GROUP BY fir_add.fir_id`;
+  }
+
+  // Combine all joins
+  let joins = [
+    addingPTDetails,
+    addingVictims,
+    addingCaseDetails,
+    addingChargeSheet,
+    addingAppealDetails,
+    addingOffenceActs
+  ].filter(Boolean).join(" ");
+
+  if (dataEntryStatus) {
+      addCondition('fir_add.status = ?', dataEntryStatus);
+  }
+
+  if (year) addCondition('DATE_FORMAT(fir_add.date_of_registration, "%Y") = ?', year);
+
+  if (legacy == "yes") {
+    console.log("legacy", legacy);
+    const legacyDate = '2025-03-20 09:18:11';
+    addCondition('fir_add.created_at = ?', legacyDate);
+  }
+
+  const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+  
+  if(caste || community){
+    countQuery = `SELECT COUNT(*) AS total
+    FROM (
+      SELECT fir_add.fir_id
+      FROM fir_add LEFT JOIN users ON users.id = fir_add.created_by ${joins} ${whereClause} ${groupByClause} ) AS sub`;
+  }
+  else{
+    countQuery = `SELECT COUNT(*) AS total FROM fir_add
+    LEFT JOIN users ON users.id = fir_add.created_by ${joins} ${whereClause} ${groupByClause}`;
+  }
+  
+    db.query(countQuery, params, (err, countResults) => {
+      if (err) return res.status(500).json({ message: 'Count query failed', error: err });
+      const total = countResults.length != 0 ? countResults[0].total : 0;
+      if (total === 0) {
+        return res.status(200).json({ data: [], total: 0, page, pageSize, totalPages: 0 });
+      }
+  
+      const totalPages = Math.ceil(total / pageSize);
+      const validPage = Math.min(Math.max(1, page), totalPages);
+      const validOffset = (validPage - 1) * pageSize;
+  
+      const query = `SELECT 
+      CONCAT(fir_add.fir_number,'/',fir_add.fir_number_suffix) as fir_number,
+      fir_add.fir_id,
+      fir_add.police_city,
+      fir_add.police_station,
+      fir_add.number_of_victim,
+      users.name as created_by,
+      fir_add.created_at,
+      fir_add.status,
+      fir_add.relief_status as relief_status,
+      nature_of_judgement as nature_of_judgement,
+      DATE(fir_add.date_of_registration) as date_of_reporting
+    FROM fir_add
+    LEFT JOIN users ON users.id = fir_add.created_by
+    ${joins} ${whereClause} ${groupByClause} 
+    ORDER BY fir_add.created_at DESC LIMIT ? OFFSET ?`;
+  
+   db.query(query, [...params, pageSize, validOffset], (err, results) => {
+        if (err) return res.status(500).json({ message: 'Data query failed', error: err });
+  
+        res.status(200).json({
+          data: results,
+          total,
+          page: validPage,
+          pageSize,
+          totalPages
+        });
+      });
+    });
+};
 
 
 // exports.getAlteredList = (req, res) => {
@@ -572,7 +836,7 @@ function generateRandomId(length = 36) {
 
 
 exports.saveFirstInstallment = (req, res) => {
-  const { firId, victims, proceedings } = req.body;
+  const { firId, victims, proceedings, saveDraft } = req.body;
 
   if (!firId || !victims || !proceedings) {
     return res.status(400).json({ message: 'Missing required fields.' });
@@ -685,53 +949,53 @@ exports.saveFirstInstallment = (req, res) => {
       });
 
       // Handle Proceedings in proceedings_victim_relief - Update if exists, else Insert
-      const proceedingsPromise = new Promise((resolve, reject) => {
-        const checkQuery = `SELECT COUNT(*) as count FROM proceedings_victim_relief WHERE fir_id = ?`;
+      // const proceedingsPromise = new Promise((resolve, reject) => {
+      //   const checkQuery = `SELECT COUNT(*) as count FROM proceedings_victim_relief WHERE fir_id = ?`;
 
-        connection.query(checkQuery, [firId], (err, results) => {
-          if (err) return reject(err);
+      //   connection.query(checkQuery, [firId], (err, results) => {
+      //     if (err) return reject(err);
 
-          const exists = results[0].count > 0;
+      //     const exists = results[0].count > 0;
 
-          const query = exists
-            ? `UPDATE proceedings_victim_relief 
-               SET total_compensation = ?, proceedings_file_no = ?, proceedings_date = ?, proceedings_file = ? 
-               WHERE fir_id = ?`
-            : `INSERT INTO proceedings_victim_relief 
-               (proceedings_id, fir_id, total_compensation, proceedings_file_no, proceedings_date, proceedings_file) 
-               VALUES (?, ?, ?, ?, ?, ?)`;
+      //     const query = exists
+      //       ? `UPDATE proceedings_victim_relief 
+      //          SET total_compensation = ?, proceedings_file_no = ?, proceedings_date = ?, proceedings_file = ? 
+      //          WHERE fir_id = ?`
+      //       : `INSERT INTO proceedings_victim_relief 
+      //          (proceedings_id, fir_id, total_compensation, proceedings_file_no, proceedings_date, proceedings_file) 
+      //          VALUES (?, ?, ?, ?, ?, ?)`;
 
-          const values = exists
-            ? [
-                proceedings.totalCompensation || 0.0,
-                proceedings.fileNo || null,
-                proceedings.fileDate || null,
-                proceedings.uploadDocument || null,
-                firId,
-              ]
-            : [
-                generateRandomId(6), // Generate new ID
-                firId,
-                proceedings.totalCompensation || 0.0,
-                proceedings.fileNo || null,
-                proceedings.fileDate || null,
-                proceedings.uploadDocument || null,
-              ];
+      //     const values = exists
+      //       ? [
+      //           proceedings.totalCompensation || 0.0,
+      //           proceedings.fileNo || null,
+      //           proceedings.fileDate || null,
+      //           proceedings.uploadDocument || null,
+      //           firId,
+      //         ]
+      //       : [
+      //           generateRandomId(6), // Generate new ID
+      //           firId,
+      //           proceedings.totalCompensation || 0.0,
+      //           proceedings.fileNo || null,
+      //           proceedings.fileDate || null,
+      //           proceedings.uploadDocument || null,
+      //         ];
 
-          connection.query(query, values, (err) => (err ? reject(err) : resolve()));
-        });
-      });
+      //     connection.query(query, values, (err) => (err ? reject(err) : resolve()));
+      //   });
+      // }); commented on 19-jul-25 by Mohan
 
       // Update FIR Status
       const updateFirStatus = new Promise((resolve, reject) => {
         const query = `UPDATE fir_add SET relief_status = ? WHERE fir_id = ?`;
-        const values = [1, firId];
+        const values = [saveDraft ? 0 : 1, firId];
 
         connection.query(query, values, (err) => (err ? reject(err) : resolve()));
       });
 
       // Execute all queries within the transaction
-      Promise.all([...victimPromises, proceedingsPromiseFirst, proceedingsPromise, updateFirStatus])
+      Promise.all([...victimPromises, proceedingsPromiseFirst, updateFirStatus])
         .then(() => {
           connection.commit((err) => {
             if (err) {
@@ -976,7 +1240,7 @@ exports.getSecondInstallmentDetails = (req, res) => {
 // };
 
 exports.saveSecondInstallment = (req, res) => {
-  const { firId, victims, proceedings } = req.body;
+  const { firId, victims, proceedings, saveDraft } = req.body;
 
   if (!firId || !victims || !proceedings) {
     return res.status(400).json({ message: "Missing required fields." });
@@ -1086,7 +1350,7 @@ exports.saveSecondInstallment = (req, res) => {
       // Update FIR Status
       const updateFirStatus = new Promise((resolve, reject) => {
         const query = `UPDATE fir_add SET relief_status = ? WHERE fir_id = ?`;
-        const values = [2, firId];
+        const values = [saveDraft ? 1 : 2, firId];
 
         connection.query(query, values, (err) => (err ? reject(err) : resolve()));
       });
@@ -1389,7 +1653,7 @@ exports.saveSecondInstallment = (req, res) => {
 
 
 exports.saveThirdInstallmentDetails = (req, res) => {
-  const { firId, victims, proceedings } = req.body;
+  const { firId, victims, proceedings, saveDraft } = req.body;
 
   if (!firId || !victims || !proceedings) {
     return res.status(400).json({ message: "Missing required fields." });
@@ -1462,7 +1726,7 @@ exports.saveThirdInstallmentDetails = (req, res) => {
                WHERE fir_id = ?`
             : `INSERT INTO trial_proceedings 
                ( fir_id, file_number, file_date, upload_document, pfms_portal_uploaded, date_of_disbursement) 
-               VALUES (?, ?, ?, ?, ?, ?, ?)`;
+               VALUES (?, ?, ?, ?, ?, ?)`;
 
           const values = exists
             ? [
@@ -1489,7 +1753,7 @@ exports.saveThirdInstallmentDetails = (req, res) => {
       const updateFirStatus = new Promise((resolve, reject) => {
         connection.query(
           `UPDATE fir_add SET relief_status = ? WHERE fir_id = ?`,
-          [3, firId],
+          [saveDraft ? 2 : 3, firId],
           (err) => (err ? reject(err) : resolve())
         );
       });
