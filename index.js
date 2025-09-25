@@ -12,6 +12,8 @@ var morgan = require('morgan');
 const db = require('./src/db');
 const session = require('express-session');
 const app = express();
+const { verifyToken } = require('./src/middleware/keycloakAuth');
+
 const JWT_SECRET = '0c60f8a33b9ccb3b8a0a8a5f9b4e34c1e2dd536f2174c9a9d12e34529c313e82053b1fe7'
 // Middleware
 app.use(express.json());
@@ -143,6 +145,17 @@ function JWTauthorization(req, res, next) {
     });
   });
 }
+
+//commented by mohan keyclaok start
+// // app.use("/auth/login", authController.login);
+// // app.post('/auth/send-otp', authController.sendOtp);
+// // app.post('/auth/verify-otp', authController.verifyOtp);
+// // app.post('/auth/reset-password', authController.resetPassword);
+
+// // Use routes
+// app.use("/", verifyToken, routes);
+
+//keycloak end
 
 app.use("/auth/login", authController.login);
 app.post('/auth/send-otp', authController.sendOtp);

@@ -44,7 +44,8 @@ const editfircontroller = require('../controller/editfirController');
 
 const dadtwodashboardController = require('../controller/getdadtwodashboardController');
 const UploadFileController = require('../controller/uploadController');
-
+const {keycloakConfig} = require('../../config');
+const { verifyToken, checkRole } = require("../middleware/keycloakAuth");
 
 router.get('/rolepermissions/:roleId', rolePermissionsController.getRolePermissions);
 
@@ -85,6 +86,35 @@ router.post("/auth/login", authController.login);
 router.post('/auth/send-otp', authController.sendOtp);
 router.post('/auth/verify-otp', authController.verifyOtp);
 router.post('/auth/reset-password', authController.resetPassword);
+
+/** For Keycloak start commented by mohan*/
+// Get all users
+// router.get('/apps/users_new', checkRole(keycloakConfig.keycloakRoles.SuperUser, keycloakConfig.keycloakClientId), userController.getAllUsers);
+// // Create a new user
+// router.post('/apps/users_new', checkRole(keycloakConfig.keycloakRoles.SuperUser, keycloakConfig.keycloakClientId), userController.createUser);
+// router.put('/apps/users_new/:id',  checkRole(keycloakConfig.keycloakRoles.SuperUser, keycloakConfig.keycloakClientId), userController.updateUser);
+// router.delete('/apps/users_new/:id', checkRole(keycloakConfig.keycloakRoles.SuperUser, keycloakConfig.keycloakClientId), userController.deleteUser);
+// router.put('/apps/users_new/:id/status', checkRole(keycloakConfig.keycloakRoles.SuperUser, keycloakConfig.keycloakClientId),  userController.toggleUserStatus);
+// router.get('/apps/roles',  checkRole(keycloakConfig.keycloakRoles.SuperUser, keycloakConfig.keycloakClientId), userController.getAllRoles);
+// router.get('/apps/rolesnew', checkRole(keycloakConfig.keycloakRoles.SuperUser, keycloakConfig.keycloakClientId), roleController.getAllRoles);
+// router.post('/apps/rolesnew', checkRole(keycloakConfig.keycloakRoles.SuperUser, keycloakConfig.keycloakClientId), roleController.addRole);
+// router.put('/apps/rolesnew/:id', checkRole(keycloakConfig.keycloakRoles.SuperUser, keycloakConfig.keycloakClientId), roleController.updateRole);
+// router.delete('/apps/rolesnew/:id', checkRole(keycloakConfig.keycloakRoles.SuperUser, keycloakConfig.keycloakClientId), roleController.deleteRole);
+// router.put('/apps/rolesnew/:id/status', checkRole(keycloakConfig.keycloakRoles.SuperUser, keycloakConfig.keycloakClientId), roleController.toggleRoleStatus);
+// router.get('/apps/permissions/', checkRole(keycloakConfig.keycloakRoles.SuperUser, keycloakConfig.keycloakClientId), permissionsController.getAllPermissions);
+// router.post('/apps/permissions/', checkRole(keycloakConfig.keycloakRoles.SuperUser, keycloakConfig.keycloakClientId), permissionsController.addPermission);
+// router.put('/apps/permissions/:id', checkRole(keycloakConfig.keycloakRoles.SuperUser, keycloakConfig.keycloakClientId), permissionsController.updatePermission);
+// router.delete('/apps/permissions/:id', checkRole(keycloakConfig.keycloakRoles.SuperUser, keycloakConfig.keycloakClientId), permissionsController.deletePermission);
+// router.get('/apps/permissions/roles', checkRole(keycloakConfig.keycloakRoles.SuperUser, keycloakConfig.keycloakClientId), permissionsController.getAllRoles);
+// router.get('/apps/permissions/:roleId/permissions', checkRole(keycloakConfig.keycloakRoles.SuperUser, keycloakConfig.keycloakClientId), permissionsController.getPermissionsByRoleId);
+// router.put('/apps/permissions/:roleId/permissions/:permissionId', checkRole(keycloakConfig.keycloakRoles.SuperUser, keycloakConfig.keycloakClientId), permissionsController.updateRolePermission);
+
+// // router.post("/auth/login", authController.login);
+// // router.post('/auth/send-otp', authController.sendOtp);
+// // router.post('/auth/verify-otp', authController.verifyOtp);
+// // router.post('/auth/reset-password', authController.resetPassword);
+
+/** For Keycloak end */
 
 // Multer configuration
 const uploadFolder = "/home/ubuntu/adwt-backend/uploads/fir_copy";
@@ -376,6 +406,7 @@ router.get('/vmcmeeting/GetVmcMeetings', vmcMeetingController.GetVmcMeetings);
 router.get('/monthlyreport/get-monthly-report-details', monthlyreportController.getmonthlyreportdetail);
 router.get('/monetaryRelief/get-monetary-relief-details', monetaryReliefController.getmonetaryReliefDetails);
 router.get('/monetaryRelief/getVmcReportList', monetaryReliefController.getVmcReportList);
+router.get('/vmcmeeting/getVmcReportListV1', monetaryReliefController.getVmcReportListV1);
 router.get('/additionalreport/get-additional-report-details', additionalreportController.getadditionalreportdetail);
 router.put('/monthlyreport/update-monthly-report-details', monthlyreportController.updateMonthlyReports);
 router.put('/monetaryRelief/update-monetary-relief-details', monetaryReliefController.updateMonetaryRelief);
@@ -388,6 +419,7 @@ router.get('/monthlyreport/GetConvictionTypeRepot', monthlyreportController.GetC
 router.get('/monthlyreport/getReasonCategories', monthlyreportController.getReasonCategories);
 router.put('/monthlyreport/MonnthlyUpdate', monthlyreportController.MonnthlyUpdate);
 router.post("/getMRFAbstract", monthlyreportController.getMRFAbstract);
+router.post("/getMRFAbstractDetails", monthlyreportController.getMRFAbstractDetails);
 router.post('/monetaryRelief/getmonetaryReliefData', monetaryReliefController.getmonetaryReliefData);
 router.get('/monetaryRelief/getmonetaryReliefDatav1', monetaryReliefController.getmonetaryReliefDataV1);
 router.post('/addtionalReport/bf/abstract', additionalreportController.getAdditionalReportBfAbstract);
@@ -426,7 +458,7 @@ router.post('/fir/GetChargesheetDetail', firController.GetChargesheetDetail);
 // Route to update FIR status
 router.put('/fir_list/update-status/:id', firListController.updateFirStatus);
 
-router.get('/fir-relief', ReliefController.getFIRReliefList);
+router.get('/fir-relief', ReliefController.getFIRReliefListV1);
 router.get('/getAlteredList', ReliefController.getAlteredList);
 //router.get('/fir-additinal-relief', AdditinalReliefController.getFIRAdditionalReliefList);
 

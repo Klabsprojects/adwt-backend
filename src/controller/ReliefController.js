@@ -3,12 +3,190 @@ const db = require('../db'); // Update with actual DB connection
 
 
 
-exports.getFIRReliefList = (req, res) => {
+// exports.getFIRReliefList = (req, res) => {
 
   
+//   // Build WHERE clause based on provided filters
+//   let whereClause = '';
+//   const params = [];
+  
+//   // Add filters to where clause
+//   if (req.query.search) {
+//     const searchValue = `%${req.query.search}%`;
+//     const searchValue2 = `${req.query.search}`;
+//     whereClause += ` WHERE (fir_add.fir_id LIKE ? OR CONCAT(fir_add.fir_number, '/', fir_add.fir_number_suffix) = ? OR fir_add.revenue_district LIKE ? OR fir_add.police_city LIKE ? OR fir_add.police_station LIKE ?)`;
+    
+//     params.push(searchValue, searchValue2, searchValue, searchValue, searchValue);
+//   }
+  
+//   if (req.query.district) {
+//     whereClause += whereClause ? ' AND ' : ' WHERE ';
+//     whereClause += 'fir_add.police_city = ?';
+//     params.push(req.query.district);
+//   }
+
+//   if (req.query.policeStationName) {
+//     whereClause += whereClause ? ' AND ' : ' WHERE ';
+//     whereClause += 'fir_add.police_station = ?';
+//     params.push(req.query.policeStationName);
+//   }
+
+//   if (req.query.police_zone) {
+//     whereClause += whereClause ? ' AND ' : ' WHERE ';
+//     whereClause += 'fir_add.police_zone = ?';
+//     params.push(req.query.police_zone);
+//   }
+
+//   if (req.query.police_range) {
+//     whereClause += whereClause ? ' AND ' : ' WHERE ';
+//     whereClause += 'fir_add.police_range = ?';
+//     params.push(req.query.police_range);
+//   }
+
+//   if (req.query.revenue_district) {
+//     whereClause += whereClause ? ' AND ' : ' WHERE ';
+//     whereClause += 'fir_add.revenue_district = ?';
+//     params.push(req.query.revenue_district);
+//   }
+
+//   if (req.query.Offence_group) {
+//     whereClause += whereClause ? ' AND ' : ' WHERE ';
+//     whereClause += 'fir_add.Offence_group = ?';
+//     params.push(req.query.Offence_group);
+//   }
+
+//   if (req.query.complaintReceivedType) {
+//     whereClause += whereClause ? ' AND ' : ' WHERE ';
+//     whereClause += 'fir_add.complaintReceivedType = ?';
+//     params.push(req.query.complaintReceivedType);
+//   }
+  
+//   if (req.query.start_date) {
+//     whereClause += whereClause ? ' AND ' : ' WHERE ';
+//     whereClause += 'DATE(fir_add.date_of_registration) >= ?';
+//     params.push(req.query.start_date);
+//   }
+  
+//   if (req.query.end_date) {
+//     whereClause += whereClause ? ' AND ' : ' WHERE ';
+//     whereClause += 'DATE(fir_add.date_of_registration) <= ?';
+//     params.push(req.query.end_date);
+//   }
+
+//   if (req.query.UIPT) {
+//     whereClause += whereClause ? ' AND ' : ' WHERE ';
+//     if (req.query.UIPT == 'UI') {
+//       whereClause += 'fir_add.status <= 5';
+//     } else {
+//       whereClause += 'fir_add.status >= 6';
+//     }
+//   }
+
+//   if (req.query.status) {
+//     whereClause += whereClause ? ' AND ' : ' WHERE ';
+//     if (req.query.status == 0) {
+//       whereClause += 'fir_add.status >= 0 AND fir_add.status <= 5';
+//     } else {
+//       whereClause += 'fir_add.status = ?';
+//       params.push(req.query.status);
+//     }
+//   }
+
+//   if (req.query.year) {
+//     whereClause += whereClause ? ' AND ' : ' WHERE ';
+//     whereClause += 'DATE_FORMAT(fir_add.date_of_registration, "%Y") = ? ';
+//     params.push(req.query.year);
+//   }
+
+//   if (req.query.chargesheetFromDate){
+//     whereClause += whereClause ? ' AND ' : ' WHERE ';
+//     whereClause += 'DATE(chargesheet_details.chargesheetDate) >= ?';
+//     params.push(req.query.chargesheetFromDate);
+//   } 
+//   if (req.query.chargesheetToDate) {
+//     whereClause += whereClause ? ' AND ' : ' WHERE ';
+//     whereClause += 'DATE(chargesheet_details.chargesheetDate) <= ?';
+//     params.push(req.query.chargesheetToDate);
+//   }
+
+//   let addingChargeSheet = '';
+//   if (req.query.chargesheetFromDate || req.query.chargesheetToDate) {
+//   // Only once
+//     addingChargeSheet = `LEFT JOIN chargesheet_details ON chargesheet_details.fir_id = fir_add.fir_id`;
+//   }
+
+//   whereClause += whereClause ? ' AND ' : ' WHERE ';
+//   whereClause += 'fir_add.status >= 0 AND fir_add.status <= 7';
+
+//           const query = `
+//             SELECT 
+//                   CONCAT(fir_add.fir_number,'/',fir_add.fir_number_suffix) as fir_number,
+//                   fir_add.fir_id,
+//                   fir_add.police_city,
+//                   fir_add.police_station,
+//                   fir_add.number_of_victim,
+//                   users.name as created_by,
+//                   fir_add.created_at,
+//                   fir_add.status,
+//                   fir_add.relief_status as relief_status,
+//                   nature_of_judgement as nature_of_judgement,
+//                   DATE(fir_add.date_of_registration) as date_of_reporting
+//                 FROM fir_add
+//                 LEFT JOIN users ON users.id = fir_add.created_by
+//                 ${addingChargeSheet}
+//                 ${whereClause} 
+//                 ORDER BY fir_add.created_at DESC 
+//           `;
+    
+//     const queryParams = [...params];
+
+//     // console.log(query)
+//     // console.log(queryParams)
+    
+//     db.query(query, queryParams, (err, results) => {
+//       if (err) {
+//         return res.status(500).json({ 
+//           message: 'Failed to retrieve FIR list', 
+//           error: err 
+//         });
+//       }
+      
+//       // Return paginated data with metadata
+//       // res.status(200).json({
+//       //   data: results
+//       // });
+//       res.status(200).json(results);
+//     });
+// };
+
+exports.getFIRReliefList = (req, res) => {
+
+  // Stage conditions
+  const stageConditions = {
+    firProposalNotYetReceived: `fir_add.status <= 4`,
+    firReliefStageGiven: `fir_add.status >= 5 AND fir_add.relief_status IN (1,2,3)`,
+    firReliefStagePending: `fir_add.status >= 5 AND fir_add.relief_status = 0`,
+    chargesheetReliefStageGiven: `fir_add.status >= 6 AND fir_add.relief_status IN (2,3)`,
+    chargesheetReliefStagePending: `fir_add.status >= 6 AND fir_add.relief_status <= 1`,
+    trialReliefStageGiven: `fir_add.status = 7 AND fir_add.relief_status = 3`,
+    trialReliefStagePending: `fir_add.status = 7 AND fir_add.relief_status <= 2`,
+
+    mistakeOfFact: `(COALESCE(fir_add.HascaseMF, 0) = 1 OR COALESCE(chargesheet_details.case_type, '') = 'referredChargeSheet')`,
+    sectionDeleted: `COALESCE(chargesheet_details.case_type, '') = 'sectionDeleted'`,
+    firQuashed: `COALESCE(chargesheet_details.case_type, '') = 'firQuashed'`,
+    acquitted: `COALESCE(case_details.judgementNature, '') = 'Acquitted'`,
+    chargeAbated: `COALESCE(case_details.judgementNature, '') = 'Charge_Abated'`,
+    quashed: `COALESCE(case_details.judgementNature, '') = 'Quashed'`
+  };
+
   // Build WHERE clause based on provided filters
   let whereClause = '';
   const params = [];
+
+  // Track required joins
+  let joinUsers = true; // always needed
+  let joinChargesheet = false;
+  let joinCaseDetails = false;
   
   // Add filters to where clause
   if (req.query.search) {
@@ -98,31 +276,72 @@ exports.getFIRReliefList = (req, res) => {
     params.push(req.query.year);
   }
 
+  if (req.query.chargesheetFromDate){
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'DATE(chargesheet_details.chargesheetDate) >= ?';
+    params.push(req.query.chargesheetFromDate);
+    joinChargesheet = true;
+  } 
+  if (req.query.chargesheetToDate) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'DATE(chargesheet_details.chargesheetDate) <= ?';
+    params.push(req.query.chargesheetToDate);
+    joinChargesheet = true;
+  }
+
+  // Stage filters (support multiple values, comma-separated)
+  if (req.query.selectedStatus) {
+    const stages = req.query.selectedStatus.split(",");
+    const stageFilters = stages
+      .filter(stage => stageConditions[stage])
+      .map(stage => {
+        if (['mistakeOfFact', 'sectionDeleted', 'firQuashed'].includes(stage)) {
+          joinChargesheet = true;
+        }
+        if (['acquitted', 'chargeAbated', 'quashed'].includes(stage)) {
+          joinCaseDetails = true;
+        }
+        return stageConditions[stage];
+      });
+
+    if (stageFilters.length) {
+      whereClause += whereClause ? ' AND ' : ' WHERE ';
+      whereClause += `(${stageFilters.join(" OR ")})`;
+    }
+  }
+
+  // Always restrict valid status range
   whereClause += whereClause ? ' AND ' : ' WHERE ';
   whereClause += 'fir_add.status >= 0 AND fir_add.status <= 7';
 
-          const query = `
-            SELECT 
-                  CONCAT(fir_add.fir_number,'/',fir_add.fir_number_suffix) as fir_number,
-                  fir_add.fir_id,
-                  fir_add.police_city,
-                  fir_add.police_station,
-                  fir_add.number_of_victim,
-                  users.name as created_by,
-                  fir_add.created_at,
-                  fir_add.status,
-                  fir_add.relief_status as relief_status,
-                  nature_of_judgement as nature_of_judgement,
-                  DATE(fir_add.date_of_registration) as date_of_reporting
-                FROM fir_add
-                LEFT JOIN users ON users.id = fir_add.created_by
-                ${whereClause} 
-                ORDER BY fir_add.created_at DESC 
-          `;
-    
+  // Build joins dynamically
+  let joins = 'LEFT JOIN users ON users.id = fir_add.created_by';
+  if (joinChargesheet) joins += ' LEFT JOIN chargesheet_details ON chargesheet_details.fir_id = fir_add.fir_id';
+  if (joinCaseDetails) joins += ' LEFT JOIN case_details ON case_details.fir_id = fir_add.fir_id';
+
+
+    const query = `
+    SELECT 
+          CONCAT(fir_add.fir_number,'/',fir_add.fir_number_suffix) as fir_number,
+          fir_add.fir_id,
+          fir_add.police_city,
+          fir_add.police_station,
+          fir_add.number_of_victim,
+          users.name as created_by,
+          fir_add.created_at,
+          fir_add.status,
+          fir_add.relief_status as relief_status,
+          nature_of_judgement as nature_of_judgement,
+          DATE(fir_add.date_of_registration) as date_of_reporting
+        FROM fir_add
+        ${joins}
+        ${whereClause} 
+        ORDER BY fir_add.created_at DESC 
+    `;
+console.log(params);
     const queryParams = [...params];
 
-    // console.log(query)
+     console.log(query)
     // console.log(queryParams)
     
     db.query(query, queryParams, (err, results) => {
@@ -141,29 +360,34 @@ exports.getFIRReliefList = (req, res) => {
     });
 };
 
-
-exports.getFIRReliefListV1 = (req, res) => { 
-  // Build WHERE clause based on provided filters
+exports.getFIRReliefListV1 = (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const pageSize = parseInt(req.query.pageSize) || 10;
   const offset = (page - 1) * pageSize;
 
-  const conditions = [];
+  const conditionsSet = new Set();     // dedupe WHERE
+  const joinsSet = new Set();          // dedupe LEFT JOIN
   const params = [];
 
   const addCondition = (sql, value, wildcard = false) => {
-    conditions.push(sql);
+    conditionsSet.add(sql);
     params.push(wildcard ? `%${value}%` : value);
   };
 
-  const { search, district, police_zone, police_range, revenue_district, Offence_group,
-          complaintReceivedType, start_date, end_date, UIPT, status, year, created_at, modified_at, 
-          CreatedATstartDate, CreatedATendDate, ModifiedATstartDate, ModifiedATDate, legacy, 
-          policeStation, caste, community, statusOfCase, sectionOfLaw, court, convictionType, 
-          chargesheetDate, hasLegalObtained, caseFitForAppeal, filedBy, appealCourt, dataEntryStatus } = req.query;
+  const {
+    search, district, police_zone, police_range, revenue_district, Offence_group,
+    complaintReceivedType, start_date, end_date, UIPT, status, year, created_at, modified_at,
+    CreatedATstartDate, CreatedATendDate, ModifiedATstartDate, ModifiedATDate, legacy,
+    policeStation, caste, community, statusOfCase, sectionOfLaw, court, convictionType,
+    chargesheetDate, hasLegalObtained, caseFitForAppeal, filedBy, appealCourt, dataEntryStatus,
+    chargesheetFromDate, chargesheetToDate, selectedStatus
+  } = req.query;
 
+  /* -------------------------------------------------------
+    BASIC FILTERS
+  ------------------------------------------------------- */
   if (search) {
-    conditions.push(`(
+    conditionsSet.add(`(
       fir_add.fir_id LIKE ? OR
       CONCAT(fir_add.fir_number, '/', fir_add.fir_number_suffix) = ? OR
       fir_add.revenue_district LIKE ? OR
@@ -185,172 +409,220 @@ exports.getFIRReliefListV1 = (req, res) => {
   if (CreatedATendDate) addCondition('DATE(fir_add.created_at) <= ?', CreatedATendDate);
   if (ModifiedATstartDate) addCondition('DATE(fir_add.updated_at) >= ?', ModifiedATstartDate);
   if (ModifiedATDate) addCondition('DATE(fir_add.updated_at) <= ?', ModifiedATDate);
-  // if (created_at) addCondition('DATE_FORMAT(fa.created_at, "%Y-%m-%d") = ?', created_at);
-  // if (modified_at) addCondition('DATE_FORMAT(fa.updated_at, "%Y-%m-%d") = ?', modified_at);
-  //added by mohan02/aug/2025
   if (policeStation) addCondition('fir_add.police_station = ?', policeStation);
 
-  let addingPTDetails = "";
-  let addingCaseDetails = "";
-  let addingChargeSheet = "";
-  let addingAppealDetails = "";
-  let addingOffenceActs = "";
-  let addingVictims = "";
-  let groupByClause = "";
-
-  let joinconditions = [];
-
-  if (statusOfCase) {
-    if (statusOfCase === 'UI') {
-      conditions.push('fir_add.status <= 5');
-    } else if (statusOfCase === 'PT') {
-      addingPTDetails = `LEFT JOIN case_details ON case_details.fir_id = fir_add.fir_id 
-      LEFT JOIN chargesheet_details ON chargesheet_details.fir_id = fir_add.fir_id`;
-
-      conditions.push('fir_add.status >= 6');
-      conditions.push(`case_details.judgement_awarded = 'no'`);
-      conditions.push(`chargesheet_details.case_type = 'chargeSheet'`);
-      
-      //add case_details table judgement_awarded - "no" & chargesheet_details table - case_type = "chargeSheet"
-    }
+  if (chargesheetFromDate) {
+    joinsSet.add(`LEFT JOIN chargesheet_details ON chargesheet_details.fir_id = fir_add.fir_id`);
+    addCondition('DATE(chargesheet_details.chargesheetDate) >= ?', chargesheetFromDate);
   }
-  // 3. Conviction - Stage 7 - FNo: 87  => table - case_Details `judgementNature` = 'Convicted'
-  // 4. Acquitted - - Stage 7 - FNo: 87 => table - case_Details `judgementNature` = 'Acquitted'
-  // 5. FIR Quashed - Stage 6 - FNo:66 => chargesheet_details table - case_type = "rcs"
-  // 6. MF - Stage 6 - FNo:66 Value RCS, FIR Stage 5 - MF Check Box => if mf is true or chargesheet_details table - case_type = "rcs"
-  // 7. Section Deleted - Stage 6 - FNo:66 => chargesheet_details table - case_type = "rcs"
-  // 8. Charge Abated - Stage 7 - FNo: 87 => table - case_Details `judgementNature` = 'Convicted'
-  // 9. Quashed - Stage 7 - FNo: 87  => table - case_Details `judgementNature` = 'Convicted'
-  // Section of Law - get from offence_acts table use left join fir_add.offence_group
-  // Court - 
-  // conviction type => FROM `case_details` WHERE `fir_id` = 'qp1IRA' ORDER BY `Conviction_Type`
-  // chargesheetdate => table - chargesheet_details - chargesheetDate
-  // has legal => table - appeal_details - legal_opinion_obtained no, yes
-  // Is the Case Fit for Appeal => table - appeal_details - case_fit_for_appeal - yes, no
-  // Who has filed the appeal => table - appeal_details - filed_by - government,victim,no appeal yet
-  // Appeal Court (High Court/ Supreme Court) => table - appeal_details - designated_court - highCourt
-  // Judgement type - Need to get clarification from department
-
-  // 3. Conviction
-  if (statusOfCase == "Convicted") {
-    addingCaseDetails = `LEFT JOIN case_details ON case_details.fir_id = fir_add.fir_id`;
-    conditions.push(`case_details.judgementNature = 'Convicted'`);
+  if (chargesheetToDate) {
+    joinsSet.add(`LEFT JOIN chargesheet_details ON chargesheet_details.fir_id = fir_add.fir_id`);
+    addCondition('DATE(chargesheet_details.chargesheetDate) <= ?', chargesheetToDate);
   }
 
-  // 4. Acquitted
-  if (statusOfCase == "Acquitted") {
-    addingCaseDetails = `LEFT JOIN case_details ON case_details.fir_id = fir_add.fir_id`;
-    conditions.push(`case_details.judgementNature = 'Acquitted'`);
+  /* -------------------------------------------------------
+    STATUS OF CASE (existing behavior you had)
+  ------------------------------------------------------- */
+  if (statusOfCase === 'UI') {
+    conditionsSet.add('fir_add.status <= 5');
   }
 
-  // 5. FIR Quashed
-  if (statusOfCase == "FirQuashed") {
-    addingChargeSheet = `LEFT JOIN chargesheet_details ON chargesheet_details.fir_id = fir_add.fir_id`;
-    conditions.push(`chargesheet_details.case_type = 'firQuashed'`);
+  if (statusOfCase === 'PT') {
+    joinsSet.add(`LEFT JOIN case_details ON case_details.fir_id = fir_add.fir_id`);
+    joinsSet.add(`LEFT JOIN chargesheet_details ON chargesheet_details.fir_id = fir_add.fir_id`);
+    conditionsSet.add('fir_add.status >= 6');
+    conditionsSet.add(`case_details.judgement_awarded = 'no'`);
+    conditionsSet.add(`chargesheet_details.case_type = 'chargeSheet'`);
   }
 
-  // 6. MF
-  if (statusOfCase == "MF") {
-    addingChargeSheet = `LEFT JOIN chargesheet_details ON chargesheet_details.fir_id = fir_add.fir_id`;
-    conditions.push(`fir_add.HascaseMF = 1 OR chargesheet_details.case_type = 'referredChargeSheet'`);
+  if (statusOfCase === "Convicted") {
+    joinsSet.add(`LEFT JOIN case_details ON case_details.fir_id = fir_add.fir_id`);
+    conditionsSet.add(`case_details.judgementNature = 'Convicted'`);
+  }
+  if (statusOfCase === "Acquitted") {
+    joinsSet.add(`LEFT JOIN case_details ON case_details.fir_id = fir_add.fir_id`);
+    conditionsSet.add(`case_details.judgementNature = 'Acquitted'`);
+  }
+  if (statusOfCase === "FirQuashed") {
+    joinsSet.add(`LEFT JOIN chargesheet_details ON chargesheet_details.fir_id = fir_add.fir_id`);
+    conditionsSet.add(`chargesheet_details.case_type = 'firQuashed'`);
+  }
+  if (statusOfCase === "MF") {
+    joinsSet.add(`LEFT JOIN chargesheet_details ON chargesheet_details.fir_id = fir_add.fir_id`);
+    conditionsSet.add(`(fir_add.HascaseMF = 1 OR chargesheet_details.case_type = 'referredChargeSheet')`);
+  }
+  if (statusOfCase === "SectionDeleted") {
+    joinsSet.add(`LEFT JOIN chargesheet_details ON chargesheet_details.fir_id = fir_add.fir_id`);
+    conditionsSet.add(`chargesheet_details.case_type = 'sectionDeleted'`);
+  }
+  if (statusOfCase === "Charge_Abated") {
+    joinsSet.add(`LEFT JOIN case_details ON case_details.fir_id = fir_add.fir_id`);
+    conditionsSet.add(`case_details.judgementNature = 'Charge_Abated'`);
+  }
+  if (statusOfCase === "Quashed") {
+    joinsSet.add(`LEFT JOIN case_details ON case_details.fir_id = fir_add.fir_id`);
+    conditionsSet.add(`case_details.judgementNature = 'Quashed'`);
   }
 
-  // 7. Section Deleted (same as RCS)
-  if (statusOfCase == "SectionDeleted") {
-    addingChargeSheet = `LEFT JOIN chargesheet_details ON chargesheet_details.fir_id = fir_add.fir_id`;
-    conditions.push(`chargesheet_details.case_type = 'sectionDeleted'`);
-  }
-
-  // 8 & 9. Charge Abated / Quashed (Stage 7, judgementNature = Convicted)
-  if (statusOfCase == "Charge_Abated") {
-    addingCaseDetails = `LEFT JOIN case_details ON case_details.fir_id = fir_add.fir_id`;
-    conditions.push(`case_details.judgementNature = 'Charge_Abated'`);
-  }
-
-  if (statusOfCase == "Quashed") {
-    addingCaseDetails = `LEFT JOIN case_details ON case_details.fir_id = fir_add.fir_id`;
-    conditions.push(`case_details.judgementNature = 'Quashed'`);
-  }
-
-  // Section of Law
+  /* -------------------------------------------------------
+    SECTION OF LAW / COURT / CONVICTION / APPEAL
+  ------------------------------------------------------- */
   if (sectionOfLaw) {
-    addingOffenceActs = `LEFT JOIN offence_acts ON offence_acts.group_code = fir_add.offence_group`;
-    conditions.push(`offence_acts.group_code = '${sectionOfLaw}'`);
+    joinsSet.add(`LEFT JOIN offence_acts ON offence_acts.group_code = fir_add.offence_group`);
+    conditionsSet.add(`offence_acts.group_code = '${sectionOfLaw}'`);
   }
 
-  // Court
   if (court) {
-    addingCaseDetails = `LEFT JOIN case_details ON case_details.fir_id = fir_add.fir_id`;
-    conditions.push(`case_details.court_name = '${court}'`);
+    joinsSet.add(`LEFT JOIN case_details ON case_details.fir_id = fir_add.fir_id`);
+    conditionsSet.add(`case_details.court_name = '${court}'`);
   }
-
-  // Conviction Type
   if (convictionType) {
-    addingCaseDetails = `LEFT JOIN case_details ON case_details.fir_id = fir_add.fir_id`;
-    conditions.push(`case_details.Conviction_Type = '${convictionType}'`);
-  }
-  
-  // Chargesheet Date
-  if (chargesheetDate) {
-    addingChargeSheet = `LEFT JOIN chargesheet_details ON chargesheet_details.fir_id = fir_add.fir_id`;
-    conditions.push(`chargesheet_details.chargesheetDate = '${chargesheetDate}'`);
+    joinsSet.add(`LEFT JOIN case_details ON case_details.fir_id = fir_add.fir_id`);
+    conditionsSet.add(`case_details.Conviction_Type = '${convictionType}'`);
   }
 
-  // Has Legal
   if (hasLegalObtained) {
-    addingAppealDetails = `LEFT JOIN appeal_details ON appeal_details.fir_id = fir_add.fir_id`;
-    conditions.push(`appeal_details.legal_opinion_obtained = '${hasLegalObtained}'`);
+    joinsSet.add(`LEFT JOIN appeal_details ON appeal_details.fir_id = fir_add.fir_id`);
+    conditionsSet.add(`appeal_details.legal_opinion_obtained = '${hasLegalObtained}'`);
   }
-
-  // Fit for Appeal
   if (caseFitForAppeal) {
-    addingAppealDetails = `LEFT JOIN appeal_details ON appeal_details.fir_id = fir_add.fir_id`;
-    conditions.push(`appeal_details.case_fit_for_appeal = '${caseFitForAppeal}'`);
+    joinsSet.add(`LEFT JOIN appeal_details ON appeal_details.fir_id = fir_add.fir_id`);
+    conditionsSet.add(`appeal_details.case_fit_for_appeal = '${caseFitForAppeal}'`);
   }
-
-  // Filed By
   if (filedBy) {
-    addingAppealDetails = `LEFT JOIN appeal_details ON appeal_details.fir_id = fir_add.fir_id`;
-    conditions.push(`appeal_details.filed_by = '${filedBy}'`);
+    joinsSet.add(`LEFT JOIN appeal_details ON appeal_details.fir_id = fir_add.fir_id`);
+    conditionsSet.add(`appeal_details.filed_by = '${filedBy}'`);
   }
-
-  // Appeal Court
   if (appealCourt) {
-    addingAppealDetails = `LEFT JOIN appeal_details ON appeal_details.fir_id = fir_add.fir_id`;
-    conditions.push(`appeal_details.designated_court = '${appealCourt}'`);
+    joinsSet.add(`LEFT JOIN appeal_details ON appeal_details.fir_id = fir_add.fir_id`);
+    conditionsSet.add(`appeal_details.designated_court = '${appealCourt}'`);
   }
 
-  if(caste || community){
-    addingVictims = `LEFT JOIN victims ON victims.fir_id = fir_add.fir_id`;
-    if(community) conditions.push(`victims.community = '${community}'`);
-    if(caste) conditions.push(`victims.caste = '${caste}'`);
+  /* -------------------------------------------------------
+    VICTIMS
+  ------------------------------------------------------- */
+  let groupByClause = "";
+  if (caste || community) {
+    joinsSet.add(`LEFT JOIN victims ON victims.fir_id = fir_add.fir_id`);
+    if (community) conditionsSet.add(`victims.community = '${community}'`);
+    if (caste) conditionsSet.add(`victims.caste = '${caste}'`);
     groupByClause = `GROUP BY fir_add.fir_id`;
   }
 
-  // Combine all joins
-  let joins = [
-    addingPTDetails,
-    addingVictims,
-    addingCaseDetails,
-    addingChargeSheet,
-    addingAppealDetails,
-    addingOffenceActs
-  ].filter(Boolean).join(" ");
-
+  /* -------------------------------------------------------
+    DATA ENTRY STATUS (expanded mapping + fallback)
+    - MF: HascaseMF OR referredChargeSheet
+    - SectionAltered: is_case_altered = 1
+    - SectionDeleted: chargesheet_details.case_type = 'sectionDeleted'
+    - FirQuashed: chargesheet_details.case_type = 'firQuashed'
+    - Charge_Abated: case_details.judgementNature = 'Charge_Abated'
+    - Quashed: case_details.judgementNature = 'Quashed'
+    - Appeal: judgementNature = 'Acquitted' AND any appeal_details.filed_by present
+    - else: fallback to fir_add.status = ?
+  ------------------------------------------------------- */
   if (dataEntryStatus) {
-      addCondition('fir_add.status = ?', dataEntryStatus);
+    switch (dataEntryStatus) {
+      case "MF":
+        joinsSet.add(`LEFT JOIN chargesheet_details ON chargesheet_details.fir_id = fir_add.fir_id`);
+        conditionsSet.add(`(fir_add.HascaseMF = 1 OR chargesheet_details.case_type = 'referredChargeSheet')`);
+        break;
+
+      case "SectionAltered":
+        conditionsSet.add(`fir_add.is_case_altered = 1`);
+        break;
+
+      case "SectionDeleted":
+        joinsSet.add(`LEFT JOIN chargesheet_details ON chargesheet_details.fir_id = fir_add.fir_id`);
+        conditionsSet.add(`chargesheet_details.case_type = 'sectionDeleted'`);
+        break;
+
+      case "FirQuashed":
+        joinsSet.add(`LEFT JOIN chargesheet_details ON chargesheet_details.fir_id = fir_add.fir_id`);
+        conditionsSet.add(`chargesheet_details.case_type = 'firQuashed'`);
+        break;
+
+      case "Charge_Abated":
+        joinsSet.add(`LEFT JOIN case_details ON case_details.fir_id = fir_add.fir_id`);
+        conditionsSet.add(`case_details.judgementNature = 'Charge_Abated'`);
+        break;
+
+      case "Quashed":
+        joinsSet.add(`LEFT JOIN case_details ON case_details.fir_id = fir_add.fir_id`);
+        conditionsSet.add(`case_details.judgementNature = 'Quashed'`);
+        break;
+
+      case "Appeal":
+        joinsSet.add(`LEFT JOIN case_details ON case_details.fir_id = fir_add.fir_id`);
+        joinsSet.add(`LEFT JOIN appeal_details ON appeal_details.fir_id = fir_add.fir_id`);
+        conditionsSet.add(`case_details.judgementNature = 'Acquitted'`);
+        conditionsSet.add(`(appeal_details.filed_by IS NOT NULL AND appeal_details.filed_by <> '')`);
+        break;
+
+      default:
+        // fallback to original behavior (numeric/other custom values)
+        addCondition('fir_add.status = ?', dataEntryStatus);
+    }
   }
 
+  /* -------------------------------------------------------
+    YEAR / LEGACY
+  ------------------------------------------------------- */
   if (year) addCondition('DATE_FORMAT(fir_add.date_of_registration, "%Y") = ?', year);
 
   if (legacy == "yes") {
-    console.log("legacy", legacy);
     const legacyDate = '2025-03-20 09:18:11';
     addCondition('fir_add.created_at = ?', legacyDate);
   }
 
-  const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
-  
+  /* -------------------------------------------------------
+  STAGE FILTER (support multiple, comma-separated)
+------------------------------------------------------- */
+  const stageConditions = {
+    firProposalNotYetReceived: `fir_add.status <= 4`,
+    firReliefStageGiven: `fir_add.status >= 5 AND fir_add.relief_status IN (1,2,3)`,
+    firReliefStagePending: `fir_add.status >= 5 AND fir_add.relief_status = 0`,
+    chargesheetReliefStageGiven: `fir_add.status >= 6 AND fir_add.relief_status IN (2,3)`,
+    chargesheetReliefStagePending: `fir_add.status >= 6 AND fir_add.relief_status <= 1`,
+    trialReliefStageGiven: `fir_add.status = 7 AND fir_add.relief_status = 3`,
+    trialReliefStagePending: `fir_add.status = 7 AND fir_add.relief_status <= 2`,
+
+    // Case outcome / misc
+    mistakeOfFact: `(COALESCE(fir_add.HascaseMF, 0) = 1 OR COALESCE(chargesheet_details.case_type, '') = 'referredChargeSheet')`,
+    sectionDeleted: `COALESCE(chargesheet_details.case_type, '') = 'sectionDeleted'`,
+    firQuashed: `COALESCE(chargesheet_details.case_type, '') = 'firQuashed'`,
+    acquitted: `COALESCE(case_details.judgementNature, '') = 'Acquitted'`,
+    chargeAbated: `COALESCE(case_details.judgementNature, '') = 'Charge_Abated'`,
+    quashed: `COALESCE(case_details.judgementNature, '') = 'Quashed'`
+  };
+
+  if (selectedStatus) {
+    const stageList = selectedStatus.split(",").map(s => s.trim()).filter(Boolean);
+
+    const stageClauses = [];
+
+    stageList.forEach(s => {
+      if (stageConditions[s]) {
+        // Add joins if needed
+        if (["mistakeOfFact", "sectionDeleted", "firQuashed"].includes(s)) {
+          joinsSet.add(`LEFT JOIN chargesheet_details ON chargesheet_details.fir_id = fir_add.fir_id`);
+        }
+        if (["acquitted", "chargeAbated", "quashed"].includes(s)) {
+          joinsSet.add(`LEFT JOIN case_details ON case_details.fir_id = fir_add.fir_id`);
+        }
+
+        stageClauses.push(stageConditions[s]);
+      }
+    });
+
+    if (stageClauses.length > 0) {
+      conditionsSet.add(`(${stageClauses.join(" OR ")})`);
+    }
+  }
+  /* -------------------------------------------------------
+    FINAL WHERE + JOINS
+  ------------------------------------------------------- */
+  const whereClause = conditionsSet.size ? `WHERE ${[...conditionsSet].join(' AND ')}` : '';
+  const joins = [...joinsSet].join(" ");
   if(caste || community){
     countQuery = `SELECT COUNT(*) AS total
     FROM (
@@ -389,7 +661,7 @@ exports.getFIRReliefListV1 = (req, res) => {
     LEFT JOIN users ON users.id = fir_add.created_by
     ${joins} ${whereClause} ${groupByClause} 
     ORDER BY fir_add.created_at DESC LIMIT ? OFFSET ?`;
-  
+
    db.query(query, [...params, pageSize, validOffset], (err, results) => {
         if (err) return res.status(500).json({ message: 'Data query failed', error: err });
   

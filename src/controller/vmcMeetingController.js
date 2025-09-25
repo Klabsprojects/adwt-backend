@@ -154,14 +154,14 @@ exports.submitMeeting = async (req, res) => {
   let checkParams = [];
 
   if (committee === 'DLVMC') {
-    checkQuery = `SELECT * FROM vmc_meeting WHERE year = ? AND district = ? AND meeting_quarter = ?`;
-    checkParams = [Year, district, meeting];
+    checkQuery = `SELECT * FROM vmc_meeting WHERE year = ? AND district = ? AND meeting_quarter = ? AND meeting_type = ?`;
+    checkParams = [Year, district, meeting, committee];
   } else if (committee === 'SDLVMC') {
-    checkQuery = `SELECT * FROM vmc_meeting WHERE year = ? AND district = ? AND meeting_quarter = ? AND subdivision = ?`;
-    checkParams = [Year, district, meeting, subdivision];
+    checkQuery = `SELECT * FROM vmc_meeting WHERE year = ? AND district = ? AND meeting_quarter = ? AND subdivision = ? AND meeting_type = ?`;
+    checkParams = [Year, district, meeting, subdivision, committee];
   } else if (committee === 'SLVMC') {
-    checkQuery = `SELECT * FROM vmc_meeting WHERE year = ? AND meeting_quarter = ?`;
-    checkParams = [Year, meeting];
+    checkQuery = `SELECT * FROM vmc_meeting WHERE year = ? AND meeting_quarter = ? AND meeting_type = ?`;
+    checkParams = [Year, meeting, committee];
   }
 
   db.query(checkQuery, checkParams, async (err, results) => {
@@ -503,7 +503,10 @@ exports.GetVmcMeetings = async (req, res) => {
       whereConditions.push(`vm.meeting_type = ?`);
       params.push(filters.meeting_type);
     }
-    
+    if (filters.meeting_status) {
+      whereConditions.push(`vm.meeting_status = ?`);
+      params.push(filters.meeting_status);
+    }
     if (filters.meeting_quarter) {
       whereConditions.push(`vm.meeting_quarter = ?`);
       params.push(filters.meeting_quarter);

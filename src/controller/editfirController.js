@@ -2868,10 +2868,15 @@ exports.Update_step6 = (req, res) => {
 
         try {
           // 1. Update FIR status
-          // await new Promise((resolve, reject) => {
-          //   const query = `UPDATE fir_add SET status = ? WHERE fir_id = ?`;
-          //   connection.query(query, [status || 6, firId], (err) => (err ? reject(err) : resolve()));
-          // });
+
+          let firStatus = 5;
+          if(parsedChargesheetDetails.chargeSheetFiled == "yes" && parsedChargesheetDetails.chargesheetDate){
+            firStatus = 6;
+          }
+          await new Promise((resolve, reject) => {
+            const query = `UPDATE fir_add SET status = ? WHERE fir_id = ?`;
+            connection.query(query, [firStatus, firId], (err) => (err ? reject(err) : resolve()));
+          });
 
           // 2. Check and upsert chargesheet_details
           await new Promise((resolve, reject) => {
@@ -2897,6 +2902,7 @@ exports.Update_step6 = (req, res) => {
                 parsedChargesheetDetails.quash_petition_no || null,
                 parsedChargesheetDetails.petition_date || null,
                 parsedChargesheetDetails.upload_court_order_path || null,
+                parsedChargesheetDetails.sectionDeletedCopyPath || null,
                 firId,
               ];
 
@@ -2905,12 +2911,14 @@ exports.Update_step6 = (req, res) => {
                       charge_sheet_filed = ?, court_district = ?, court_name = ?, case_type = ?,
                       case_number = ?, chargesheetDate = ?, rcs_file_number = ?, rcs_filing_date = ?,
                       mf_copy_path = ?, total_compensation_1 = ?, proceedings_file_no = ?,
-                      proceedings_date = ?, upload_proceedings_path = ?, ChargeSheet_CRL_number = ?, quash_petition_no = ?, petition_date = ?, upload_court_order_path = ? WHERE fir_id = ?`
+                      proceedings_date = ?, upload_proceedings_path = ?, ChargeSheet_CRL_number = ?, 
+                      quash_petition_no = ?, petition_date = ?, upload_court_order_path = ?, section_deleted_copy_path = ? WHERE fir_id = ?`
                 : `INSERT INTO chargesheet_details (
                       charge_sheet_filed, court_district, court_name, case_type, case_number,
                       chargesheetDate, rcs_file_number, rcs_filing_date, mf_copy_path,
-                      total_compensation_1, proceedings_file_no, proceedings_date, upload_proceedings_path, ChargeSheet_CRL_number, quash_petition_no ,petition_date ,upload_court_order_path, fir_id
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+                      total_compensation_1, proceedings_file_no, proceedings_date, upload_proceedings_path, 
+                      ChargeSheet_CRL_number, quash_petition_no ,petition_date ,upload_court_order_path, section_deleted_copy_path, fir_id
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
               connection.query(query, values, (err) => (err ? reject(err) : resolve()));
             });
@@ -3269,7 +3277,8 @@ exports.getFirDetailsFirEdit = async (req, res) => {
         cd.total_compensation_1,
         cd.proceedings_file_no,
         cd.proceedings_date,
-        cd.upload_proceedings_path
+        cd.upload_proceedings_path,
+        cd.section_deleted_copy_path
       FROM 
         chargesheet_details cd
       LEFT JOIN 
@@ -3289,7 +3298,8 @@ exports.getFirDetailsFirEdit = async (req, res) => {
         cd.total_compensation_1, 
         cd.proceedings_file_no, 
         cd.proceedings_date, 
-        cd.upload_proceedings_path
+        cd.upload_proceedings_path,
+        cd.section_deleted_copy_path
     `;
     const chargesheetDetails = await queryDb(chargesheetQuery, [fir_id]);
 

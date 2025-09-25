@@ -2814,15 +2814,6 @@ exports.handleStepSix = (req, res) => {
           return res.status(500).json({ message: 'Transaction error' });
         }
 
-        // Update FIR Status
-        const updateFirStatusPromise = new Promise((resolve, reject) => {
-          const query = `UPDATE fir_add SET status = 6 WHERE fir_id = ?`;
-          connection.query(query, [firId], (err) => {
-            if (err) return reject(err);
-            resolve();
-          });
-        });
-
         // Parse chargesheetDetails
         let parsedChargesheetDetails;
         try {
@@ -2832,6 +2823,19 @@ exports.handleStepSix = (req, res) => {
           return res.status(400).json({ message: 'Invalid chargesheetDetails data format' });
         }
 
+        let firStatus = 5;
+        if(parsedChargesheetDetails.chargeSheetFiled == "yes" && parsedChargesheetDetails.chargesheetDate){
+          firStatus = 6;
+        }
+         // Update FIR Status
+         const updateFirStatusPromise = new Promise((resolve, reject) => {
+          const query = `UPDATE fir_add SET status = ? WHERE fir_id = ?`;
+          connection.query(query, [firStatus, firId], (err) => {
+            if (err) return reject(err);
+            resolve();
+          });
+        });
+
         const chargesheetId = parsedChargesheetDetails.chargesheetId || generateRandomId();
 
         const chargesheetPromise = new Promise((resolve, reject) => {
@@ -2840,8 +2844,8 @@ exports.handleStepSix = (req, res) => {
               chargesheet_id, fir_id, charge_sheet_filed, court_district,
               court_name, case_type, case_number, chargesheetDate, rcs_file_number,
               rcs_filing_date, mf_copy_path, total_compensation_1,
-              proceedings_file_no, proceedings_date, upload_proceedings_path
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              proceedings_file_no, proceedings_date, upload_proceedings_path, section_deleted_copy_path
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE
               charge_sheet_filed = VALUES(charge_sheet_filed),
               court_district = VALUES(court_district),
@@ -2855,7 +2859,8 @@ exports.handleStepSix = (req, res) => {
               total_compensation_1 = VALUES(total_compensation_1),
               proceedings_file_no = VALUES(proceedings_file_no),
               proceedings_date = VALUES(proceedings_date),
-              upload_proceedings_path = VALUES(upload_proceedings_path)
+              upload_proceedings_path = VALUES(upload_proceedings_path),
+              section_deleted_copy_path = VALUES(section_deleted_copy_path)
           `;
 
           const values = [
@@ -2874,6 +2879,7 @@ exports.handleStepSix = (req, res) => {
             parsedChargesheetDetails.proceedingsFileNo || null,
             parsedChargesheetDetails.proceedingsDate || null,
             proceedingsFile || null,
+            parsedChargesheetDetails.sectionDeletedCopyPath || null,
           ];
 
           connection.query(query, values, (err) => {

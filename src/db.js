@@ -36,7 +36,7 @@ const mysql = require('mysql2');
 const db = mysql.createPool({
   host: 'localhost',
   user: 'root',
-  password: 'U*qJ$#A$T9',
+  password: '',
   database: 'onlinetn_adw_database',
   waitForConnections: true,
   connectionLimit: 70,

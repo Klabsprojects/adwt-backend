@@ -196,6 +196,12 @@ exports.getVmcReportList = (req, res) => {
     params.push(req.query.meeting_type);
   }
 
+  if (req.query.meeting_status) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'meeting_status = ?';
+    params.push(req.query.meeting_status);
+  }
+
   if (req.query.meeting_quarter) {
     whereClause += whereClause ? ' AND ' : ' WHERE ';
     whereClause += 'meeting_quarter = ?';
@@ -243,6 +249,123 @@ exports.getVmcReportList = (req, res) => {
     });
   };
 
+exports.getVmcReportListV1 = (req, res) => {
+  // --- PARAM BUCKETS ---
+  const selectParts = [];
+  const selectParams = [];
+  const joinParams = [];
+  const whereParams = [];
+
+// --- Year ---
+if (req.query.year) {
+  selectParts.push('COALESCE(m.year, ?) AS year'); // fallback because param is passed
+  selectParams.push(req.query.year);
+} else {
+  selectParts.push('m.year AS year'); // just table column
+}
+
+// --- meeting_type ---
+if (req.query.meeting_type) {
+  selectParts.push('COALESCE(m.meeting_type, ?) AS meeting_type');
+  selectParams.push(req.query.meeting_type);
+} else {
+  selectParts.push('m.meeting_type AS meeting_type');
+}
+
+// --- meeting_quarter ---
+if (req.query.meeting_quarter) {
+  selectParts.push('COALESCE(m.meeting_quarter, ?) AS meeting_quarter');
+  selectParams.push(req.query.meeting_quarter);
+} else {
+  selectParts.push('m.meeting_quarter AS meeting_quarter');
+}
+
+// --- remaining stable columns ---
+selectParts.push(
+  "COALESCE(m.meeting_date, 'TBD') AS meeting_date",
+  "COALESCE(m.meeting_time, 'TBD') AS meeting_time",
+  "d.district_name AS district",
+  "COALESCE(m.meeting_status, 'pending') AS meeting_status",
+  "COALESCE(DATE_FORMAT(m.uploaded_date, \"%d %M %Y\"), 'TBD') AS uploaded_date",
+  "m.subdivision"
+);
+  // --- JOIN conditions ---
+  let joinConditions = ['m.district = d.district_name'];
+
+  if (req.query.meeting_type) {
+    joinConditions.push('m.meeting_type = ?');
+    joinParams.push(req.query.meeting_type);
+  }
+
+  if (req.query.year) {
+    joinConditions.push('m.year = ?');
+    joinParams.push(req.query.year);
+  }
+
+  if (req.query.meeting_quarter) {
+    joinConditions.push('m.meeting_quarter = ?');
+    joinParams.push(req.query.meeting_quarter);
+  }
+
+  // --- WHERE conditions ---
+  let whereClause = '';
+
+  if (req.query.search) {
+    const searchValue = `%${req.query.search}%`;
+    whereClause += ` WHERE (d.district_name LIKE ? OR m.subdivision LIKE ? OR m.meeting_type LIKE ? OR m.meeting_quarter LIKE ? OR m.meeting_date LIKE ?)`;
+    whereParams.push(searchValue, searchValue, searchValue, searchValue, searchValue);
+  }
+
+  if (req.query.district) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'd.district_name = ?';
+    whereParams.push(req.query.district);
+  }
+
+  if (req.query.subdivision) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    whereClause += 'm.subdivision = ?';
+    whereParams.push(req.query.subdivision);
+  }
+
+  if (req.query.meeting_status) {
+    whereClause += whereClause ? ' AND ' : ' WHERE ';
+    if (req.query.meeting_status === "Completed") {
+      whereClause += " m.meeting_status = ?";
+    } else if (req.query.meeting_status === "Pending") {
+      whereClause += " (m.meeting_status = ? OR m.meeting_status IS NULL)";
+    }
+    whereParams.push(req.query.meeting_status);
+  }
+
+  // --- FINAL QUERY ---
+  const query = `
+    SELECT
+    ${selectParts.join(',\n    ')}
+    FROM district d
+    LEFT JOIN vmc_meeting m
+      ON ${joinConditions.join(' AND ')}
+    ${whereClause}
+    ORDER BY d.district_name
+  `;
+
+  // --- FINAL PARAMS ---
+  const queryParams = [...selectParams, ...joinParams, ...whereParams];
+
+  console.log('Query:', query);
+  console.log('Params:', queryParams);
+
+  // Execute query
+  db.query(query, queryParams, (err, results) => {
+    if (err) {
+      return res.status(500).json({
+        message: 'Failed to retrieve meeting list',
+        error: err,
+      });
+    }
+    res.status(200).json({ data: results });
+  });
+}
 
 exports.getmonetaryReliefData = async (req, res) => {
 
@@ -399,6 +522,330 @@ exports.getmonetaryReliefData = async (req, res) => {
     }
 }
 
+// exports.getmonetaryReliefDataV1 = (req, res) => {
+//   const page = parseInt(req.query.page) || 1;
+//   const pageSize = parseInt(req.query.pageSize) || 10;
+//   const offset = (page - 1) * pageSize;
+
+//   const conditions = [];
+//   const params = [];
+
+//   const addCondition = (sql, value, wildcard = false) => {
+//     conditions.push(sql);
+//     params.push(wildcard ? `%${value}%` : value);
+//   };
+
+//   const { policeCity, policeZone, revenueDistrict, OffenceGroup, startDate, endDate, 
+//           caste, community, sectionOfLaw, download,search, selectedStatus } = req.query;
+//   if (search) {
+//       conditions.push(`(
+//           fa.fir_id LIKE ? OR
+//           CONCAT(fa.fir_number, '/', fa.fir_number_suffix) = ? OR
+//           fa.revenue_district LIKE ? OR
+//           fa.police_city LIKE ? OR
+//           fa.police_station LIKE ?
+//           )`);
+//       params.push(`%${search}%`, search, `%${search}%`, `%${search}%`, `%${search}%`);
+//   }
+
+//   if (policeZone) addCondition('fa.police_zone = ?', policeZone);
+//   if (policeCity) addCondition('fa.police_city = ?', policeCity);
+//   if (revenueDistrict) addCondition('fa.revenue_district = ?', revenueDistrict);
+//   if (OffenceGroup) addCondition('fa.Offence_group = ?', OffenceGroup);
+//   if (startDate) addCondition('DATE(fa.date_of_registration) >= ?', startDate);
+//   if (endDate) addCondition('DATE(fa.date_of_registration) <= ?', endDate);
+  
+//   let addingOffenceActs = "";
+  
+//   // Section of Law
+//   if (sectionOfLaw) {
+//     addingOffenceActs = `LEFT JOIN offence_acts ON offence_acts.offence_act_name = fa.offence_group`;
+//     conditions.push(`offence_acts.offence_act_name = '${sectionOfLaw}'`);
+//   }
+
+//   if(caste || community){
+//     if(community) conditions.push(`vd.community = '${community}'`);
+//     if(caste) conditions.push(`vd.caste = '${caste}'`);
+//   }
+
+//   let pagination = `LIMIT ? OFFSET ?`;
+//   if(download == "yes"){
+//     //remove pagination
+//     pagination = "";
+//   }
+
+//   const stageConditions = {
+//     firProposalNotYetReceived: `fa.status <= 4`,
+//     firReliefStageGiven: `fa.status >= 5 AND fa.relief_status IN (1,2,3)`,
+//     firReliefStagePending: `fa.status >= 5 AND fa.relief_status = 0`,
+//     chargesheetReliefStageGiven: `fa.status >= 6 AND fa.relief_status IN (2,3)`,
+//     chargesheetReliefStagePending: `fa.status >= 6 AND fa.relief_status <= 1`,
+//     trialReliefStageGiven: `fa.status = 7 AND fa.relief_status = 3`,
+//     trialReliefStagePending: `fa.status = 7 AND fa.relief_status <= 2`,
+
+//     mistakeOfFact: `(COALESCE(fa.HascaseMF, 0) = 1 OR COALESCE(chargesheet_details.case_type, '') = 'referredChargeSheet')`,
+//     sectionDeleted: `COALESCE(chargesheet_details.case_type, '') = 'sectionDeleted'`,
+//     firQuashed: `COALESCE(chargesheet_details.case_type, '') = 'firQuashed'`,
+//     acquitted: `COALESCE(case_details.judgementNature, '') = 'Acquitted'`,
+//     chargeAbated: `COALESCE(case_details.judgementNature, '') = 'Charge_Abated'`,
+//     quashed: `COALESCE(case_details.judgementNature, '') = 'Quashed'`
+//   };
+
+//   if (selectedStatus) {
+//     const stages = selectedStatus.split(",");
+//     const stageFilters = stages
+//       .filter(stage => stageConditions[stage]) // keep only valid keys
+//       .map(stage => stageConditions[stage]);
+  
+//     if (stageFilters.length) {
+//       conditions.push(`(${stageFilters.join(" OR ")})`);
+//     }
+//   }
+// console.log(conditions);
+//   // Combine all joins
+//   let joins = [
+//     addingOffenceActs
+//   ].filter(Boolean).join(" ");
+ 
+//   const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+
+//   countQuery = `SELECT COUNT(DISTINCT fa.fir_id) AS total FROM fir_add fa LEFT JOIN victims vd ON vd.fir_id = fa.fir_id LEFT JOIN chargesheet_details 
+//   ON chargesheet_details.fir_id = fa.fir_id
+// LEFT JOIN case_details 
+//   ON case_details.fir_id = fa.fir_id ${joins} ${whereClause}`;
+
+//   db.query(countQuery, params, (err, countResults) => {
+//     if (err) return res.status(500).json({ message: 'Count query failed', error: err });
+//      const total = countResults.length != 0 ? countResults[0].total : 0;
+//     if (total === 0) {
+//       return res.status(200).json({ data: [], total: 0, page, pageSize, totalPages: 0 });
+//     }
+
+//     const totalPages = Math.ceil(total / pageSize);
+//     const validPage = Math.min(Math.max(1, page), totalPages);
+//     const validOffset = (validPage - 1) * pageSize;
+
+//     const query = `WITH victim_data AS (
+//       SELECT
+//           vm.victim_id,
+//           vm.fir_id,
+//           vm.victim_name,
+//           vm.victim_gender,
+//           vm.caste,
+//           vm.community,
+//           vm.offence_committed,
+  
+//           -- Relief - First Stage
+//           vrf.relief_amount_scst,
+//           vrf.relief_amount_exgratia,
+//           pvrf.proceedings_date AS first_proceeding_date,
+//           pvrf.date_of_disbursement AS first_disbursement_date,
+  
+//           -- Relief - Second Stage
+//           vrs.secondInstallmentReliefScst,
+//           vrs.secondInstallmentReliefExGratia,
+//           sip.file_date AS second_proceeding_date,
+//           sip.date_of_disbursement AS second_disbursement_date,
+  
+//           -- Relief - Trial Stage
+//           tsr.trialStageReliefAct,
+//           tsr.trialStageReliefGovernment,
+//           tp.file_date AS trial_proceeding_date,
+//           tp.date_of_disbursement AS trial_disbursement_date
+  
+//       FROM victims vm
+//       LEFT JOIN victim_relief_first vrf 
+//           ON vrf.fir_id COLLATE utf8mb4_general_ci = vm.fir_id COLLATE utf8mb4_general_ci
+//       LEFT JOIN proceedings_victim_relief_first pvrf 
+//           ON pvrf.fir_id = vrf.fir_id
+//       LEFT JOIN victim_relief_second vrs 
+//           ON vrs.victim_id = vm.victim_id
+//       LEFT JOIN second_installment_proceedings sip 
+//           ON sip.fir_id = vrs.fir_id
+//       LEFT JOIN trial_stage_relief tsr 
+//           ON tsr.victim_id = vm.victim_id
+//       LEFT JOIN trial_proceedings tp 
+//           ON tp.fir_id = tsr.fir_id
+//       WHERE vm.delete_status = 0
+//         AND TRIM(vm.victim_name) <> ''
+//   )
+  
+//   SELECT
+//       -- FIR Info
+//       fa.fir_id,
+//       fa.revenue_district,
+//       fa.police_city,
+//       fa.police_station,
+//       CONCAT(fa.fir_number, '/', fa.fir_number_suffix) AS fir_number,
+//       fa.date_of_registration AS FIR_date,
+  
+//       -- Relief Stage (Exact mapping)
+//       CASE
+//           WHEN fa.status <= 5 THEN 'FIR'
+//           WHEN fa.status = 6 THEN 'Chargesheet'
+//           WHEN fa.status = 7 THEN 'Final Stage'
+//           ELSE 'Unknown'
+//       END AS relief_stage,
+  
+//       -- Stage-wise Relief Status
+//       CASE 
+//           -- FIR Stage
+//           WHEN fa.status >= 5 AND fa.relief_status = 1 
+//               THEN 'FIR Stage - Relief Given'
+//           WHEN fa.status >= 5 AND fa.relief_status < 1 
+//               THEN 'FIR Stage - Relief Pending'
+  
+//           -- Chargesheet Stage
+//           WHEN fa.status >= 6 AND fa.relief_status = 2 
+//               THEN 'Chargesheet Stage - Relief Given'
+//           WHEN fa.status >= 6 AND fa.relief_status < 2 
+//               THEN 'Chargesheet Stage - Relief Pending'
+  
+//           -- Trial Stage
+//           WHEN fa.status = 7 AND fa.relief_status = 3 
+//               THEN 'Trial Stage - Relief Given'
+//           WHEN fa.status = 7 AND fa.relief_status < 3 
+//               THEN 'Trial Stage - Relief Pending'
+  
+//           ELSE 'Not Applicable'
+//       END AS relief_status,
+  
+//       -- Report Reason (for current month/year)
+//       rr.reason_for_status AS report_reason,
+  
+//       -- Victim Info
+//       vd.victim_name,
+//       vd.victim_gender,
+//       vd.caste,
+//       vd.community,
+//       vd.offence_committed,
+  
+//       -- First Stage Relief
+//       vd.relief_amount_scst,
+//       vd.relief_amount_exgratia,
+//       vd.first_proceeding_date,
+//       vd.first_disbursement_date,
+//       DATEDIFF(vd.first_disbursement_date, fa.date_of_registration) AS days_since_first_relief,
+  
+//       -- Second Stage Relief
+//       vd.secondInstallmentReliefScst,
+//       vd.secondInstallmentReliefExGratia,
+//       vd.second_proceeding_date,
+//       vd.second_disbursement_date,
+//       DATEDIFF(vd.second_disbursement_date, fa.date_of_registration) AS days_since_second_relief,
+  
+//       -- Trial Stage Relief
+//       vd.trialStageReliefAct,
+//       vd.trialStageReliefGovernment,
+//       vd.trial_proceeding_date,
+//       vd.trial_disbursement_date,
+//       DATEDIFF(vd.trial_disbursement_date, fa.date_of_registration) AS days_since_trial_relief,
+//       -- FIR stage
+//     CASE 
+//         WHEN COALESCE(fa.relief_status, 0) = 0 AND fa.status >= 5 
+//              AND NOT (
+//                  COALESCE(fa.HascaseMF, 0) = 1 
+//                  AND COALESCE(chargesheet_details.case_type, NULL) IN ('referredChargeSheet','firQuashed','sectionDeleted') 
+//                  AND COALESCE(case_details.judgementNature, NULL) IN ('Charge_Abated', 'Quashed')
+//              )
+//         THEN 'Relief Pending'
+//         WHEN COALESCE(fa.relief_status, 0) >= 1
+//         THEN 'Relief Given'
+//         ELSE 'Relief Pending'
+//     END AS fir_status,
+//     CASE 
+//         WHEN COALESCE(fa.relief_status, 0) = 0 AND fa.status >= 5 
+//              AND NOT (
+//                  COALESCE(fa.HascaseMF, 0) = 1 
+//                  AND COALESCE(chargesheet_details.case_type, NULL) IN ('referredChargeSheet','firQuashed','sectionDeleted') 
+//                  AND COALESCE(case_details.judgementNature, NULL) IN ('Charge_Abated', 'Quashed')
+//              )
+//         THEN DATEDIFF(CURDATE(), fa.date_of_registration)
+//     END AS fir_pending_days,
+
+//     -- Chargesheet stage
+//     CASE 
+//         WHEN fa.status >= 6 AND COALESCE(fa.relief_status, 0) <= 1
+//              AND COALESCE(fa.relief_status, 0) NOT IN (2,3)
+//              AND NOT (
+//                  COALESCE(fa.HascaseMF, 0) = 1
+//                  AND COALESCE(chargesheet_details.case_type, NULL) IN ('referredChargeSheet','firQuashed','sectionDeleted') 
+//                  AND COALESCE(case_details.judgementNature, NULL) IN ('Charge_Abated', 'Quashed')
+//              )
+//         THEN 'Relief Pending'
+//         WHEN COALESCE(fa.relief_status, 0) IN (2,3) 
+//         THEN 'Relief Given'
+//         ELSE 'Relief Pending'
+//     END AS chargesheet_status,
+//     CASE 
+//         WHEN fa.status >= 6 AND COALESCE(fa.relief_status, 0) <= 1
+//              AND COALESCE(fa.relief_status, 0) NOT IN (2,3)
+//              AND NOT (
+//                  COALESCE(fa.HascaseMF, 0) = 1
+//                  AND COALESCE(chargesheet_details.case_type, NULL) IN ('referredChargeSheet','firQuashed','sectionDeleted') 
+//                  AND COALESCE(case_details.judgementNature, NULL) IN ('Charge_Abated', 'Quashed')
+//              )
+//         THEN DATEDIFF(CURDATE(), chargesheet_details.chargesheetDate)
+//     END AS chargesheet_pending_days,
+
+//     -- Trial stage
+//     CASE 
+//         WHEN fa.status = 7 AND COALESCE(fa.relief_status, 0) <=2
+//              AND NOT (
+//                  COALESCE(fa.HascaseMF, 0) = 1 
+//                  AND COALESCE(chargesheet_details.case_type, NULL) IN ('referredChargeSheet','firQuashed','sectionDeleted') 
+//                  AND COALESCE(case_details.judgementNature, NULL) IN ('Charge_Abated', 'Quashed')
+//              )
+//         THEN 'Relief Pending'
+//         WHEN COALESCE(fa.relief_status, 0) = 3 
+//         THEN 'Relief Given'
+//         ELSE 'Relief Pending'
+//     END AS trial_status,
+//     CASE 
+//         WHEN fa.status = 7 AND COALESCE(fa.relief_status, 0) <=2
+//              AND NOT (
+//                  COALESCE(fa.HascaseMF, 0) = 1 
+//                  AND COALESCE(chargesheet_details.case_type, NULL) IN ('referredChargeSheet','firQuashed','sectionDeleted') 
+//                  AND COALESCE(case_details.judgementNature, NULL) IN ('Charge_Abated', 'Quashed')
+//              )
+//         THEN DATEDIFF(CURDATE(), case_details.Judgement_Date)
+//     END AS trial_pending_days,
+//     CASE WHEN fa.status >= 5 THEN "Yes" ELSE "No" END as fir_proposal_status, 
+//     CASE WHEN fa.status >= 6 THEN "Yes" ELSE "No" END as chargesheet_proposal_status, 
+//     CASE WHEN fa.status >= 7 THEN "Yes" ELSE "No" END as trail_proposal_status
+  
+//   FROM fir_add fa
+  
+//   -- Join victims + reliefs
+//   LEFT JOIN victim_data vd 
+//       ON vd.fir_id = fa.fir_id
+//       LEFT JOIN chargesheet_details 
+//       ON chargesheet_details.fir_id = fa.fir_id
+//   LEFT JOIN case_details 
+//       ON case_details.fir_id = fa.fir_id
+//   -- Join report reasons for current month/year
+//   LEFT JOIN report_reasons rr 
+//       ON rr.fir_id = fa.fir_id
+//      AND MONTH(rr.created_at) = MONTH(CURDATE())
+//      AND YEAR(rr.created_at) = YEAR(CURDATE())
+//     ${joins} ${whereClause}
+//     GROUP BY fa.fir_id
+//     ORDER BY fa.fir_id ${pagination}`;
+// console.log(query);
+//  db.query(query, [...params, pageSize, validOffset], (err, results) => {
+//       if (err) return res.status(500).json({ message: 'Data query failed', error: err });
+
+//       res.status(200).json({
+//         data: results,
+//         total,
+//         page: validPage,
+//         pageSize,
+//         totalPages
+//       });
+//     });
+//   });
+// };
+
 exports.getmonetaryReliefDataV1 = (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const pageSize = parseInt(req.query.pageSize) || 10;
@@ -413,7 +860,7 @@ exports.getmonetaryReliefDataV1 = (req, res) => {
   };
 
   const { policeCity, policeZone, revenueDistrict, OffenceGroup, startDate, endDate, 
-          caste, community, statusOfCase, sectionOfLaw, reliefStage, reliefStatus, download,search } = req.query;
+          caste, community, sectionOfLaw, download,search, selectedStatus } = req.query;
   if (search) {
       conditions.push(`(
           fa.fir_id LIKE ? OR
@@ -432,61 +879,8 @@ exports.getmonetaryReliefDataV1 = (req, res) => {
   if (startDate) addCondition('DATE(fa.date_of_registration) >= ?', startDate);
   if (endDate) addCondition('DATE(fa.date_of_registration) <= ?', endDate);
   
-  let addingPTDetails = "";
-  let addingCaseDetails = "";
-  let addingChargeSheet = "";
   let addingOffenceActs = "";
   
-
-  let joinconditions = [];
-
-  if (statusOfCase) {
-    if (statusOfCase === 'UI') {
-      conditions.push('fa.status <= 5');
-    } else if (statusOfCase === 'PT') {
-      addingPTDetails = `LEFT JOIN case_details ON case_details.fir_id = fa.fir_id 
-      LEFT JOIN chargesheet_details ON chargesheet_details.fir_id = fa.fir_id`;
-
-      conditions.push('fa.status >= 6');
-      conditions.push(`case_details.judgement_awarded = 'no'`);
-      conditions.push(`chargesheet_details.case_type = 'chargeSheet'`);
-    } else if (statusOfCase === 'MF') {
-      conditions.push(`COALESCE(fa.HascaseMF, 0) = 1`);
-    }
-    else if (statusOfCase === 'FirQuashed') {
-      addingChargeSheet = `LEFT JOIN chargesheet_details ON chargesheet_details.fir_id = fa.fir_id`;
-      conditions.push(`COALESCE(chargesheet_details.case_type, '') = 'firQuashed'`);
-    }
-    else if (statusOfCase === 'SectionDeleted') {
-      addingChargeSheet = `LEFT JOIN chargesheet_details ON chargesheet_details.fir_id = fa.fir_id`;
-      conditions.push(`COALESCE(chargesheet_details.case_type, '') = 'sectionDeleted'`);
-    }
-    else if (statusOfCase === 'Charge_Abated') {
-      addingCaseDetails = `LEFT JOIN case_details ON case_details.fir_id = fa.fir_id`;
-      conditions.push(`COALESCE(case_details.judgementNature, '') = 'Charge_Abated'`);
-    }
-    else if (statusOfCase === 'Quashed') {
-      addingCaseDetails = `LEFT JOIN case_details ON case_details.fir_id = fa.fir_id`;
-      conditions.push(`COALESCE(case_details.judgementNature, '') = 'Quashed'`);
-    }
-    else if (statusOfCase == "Convicted") {
-      addingCaseDetails = `LEFT JOIN case_details ON case_details.fir_id = fa.fir_id`;
-      conditions.push(`COALESCE(case_details.judgementNature, '') = 'Convicted'`);
-    }
-    else if (statusOfCase == "Acquitted") {
-      addingCaseDetails = `LEFT JOIN case_details ON case_details.fir_id = fa.fir_id`;
-      conditions.push(`COALESCE(case_details.judgementNature, '') = 'Acquitted'`);
-    }
-  }
-  
-  if(reliefStage == "FirQuashed,MF,SectionDeleted,Charge_Abated,Quashed"){
-
-    addingChargeSheet = `LEFT JOIN chargesheet_details ON chargesheet_details.fir_id = fa.fir_id`;
-    addingCaseDetails = `LEFT JOIN case_details ON case_details.fir_id = fa.fir_id`;
-    conditions.push(`COALESCE(chargesheet_details.case_type, '') IN ('firQuashed', 'sectionDeleted', 'referredChargeSheet') 
-    OR COALESCE(fa.HascaseMF, 0) = 1 OR COALESCE(case_details.judgementNature, '') IN ('Charge_Abated', 'Quashed')`);
-  }
-
   // Section of Law
   if (sectionOfLaw) {
     addingOffenceActs = `LEFT JOIN offence_acts ON offence_acts.offence_act_name = fa.offence_group`;
@@ -498,60 +892,69 @@ exports.getmonetaryReliefDataV1 = (req, res) => {
     if(caste) conditions.push(`vd.caste = '${caste}'`);
   }
 
-  if (reliefStage) {
-    if (reliefStatus === "notyetreceived") {
-      // Override everything: not yet received means FIR stage not given
-      conditions.push(`fa.status <= 4`);
-    }
-    else if(reliefStage == 'FIR'){
-      conditions.push('fa.status >= 5');
-    } else if(reliefStage == 'Chargesheet'){
-      conditions.push('fa.status >= 6');
-    } else if(reliefStage == 'TrialStage'){
-      conditions.push('fa.status = 7');
-    }
-  }
-
-  if(reliefStatus == "pending"){
-    if(reliefStage == 'FIR'){
-      conditions.push(`fa.relief_status IN (0)`);
-    }
-    else if(reliefStage == 'Chargesheet'){
-      conditions.push(`fa.relief_status IN (0,1)`);
-    }
-    else if(reliefStage == 'TrialStage'){
-      conditions.push(`fa.relief_status IN (0,1,2)`);
-    }
-  }
-  else if(reliefStatus == "given"){
-    if(reliefStage == 'FIR'){
-      conditions.push(`fa.relief_status IN(1,2,3)`);
-    }
-    else if(reliefStage == 'Chargesheet'){
-      conditions.push(`fa.relief_status IN(2,3)`);
-    }
-    else if(reliefStage == 'TrialStage'){
-      conditions.push(`fa.relief_status = 3`);
-    }
-  }
-
   let pagination = `LIMIT ? OFFSET ?`;
   if(download == "yes"){
     //remove pagination
     pagination = "";
   }
 
+  const stageConditions = {
+    firProposalNotYetReceived: `fa.status <= 4`,
+    firReliefStageGiven: `COALESCE(fa.relief_status, 0) IN (1,2,3) AND COALESCE(fa.HascaseMF, 0) <> 1 AND COALESCE(chargesheet_details.case_type, '') NOT IN ('referredChargeSheet','firQuashed','sectionDeleted') AND COALESCE(case_details.judgementNature, '') NOT IN ('Charge_Abated','Quashed')`,
+    firReliefStagePending: `fa.status >= 5
+    AND COALESCE(fa.HascaseMF, 0) <> 1
+    AND COALESCE(chargesheet_details.case_type, '') NOT IN ('referredChargeSheet','firQuashed','sectionDeleted')
+    AND COALESCE(case_details.judgementNature, '') NOT IN ('Charge_Abated','Quashed')
+    AND COALESCE(fa.relief_status, 0) = 0`,
+    chargesheetReliefStageGiven: `COALESCE(fa.relief_status, 0) IN (2,3)
+    AND COALESCE(fa.HascaseMF, 0) <> 1
+    AND COALESCE(chargesheet_details.case_type, '') NOT IN ('referredChargeSheet','firQuashed','sectionDeleted')
+    AND COALESCE(case_details.judgementNature, '') NOT IN ('Charge_Abated','Quashed')`,
+    chargesheetReliefStagePending: `fa.status >= 6
+    AND NOT (COALESCE(fa.HascaseMF, 0) = 1
+    AND COALESCE(chargesheet_details.case_type, NULL) IN ('referredChargeSheet','firQuashed','sectionDeleted')
+    AND COALESCE(case_details.judgementNature, NULL) IN ('Charge_Abated', 'Quashed'))
+    AND COALESCE(fa.relief_status, 0) NOT IN (2,3)`,
+    trialReliefStageGiven: `COALESCE(fa.relief_status, 0) = 3
+    AND COALESCE(fa.HascaseMF, 0) <> 1
+    AND COALESCE(chargesheet_details.case_type, '') NOT IN ('referredChargeSheet','firQuashed','sectionDeleted')
+    AND COALESCE(case_details.judgementNature, '') NOT IN ('Charge_Abated','Quashed')`,
+    trialReliefStagePending: `fa.status = 7
+    AND NOT (COALESCE(fa.HascaseMF, 0) = 1
+    AND COALESCE(chargesheet_details.case_type, NULL) IN ('referredChargeSheet','firQuashed','sectionDeleted')
+    AND COALESCE(case_details.judgementNature, NULL) IN ('Charge_Abated', 'Quashed'))
+    AND COALESCE(fa.relief_status, 0) <> 3`,
+
+    mistakeOfFact: `(COALESCE(fa.HascaseMF, 0) = 1 OR COALESCE(chargesheet_details.case_type, '') = 'referredChargeSheet')`,
+    sectionDeleted: `COALESCE(chargesheet_details.case_type, '') = 'sectionDeleted'`,
+    firQuashed: `COALESCE(chargesheet_details.case_type, '') = 'firQuashed'`,
+    acquitted: `COALESCE(case_details.judgementNature, '') = 'Acquitted'`,
+    chargeAbated: `COALESCE(case_details.judgementNature, '') = 'Charge_Abated'`,
+    quashed: `COALESCE(case_details.judgementNature, '') = 'Quashed'`
+  };
+
+  if (selectedStatus) {
+    const stages = selectedStatus.split(",");
+    const stageFilters = stages
+      .filter(stage => stageConditions[stage]) // keep only valid keys
+      .map(stage => stageConditions[stage]);
+  
+    if (stageFilters.length) {
+      conditions.push(`(${stageFilters.join(" OR ")})`);
+    }
+  }
+console.log(conditions);
   // Combine all joins
   let joins = [
-    addingPTDetails,
-    addingCaseDetails,
-    addingChargeSheet,
     addingOffenceActs
   ].filter(Boolean).join(" ");
  
   const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
 
-  countQuery = `SELECT COUNT(DISTINCT fa.fir_id) AS total FROM fir_add fa LEFT JOIN victims vd ON vd.fir_id = fa.fir_id ${joins} ${whereClause}`;
+  countQuery = `SELECT COUNT(DISTINCT fa.fir_id) AS total FROM fir_add fa LEFT JOIN victims vd ON vd.fir_id = fa.fir_id LEFT JOIN chargesheet_details 
+  ON chargesheet_details.fir_id = fa.fir_id
+LEFT JOIN case_details 
+  ON case_details.fir_id = fa.fir_id ${joins} ${whereClause}`;
 
   db.query(countQuery, params, (err, countResults) => {
     if (err) return res.status(500).json({ message: 'Count query failed', error: err });
@@ -678,14 +1081,421 @@ exports.getmonetaryReliefDataV1 = (req, res) => {
       vd.trialStageReliefGovernment,
       vd.trial_proceeding_date,
       vd.trial_disbursement_date,
-      DATEDIFF(vd.trial_disbursement_date, fa.date_of_registration) AS days_since_trial_relief
+      DATEDIFF(vd.trial_disbursement_date, fa.date_of_registration) AS days_since_trial_relief,
+      -- FIR stage
+    CASE 
+        WHEN COALESCE(fa.relief_status, 0) = 0 AND fa.status >= 5 
+             AND NOT (
+                 COALESCE(fa.HascaseMF, 0) = 1 
+                 AND COALESCE(chargesheet_details.case_type, NULL) IN ('referredChargeSheet','firQuashed','sectionDeleted') 
+                 AND COALESCE(case_details.judgementNature, NULL) IN ('Charge_Abated', 'Quashed')
+             )
+        THEN 'Relief Pending'
+        WHEN COALESCE(fa.relief_status, 0) >= 1
+        THEN 'Relief Given'
+        ELSE 'Relief Pending'
+    END AS fir_status,
+    CASE 
+        WHEN COALESCE(fa.relief_status, 0) = 0 AND fa.status >= 5 
+             AND NOT (
+                 COALESCE(fa.HascaseMF, 0) = 1 
+                 AND COALESCE(chargesheet_details.case_type, NULL) IN ('referredChargeSheet','firQuashed','sectionDeleted') 
+                 AND COALESCE(case_details.judgementNature, NULL) IN ('Charge_Abated', 'Quashed')
+             )
+        THEN DATEDIFF(CURDATE(), fa.date_of_registration)
+    END AS fir_pending_days,
+
+    -- Chargesheet stage
+    CASE 
+        WHEN fa.status >= 6 AND COALESCE(fa.relief_status, 0) <= 1
+             AND COALESCE(fa.relief_status, 0) NOT IN (2,3)
+             AND NOT (
+                 COALESCE(fa.HascaseMF, 0) = 1
+                 AND COALESCE(chargesheet_details.case_type, NULL) IN ('referredChargeSheet','firQuashed','sectionDeleted') 
+                 AND COALESCE(case_details.judgementNature, NULL) IN ('Charge_Abated', 'Quashed')
+             )
+        THEN 'Relief Pending'
+        WHEN COALESCE(fa.relief_status, 0) IN (2,3) 
+        THEN 'Relief Given'
+        ELSE 'Relief Pending'
+    END AS chargesheet_status,
+    CASE 
+        WHEN fa.status >= 6 AND COALESCE(fa.relief_status, 0) <= 1
+             AND COALESCE(fa.relief_status, 0) NOT IN (2,3)
+             AND NOT (
+                 COALESCE(fa.HascaseMF, 0) = 1
+                 AND COALESCE(chargesheet_details.case_type, NULL) IN ('referredChargeSheet','firQuashed','sectionDeleted') 
+                 AND COALESCE(case_details.judgementNature, NULL) IN ('Charge_Abated', 'Quashed')
+             )
+        THEN DATEDIFF(CURDATE(), chargesheet_details.chargesheetDate)
+    END AS chargesheet_pending_days,
+
+    -- Trial stage
+    CASE 
+        WHEN fa.status = 7 AND COALESCE(fa.relief_status, 0) <=2
+             AND NOT (
+                 COALESCE(fa.HascaseMF, 0) = 1 
+                 AND COALESCE(chargesheet_details.case_type, NULL) IN ('referredChargeSheet','firQuashed','sectionDeleted') 
+                 AND COALESCE(case_details.judgementNature, NULL) IN ('Charge_Abated', 'Quashed')
+             )
+        THEN 'Relief Pending'
+        WHEN COALESCE(fa.relief_status, 0) = 3 
+        THEN 'Relief Given'
+        ELSE 'Relief Pending'
+    END AS trial_status,
+    CASE 
+        WHEN fa.status = 7 AND COALESCE(fa.relief_status, 0) <=2
+             AND NOT (
+                 COALESCE(fa.HascaseMF, 0) = 1 
+                 AND COALESCE(chargesheet_details.case_type, NULL) IN ('referredChargeSheet','firQuashed','sectionDeleted') 
+                 AND COALESCE(case_details.judgementNature, NULL) IN ('Charge_Abated', 'Quashed')
+             )
+        THEN DATEDIFF(CURDATE(), case_details.Judgement_Date)
+    END AS trial_pending_days,
+    CASE WHEN fa.status >= 5 THEN "Yes" ELSE "No" END as fir_proposal_status, 
+    CASE WHEN fa.status >= 6 THEN "Yes" ELSE "No" END as chargesheet_proposal_status, 
+    CASE WHEN fa.status >= 7 THEN "Yes" ELSE "No" END as trail_proposal_status
   
   FROM fir_add fa
   
   -- Join victims + reliefs
   LEFT JOIN victim_data vd 
       ON vd.fir_id = fa.fir_id
+      LEFT JOIN chargesheet_details 
+      ON chargesheet_details.fir_id = fa.fir_id
+  LEFT JOIN case_details 
+      ON case_details.fir_id = fa.fir_id
+  -- Join report reasons for current month/year
+  LEFT JOIN report_reasons rr 
+      ON rr.fir_id = fa.fir_id
+     AND MONTH(rr.created_at) = MONTH(CURDATE())
+     AND YEAR(rr.created_at) = YEAR(CURDATE())
+    ${joins} ${whereClause}
+    GROUP BY fa.fir_id
+    ORDER BY fa.fir_id ${pagination}`;
+console.log(query);
+ db.query(query, [...params, pageSize, validOffset], (err, results) => {
+      if (err) return res.status(500).json({ message: 'Data query failed', error: err });
+
+      res.status(200).json({
+        data: results,
+        total,
+        page: validPage,
+        pageSize,
+        totalPages
+      });
+    });
+  });
+};
+
+exports.getmonetaryReliefDataV1Latest = (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const pageSize = parseInt(req.query.pageSize) || 10;
+  const offset = (page - 1) * pageSize;
+
+  const conditions = [];
+  let specialStagesSelected = false;
+  const params = [];
+
+  const addCondition = (sql, value, wildcard = false) => {
+    conditions.push(sql);
+    params.push(wildcard ? `%${value}%` : value);
+  };
+
+  const { policeCity, policeZone, revenueDistrict, OffenceGroup, startDate, endDate, 
+          caste, community, sectionOfLaw, download,search, selectedStatus } = req.query;
+  if (search) {
+      conditions.push(`(
+          fa.fir_id LIKE ? OR
+          CONCAT(fa.fir_number, '/', fa.fir_number_suffix) = ? OR
+          fa.revenue_district LIKE ? OR
+          fa.police_city LIKE ? OR
+          fa.police_station LIKE ?
+          )`);
+      params.push(`%${search}%`, search, `%${search}%`, `%${search}%`, `%${search}%`);
+  }
+
+  if (policeZone) addCondition('fa.police_zone = ?', policeZone);
+  if (policeCity) addCondition('fa.police_city = ?', policeCity);
+  if (revenueDistrict) addCondition('fa.revenue_district = ?', revenueDistrict);
+  if (OffenceGroup) addCondition('fa.Offence_group = ?', OffenceGroup);
+  if (startDate) addCondition('DATE(fa.date_of_registration) >= ?', startDate);
+  if (endDate) addCondition('DATE(fa.date_of_registration) <= ?', endDate);
   
+  let addingOffenceActs = "";
+  
+  // Section of Law
+  if (sectionOfLaw) {
+    addingOffenceActs = `LEFT JOIN offence_acts ON offence_acts.offence_act_name = fa.offence_group`;
+    conditions.push(`offence_acts.offence_act_name = '${sectionOfLaw}'`);
+  }
+
+  if(caste || community){
+    if(community) conditions.push(`vd.community = '${community}'`);
+    if(caste) conditions.push(`vd.caste = '${caste}'`);
+  }
+
+  let pagination = `LIMIT ? OFFSET ?`;
+  if(download == "yes"){
+    //remove pagination
+    pagination = "";
+  }
+
+  const stageConditions = {
+    firProposalNotYetReceived: `fa.status <= 4`,
+    firReliefStageGiven: `fa.status >= 5 AND fa.relief_status IN (1,2,3)`,
+    firReliefStagePending: `fa.status >= 5 AND fa.relief_status = 0`,
+    chargesheetReliefStageGiven: `fa.status >= 6 AND fa.relief_status IN (2,3)`,
+    chargesheetReliefStagePending: `fa.status >= 6 AND fa.relief_status <= 1`,
+    trialReliefStageGiven: `fa.status = 7 AND fa.relief_status = 3`,
+    trialReliefStagePending: `fa.status = 7 AND fa.relief_status <= 2`,
+
+    mistakeOfFact: `(COALESCE(fa.HascaseMF, 0) = 1 OR COALESCE(chargesheet_details.case_type, '') = 'referredChargeSheet')`,
+    sectionDeleted: `COALESCE(chargesheet_details.case_type, '') = 'sectionDeleted'`,
+    firQuashed: `COALESCE(chargesheet_details.case_type, '') = 'firQuashed'`,
+    acquitted: `COALESCE(case_details.judgementNature, '') = 'Acquitted'`,
+    chargeAbated: `COALESCE(case_details.judgementNature, '') = 'Charge_Abated'`,
+    quashed: `COALESCE(case_details.judgementNature, '') = 'Quashed'`
+  };
+
+  if (selectedStatus) {
+    const stages = selectedStatus.split(",");
+    const stageFilters = stages
+      .filter(stage => stageConditions[stage]) // keep only valid keys
+      .map(stage => {
+        // detect if it's one of the "special" stages
+        if (["mistakeOfFact","sectionDeleted","firQuashed","acquitted","chargeAbated","quashed"].includes(stage)) {
+          specialStagesSelected = true;
+        }
+        return stageConditions[stage];
+      });
+  
+    if (stageFilters.length) {
+      conditions.push(`(${stageFilters.join(" OR ")})`);
+    }
+  }
+console.log(conditions);
+  // Combine all joins
+  let joins = [
+    addingOffenceActs
+  ].filter(Boolean).join(" ");
+ 
+  //const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+  let whereClause = "";
+  if (specialStagesSelected) {
+    // Case 3: special stages selected
+    whereClause = `WHERE ${conditions.join(" AND ")}`;
+  } else if (conditions.length){
+    // Case 2: only normal stages selected
+    whereClause = `WHERE COALESCE(fa.HascaseMF, 0) <> 1
+      AND COALESCE(chargesheet_details.case_type, NULL) NOT IN ('referredChargeSheet','firQuashed','sectionDeleted') 
+      AND COALESCE(case_details.judgementNature, NULL) NOT IN ('Charge_Abated', 'Quashed')`;
+    if (conditions.length) {
+      whereClause += ` AND ${conditions.join(" AND ")}`;
+    }
+  }
+  
+  console.log(whereClause);
+
+  countQuery = `SELECT COUNT(DISTINCT fa.fir_id) AS total FROM fir_add fa LEFT JOIN victims vd ON vd.fir_id = fa.fir_id LEFT JOIN chargesheet_details 
+  ON chargesheet_details.fir_id = fa.fir_id
+LEFT JOIN case_details 
+  ON case_details.fir_id = fa.fir_id ${joins} ${whereClause}`;
+
+  db.query(countQuery, params, (err, countResults) => {
+    if (err) return res.status(500).json({ message: 'Count query failed', error: err });
+     const total = countResults.length != 0 ? countResults[0].total : 0;
+    if (total === 0) {
+      return res.status(200).json({ data: [], total: 0, page, pageSize, totalPages: 0 });
+    }
+
+    const totalPages = Math.ceil(total / pageSize);
+    const validPage = Math.min(Math.max(1, page), totalPages);
+    const validOffset = (validPage - 1) * pageSize;
+
+    const query = `WITH victim_data AS (
+      SELECT
+          vm.victim_id,
+          vm.fir_id,
+          vm.victim_name,
+          vm.victim_gender,
+          vm.caste,
+          vm.community,
+          vm.offence_committed,
+  
+          -- Relief - First Stage
+          vrf.relief_amount_scst,
+          vrf.relief_amount_exgratia,
+          pvrf.proceedings_date AS first_proceeding_date,
+          pvrf.date_of_disbursement AS first_disbursement_date,
+  
+          -- Relief - Second Stage
+          vrs.secondInstallmentReliefScst,
+          vrs.secondInstallmentReliefExGratia,
+          sip.file_date AS second_proceeding_date,
+          sip.date_of_disbursement AS second_disbursement_date,
+  
+          -- Relief - Trial Stage
+          tsr.trialStageReliefAct,
+          tsr.trialStageReliefGovernment,
+          tp.file_date AS trial_proceeding_date,
+          tp.date_of_disbursement AS trial_disbursement_date
+  
+      FROM victims vm
+      LEFT JOIN victim_relief_first vrf 
+          ON vrf.fir_id COLLATE utf8mb4_general_ci = vm.fir_id COLLATE utf8mb4_general_ci
+      LEFT JOIN proceedings_victim_relief_first pvrf 
+          ON pvrf.fir_id = vrf.fir_id
+      LEFT JOIN victim_relief_second vrs 
+          ON vrs.victim_id = vm.victim_id
+      LEFT JOIN second_installment_proceedings sip 
+          ON sip.fir_id = vrs.fir_id
+      LEFT JOIN trial_stage_relief tsr 
+          ON tsr.victim_id = vm.victim_id
+      LEFT JOIN trial_proceedings tp 
+          ON tp.fir_id = tsr.fir_id
+      WHERE vm.delete_status = 0
+        AND TRIM(vm.victim_name) <> ''
+  )
+  
+  SELECT
+      -- FIR Info
+      fa.fir_id,
+      fa.revenue_district,
+      fa.police_city,
+      fa.police_station,
+      CONCAT(fa.fir_number, '/', fa.fir_number_suffix) AS fir_number,
+      fa.date_of_registration AS FIR_date,
+  
+      -- Relief Stage (Exact mapping)
+      CASE
+          WHEN fa.status <= 5 THEN 'FIR'
+          WHEN fa.status = 6 THEN 'Chargesheet'
+          WHEN fa.status = 7 THEN 'Final Stage'
+          ELSE 'Unknown'
+      END AS relief_stage,
+  
+      -- Stage-wise Relief Status
+      CASE 
+          -- FIR Stage
+          WHEN fa.status >= 5 AND fa.relief_status = 1 
+              THEN 'FIR Stage - Relief Given'
+          WHEN fa.status >= 5 AND fa.relief_status < 1 
+              THEN 'FIR Stage - Relief Pending'
+  
+          -- Chargesheet Stage
+          WHEN fa.status >= 6 AND fa.relief_status = 2 
+              THEN 'Chargesheet Stage - Relief Given'
+          WHEN fa.status >= 6 AND fa.relief_status < 2 
+              THEN 'Chargesheet Stage - Relief Pending'
+  
+          -- Trial Stage
+          WHEN fa.status = 7 AND fa.relief_status = 3 
+              THEN 'Trial Stage - Relief Given'
+          WHEN fa.status = 7 AND fa.relief_status < 3 
+              THEN 'Trial Stage - Relief Pending'
+  
+          ELSE 'Not Applicable'
+      END AS relief_status,
+  
+      -- Report Reason (for current month/year)
+      rr.reason_for_status AS report_reason,
+  
+      -- Victim Info
+      vd.victim_name,
+      vd.victim_gender,
+      vd.caste,
+      vd.community,
+      vd.offence_committed,
+  
+      -- First Stage Relief
+      vd.relief_amount_scst,
+      vd.relief_amount_exgratia,
+      vd.first_proceeding_date,
+      vd.first_disbursement_date,
+      DATEDIFF(vd.first_disbursement_date, fa.date_of_registration) AS days_since_first_relief,
+  
+      -- Second Stage Relief
+      vd.secondInstallmentReliefScst,
+      vd.secondInstallmentReliefExGratia,
+      vd.second_proceeding_date,
+      vd.second_disbursement_date,
+      DATEDIFF(vd.second_disbursement_date, fa.date_of_registration) AS days_since_second_relief,
+  
+      -- Trial Stage Relief
+      vd.trialStageReliefAct,
+      vd.trialStageReliefGovernment,
+      vd.trial_proceeding_date,
+      vd.trial_disbursement_date,
+      DATEDIFF(vd.trial_disbursement_date, fa.date_of_registration) AS days_since_trial_relief,
+      -- FIR stage
+    CASE 
+        WHEN COALESCE(fa.relief_status, 0) = 0 AND fa.status >= 5 
+             AND NOT (
+                 COALESCE(fa.HascaseMF, 0) = 1 
+                 AND COALESCE(chargesheet_details.case_type, NULL) IN ('referredChargeSheet','firQuashed','sectionDeleted') 
+                 AND COALESCE(case_details.judgementNature, NULL) IN ('Charge_Abated', 'Quashed')
+             )
+        THEN 'Relief Pending'
+        WHEN COALESCE(fa.relief_status, 0) >= 1
+        THEN 'Relief Given'
+        ELSE 'Relief Pending'
+    END AS fir_status,
+    CASE 
+        WHEN COALESCE(fa.relief_status, 0) = 0 AND fa.status >= 5
+        THEN DATEDIFF(CURDATE(), fa.date_of_registration)
+    END AS fir_pending_days,
+
+    -- Chargesheet stage
+    CASE 
+        WHEN fa.status >= 6 AND COALESCE(fa.relief_status, 0) <= 1
+             AND COALESCE(fa.relief_status, 0) NOT IN (2,3)
+             AND NOT (
+                 COALESCE(fa.HascaseMF, 0) = 1
+                 AND COALESCE(chargesheet_details.case_type, NULL) IN ('referredChargeSheet','firQuashed','sectionDeleted') 
+                 AND COALESCE(case_details.judgementNature, NULL) IN ('Charge_Abated', 'Quashed')
+             )
+        THEN 'Relief Pending'
+        WHEN COALESCE(fa.relief_status, 0) IN (2,3) 
+        THEN 'Relief Given'
+        ELSE 'Relief Pending'
+    END AS chargesheet_status,
+    CASE 
+        WHEN fa.status >= 6 AND COALESCE(fa.relief_status, 0) <= 1
+             AND COALESCE(fa.relief_status, 0) NOT IN (2,3)
+        THEN DATEDIFF(CURDATE(), chargesheet_details.chargesheetDate)
+    END AS chargesheet_pending_days,
+
+    -- Trial stage
+    CASE 
+        WHEN fa.status = 7 AND COALESCE(fa.relief_status, 0) <=2
+             AND NOT (
+                 COALESCE(fa.HascaseMF, 0) = 1 
+                 AND COALESCE(chargesheet_details.case_type, NULL) IN ('referredChargeSheet','firQuashed','sectionDeleted') 
+                 AND COALESCE(case_details.judgementNature, NULL) IN ('Charge_Abated', 'Quashed')
+             )
+        THEN 'Relief Pending'
+        WHEN COALESCE(fa.relief_status, 0) = 3 
+        THEN 'Relief Given'
+        ELSE 'Relief Pending'
+    END AS trial_status,
+    CASE 
+        WHEN fa.status = 7 AND COALESCE(fa.relief_status, 0) <=2
+        THEN DATEDIFF(CURDATE(), case_details.Judgement_Date)
+    END AS trial_pending_days,
+    CASE WHEN fa.status >= 5 THEN "Yes" ELSE "No" END as fir_proposal_status, 
+    CASE WHEN fa.status >= 6 THEN "Yes" ELSE "No" END as chargesheet_proposal_status, 
+    CASE WHEN fa.status >= 7 THEN "Yes" ELSE "No" END as trail_proposal_status
+  
+  FROM fir_add fa
+  
+  -- Join victims + reliefs
+  LEFT JOIN victim_data vd 
+      ON vd.fir_id = fa.fir_id
+      LEFT JOIN chargesheet_details 
+      ON chargesheet_details.fir_id = fa.fir_id
+  LEFT JOIN case_details 
+      ON case_details.fir_id = fa.fir_id
   -- Join report reasons for current month/year
   LEFT JOIN report_reasons rr 
       ON rr.fir_id = fa.fir_id
